@@ -29,11 +29,11 @@ jobs:
           node-version: "22"
 
       - name: Install playground dependencies
-        run: npm ci
+        run: npm install
         working-directory: playground
 
       - name: Install worker dependencies
-        run: npm ci
+        run: npm install
         working-directory: workers/cortex-api
 
       - name: Deploy Worker
@@ -58,7 +58,7 @@ jobs:
           node-version: "22"
 
       - name: Install UI dependencies
-        run: npm ci
+        run: npm install
         working-directory: apps/cortex-ui
 
       - name: Build for Cloudflare Pages
