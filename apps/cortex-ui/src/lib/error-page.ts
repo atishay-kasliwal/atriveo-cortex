@@ -11,9 +11,9 @@ export function renderErrorPage(): string {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style>
-      body { font: 15px/1.55 Inter, system-ui, -apple-system, sans-serif; background: #0B0D12; color: #FAFAF7; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
+      body { font: 15px/1.55 "Work Sans", system-ui, -apple-system, sans-serif; background: #0B0D12; color: #FAFAF7; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
       .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: #14171F; }
-      h1 { font-family: Georgia, serif; font-size: 1.35rem; font-weight: 400; margin: 0 0 0.5rem; letter-spacing: -0.02em; }
+      h1 { font-family: "Work Sans", system-ui, sans-serif; font-size: 1.35rem; font-weight: 600; margin: 0 0 0.5rem; letter-spacing: -0.02em; }
       p { color: #A8ADBA; margin: 0 0 1.5rem; }
       .actions { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
       a, button { padding: 0.5rem 1rem; border-radius: 8px; font: inherit; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
