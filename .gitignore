@@ -1,0 +1,29 @@
+# Dependencies & build
+node_modules/
+.next/
+out/
+
+# Local data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# macOS / ExFAT
+.DS_Store
+._*
+
+# Log directories
+logs/
+
+# SQLite variants
+*.sqlite
+*.sqlite3
+
+# ScreenPipe capture data (never commit)
+screenpipe-data/

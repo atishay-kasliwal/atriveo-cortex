@@ -1,0 +1,27 @@
+node_modules/
+.next/
+out/
+
+.env
+.env.local
+.env.*.local
+
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+.DS_Store
+._*
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# SQLite variants
+*.sqlite
+*.sqlite3
+
+# ScreenPipe capture data
+screenpipe-data/

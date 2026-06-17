@@ -1,0 +1,3 @@
+# Local data directory (gitignored)
+# Place ScreenPipe db.sqlite at: data/screenpipe/db.sqlite
+# Working memory DB is created automatically at: data/working-memory.db
