@@ -44,6 +44,7 @@ import {
   getIdeaRecurrenceReport,
 } from "@/lib/recurrence";
 import { getCloudScreenpipeHealth } from "@/lib/system/screenpipe-health-cloud";
+import { getAnalyticsHistory } from "@/lib/analytics/history";
 import { apiError, apiSuccess } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
@@ -110,6 +111,14 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, await buildMonthActivity(range.startDate, range.endDate));
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load month analytics", 500);
+    }
+  });
+
+  app.get("/api/analytics/history", async (c) => {
+    try {
+      return apiSuccess(c, await getAnalyticsHistory());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load analytics history", 500);
     }
   });
 

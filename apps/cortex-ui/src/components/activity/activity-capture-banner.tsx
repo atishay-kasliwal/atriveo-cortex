@@ -4,20 +4,22 @@
 
 import type { ScreenpipeHealth } from "@/lib/api/system-adapter";
 import {
-  type ActivityCaptureState,
-  activityCaptureBannerMessage,
-  activityCaptureBannerStyles,
+  type ActivityPipelineState,
+  activityPipelineBannerMessage,
+  activityPipelineBannerStyles,
 } from "@/lib/activity/activity-state";
 
 export function ActivityCaptureBanner({
   health,
-  captureState,
+  pipelineState,
+  hasHistoricalData,
 }: {
   health?: ScreenpipeHealth;
-  captureState: ActivityCaptureState;
+  pipelineState: ActivityPipelineState;
+  hasHistoricalData: boolean;
 }) {
-  const styles = activityCaptureBannerStyles[captureState];
-  const message = activityCaptureBannerMessage(health, captureState);
+  const styles = activityPipelineBannerStyles[pipelineState];
+  const message = activityPipelineBannerMessage(health, pipelineState, hasHistoricalData);
 
   return (
     <div
@@ -29,7 +31,11 @@ export function ActivityCaptureBanner({
       aria-live="polite"
     >
       <span className={"h-2 w-2 shrink-0 rounded-full " + styles.dot} />
-      <span>{message}</span>
+      <span className="font-medium uppercase tracking-wider text-[10px] opacity-80">
+        {pipelineState}
+      </span>
+      <span className="text-border">·</span>
+      <span>{message.replace(/^(Live|Syncing|Stale|Offline)\s*—\s*/i, "")}</span>
     </div>
   );
 }

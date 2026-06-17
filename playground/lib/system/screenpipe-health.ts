@@ -32,6 +32,16 @@ export type ScreenpipeHealth = CaptureHealthMetrics & {
   lastRestartAt: string | null;
   restartCount: number;
   lastError: string | null;
+  /** Phase 7A pipeline status for dashboard banner */
+  pipelineStatus?: "live" | "syncing" | "stale" | "offline";
+  captureRunning?: boolean;
+  captureActive?: boolean;
+  syncHealthy?: boolean;
+  syncStale?: boolean;
+  analyticsStale?: boolean;
+  lastSyncAt?: string | null;
+  lastFrameAt?: string | null;
+  minutesSinceSync?: number | null;
 };
 
 const HEALTHY_MINUTES = 5;

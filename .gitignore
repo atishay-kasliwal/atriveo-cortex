@@ -12,6 +12,7 @@ out/
 # Environment
 .env
 .env.local
+.env.sync
 .env.*.local
 
 # macOS / ExFAT

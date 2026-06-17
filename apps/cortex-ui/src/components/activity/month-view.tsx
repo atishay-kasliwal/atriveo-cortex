@@ -18,9 +18,11 @@ import type { MonthActivity } from "@/lib/api/types";
 export function MonthView({
   data,
   loading,
+  isCurrentMonth = true,
 }: {
   data: MonthActivity | undefined;
   loading: boolean;
+  isCurrentMonth?: boolean;
 }) {
   if (loading) return <MonthSkeleton />;
   if (!hasMonthActivity(data)) {

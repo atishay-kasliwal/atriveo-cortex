@@ -14,6 +14,8 @@
     "db:migrate": "tsx scripts/migrate-cortex-to-neon.ts",
     "db:verify": "tsx scripts/verify-neon.ts",
     "sync:screenpipe": "tsx scripts/sync-screenpipe.ts",
+    "backfill:analytics": "tsx scripts/backfill-analytics.ts",
+    "audit:history": "tsx scripts/audit-history.ts",
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {

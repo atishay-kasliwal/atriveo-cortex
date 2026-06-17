@@ -12,9 +12,11 @@ import type { WeekActivity } from "@/lib/api/types";
 export function WeekView({
   data,
   loading,
+  isCurrentWeek = true,
 }: {
   data: WeekActivity | undefined;
   loading: boolean;
+  isCurrentWeek?: boolean;
 }) {
   if (loading) return <WeekSkeleton />;
   if (!hasWeekActivity(data)) {
@@ -46,7 +48,10 @@ export function WeekView({
         </div>
       </section>
 
-      <ActivityCard title="Day strip" subtitle="Last 7 days at a glance">
+      <ActivityCard
+        title="Day strip"
+        subtitle={isCurrentWeek ? "Last 7 days at a glance" : "Seven-day window"}
+      >
         <DayStrip days={data.days} max={maxDay} mostActiveDate={data.insights.mostActiveDay?.date} />
       </ActivityCard>
 

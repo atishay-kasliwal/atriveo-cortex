@@ -6,64 +6,82 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ActivityCaptureBanner } from "@/components/activity/activity-capture-banner";
+import { ActivityHistoryCoverage } from "@/components/activity/activity-history-coverage";
+import {
+  ActivityPeriodNav,
+  dayViewHeading,
+} from "@/components/activity/activity-period-nav";
 import { MonthView } from "@/components/activity/month-view";
 import { TodayView } from "@/components/activity/today-view";
 import { WeekView } from "@/components/activity/week-view";
 import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
 import { ErrorState } from "@/components/dashboard/states";
 import {
+  formatDateLabel,
+  formatShortRange,
+  localDateString,
+  shiftDate,
+  shiftMonth,
+  weekRangeFromEnd,
+  yesterdayDate,
+} from "@/lib/activity/date-nav";
+import {
   hasMonthActivity,
   hasTodayActivity,
   hasWeekActivity,
-  resolveActivityCaptureState,
+  resolveActivityPipelineState,
 } from "@/lib/activity/activity-state";
-import { monthQuery, screenpipeHealthQuery, todayQuery, weekQuery } from "@/lib/api/queries";
+import {
+  analyticsHistoryQuery,
+  monthQuery,
+  screenpipeHealthQuery,
+  todayQuery,
+  weekQuery,
+} from "@/lib/api/queries";
 
 type Range = "today" | "week" | "month";
-
-const RANGE_META: Record<
-  Range,
-  { title: string; question: string; pageTitle: string }
-> = {
-  today: {
-    title: "Today",
-    question: "What did I do today?",
-    pageTitle: "Today · Atriveo Cortex",
-  },
-  week: {
-    title: "This Week",
-    question: "How did my week evolve?",
-    pageTitle: "Week · Atriveo Cortex",
-  },
-  month: {
-    title: "This Month",
-    question: "What changed this month?",
-    pageTitle: "Month · Atriveo Cortex",
-  },
-};
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: RANGE_META.today.pageTitle },
-      { name: "description", content: RANGE_META.today.question },
+      { title: "Activity · Atriveo Cortex" },
+      { name: "description", content: "Your activity memory — today, this week, this month" },
     ],
   }),
   loader: ({ context }) => {
     void context.queryClient.prefetchQuery(todayQuery());
+    void context.queryClient.prefetchQuery(analyticsHistoryQuery);
   },
   component: ActivityPage,
 });
 
 function ActivityPage() {
+  const calendarToday = useMemo(() => localDateString(), []);
   const [range, setRange] = useState<Range>("today");
-  const today = useQuery(todayQuery());
-  const week = useQuery({ ...weekQuery(), enabled: range === "week" });
-  const month = useQuery({ ...monthQuery(), enabled: range === "month" });
+  const [viewDate, setViewDate] = useState(calendarToday);
+  const [weekEnd, setWeekEnd] = useState(calendarToday);
+  const [monthKey, setMonthKey] = useState(calendarToday.slice(0, 7));
+
+  const weekStart = weekRangeFromEnd(weekEnd).start;
+  const isCurrentWeek = weekEnd === calendarToday;
+  const isCurrentMonth = monthKey === calendarToday.slice(0, 7);
+
+  const today = useQuery({
+    ...todayQuery(viewDate),
+    enabled: range === "today",
+  });
+  const week = useQuery({
+    ...weekQuery(weekStart),
+    enabled: range === "week",
+  });
+  const month = useQuery({
+    ...monthQuery(`${monthKey}-01`),
+    enabled: range === "month",
+  });
+  const history = useQuery(analyticsHistoryQuery);
   const screenpipeHealth = useQuery(screenpipeHealthQuery);
 
   const active = range === "today" ? today : range === "week" ? week : month;
-  const meta = RANGE_META[range];
 
   const hasHistoricalData = useMemo(() => {
     if (range === "today") return hasTodayActivity(today.data);
@@ -71,38 +89,101 @@ function ActivityPage() {
     return hasMonthActivity(month.data);
   }, [range, today.data, week.data, month.data]);
 
-  const captureState = resolveActivityCaptureState(
+  const pipelineState = resolveActivityPipelineState(
     screenpipeHealth.data,
     hasHistoricalData,
   );
 
-  const dateLabel = useMemo(() => {
-    const now = new Date();
-    if (range === "today") {
-      return now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
-    }
+  const headerTitle = useMemo(() => {
+    if (range === "today") return formatDateLabel(viewDate, calendarToday);
+    if (range === "week") return isCurrentWeek ? "This Week" : "Week";
+    return isCurrentMonth
+      ? "This Month"
+      : new Date(`${monthKey}-01T12:00:00`).toLocaleDateString([], {
+          month: "long",
+          year: "numeric",
+        });
+  }, [range, viewDate, weekEnd, monthKey, calendarToday, isCurrentWeek, isCurrentMonth]);
+
+  const headerDescription = useMemo(() => {
+    if (range === "today") return dayViewHeading(viewDate, calendarToday);
     if (range === "week") {
-      const end = now;
-      const start = new Date(now);
-      start.setDate(now.getDate() - 6);
-      return `${start.toLocaleDateString([], { month: "short", day: "numeric" })} – ${end.toLocaleDateString([], { month: "short", day: "numeric" })}`;
+      const { start, end } = weekRangeFromEnd(weekEnd);
+      return `How did my week evolve? · ${formatShortRange(start, end)}`;
     }
-    return now.toLocaleDateString([], { month: "long", year: "numeric" });
-  }, [range]);
+    const monthDate = new Date(`${monthKey}-01T12:00:00`);
+    return `What changed this month? · ${monthDate.toLocaleDateString([], { month: "long", year: "numeric" })}`;
+  }, [range, viewDate, weekEnd, monthKey, calendarToday]);
+
+  const canGoForward =
+    range === "today"
+      ? viewDate < calendarToday
+      : range === "week"
+        ? weekEnd < calendarToday
+        : monthKey < calendarToday.slice(0, 7);
+
+  function goBack() {
+    if (range === "today") setViewDate((d) => shiftDate(d, -1));
+    else if (range === "week") setWeekEnd((d) => shiftDate(d, -7));
+    else setMonthKey((m) => shiftMonth(m, -1));
+  }
+
+  function goForward() {
+    if (!canGoForward) return;
+    if (range === "today") {
+      const next = shiftDate(viewDate, 1);
+      setViewDate(next > calendarToday ? calendarToday : next);
+    } else if (range === "week") {
+      const next = shiftDate(weekEnd, 7);
+      setWeekEnd(next > calendarToday ? calendarToday : next);
+    } else {
+      const next = shiftMonth(monthKey, 1);
+      const current = calendarToday.slice(0, 7);
+      setMonthKey(next > current ? current : next);
+    }
+  }
+
+  function jumpToCurrentPeriod() {
+    if (range === "today") setViewDate(calendarToday);
+    else if (range === "week") setWeekEnd(calendarToday);
+    else setMonthKey(calendarToday.slice(0, 7));
+  }
+
+  function jumpYesterday() {
+    setRange("today");
+    setViewDate(yesterdayDate(calendarToday));
+  }
 
   return (
     <PageBody>
-      <PageHeader
-        eyebrow="Activity"
-        title={meta.title}
-        description={`${meta.question} · ${dateLabel}`}
-        actions={<RangeTabs value={range} onChange={setRange} />}
-      />
+      <PageHeader eyebrow="Activity" title={headerTitle} description={headerDescription} />
 
       <div className="mt-4">
+        <ActivityPeriodNav
+          range={range}
+          onRangeChange={setRange}
+          viewDate={viewDate}
+          weekEnd={weekEnd}
+          monthKey={monthKey}
+          calendarToday={calendarToday}
+          onPrev={goBack}
+          onNext={goForward}
+          canNext={canGoForward}
+          onJumpToday={jumpToCurrentPeriod}
+          onJumpYesterday={jumpYesterday}
+          showJumpToday={range === "today" && viewDate !== calendarToday}
+          showJumpYesterday={
+            range === "today" && viewDate !== yesterdayDate(calendarToday)
+          }
+        />
+      </div>
+
+      <div className="mt-4 space-y-3">
+        <ActivityHistoryCoverage history={history.data} loading={history.isLoading} />
         <ActivityCaptureBanner
           health={screenpipeHealth.data}
-          captureState={captureState}
+          pipelineState={pipelineState}
+          hasHistoricalData={hasHistoricalData}
         />
       </div>
 
@@ -112,37 +193,30 @@ function ActivityPage() {
         </div>
       ) : (
         <div className="mt-6">
-          {range === "today" && <TodayView data={today.data} loading={today.isLoading} />}
-          {range === "week" && <WeekView data={week.data} loading={week.isLoading} />}
-          {range === "month" && <MonthView data={month.data} loading={month.isLoading} />}
+          {range === "today" && (
+            <TodayView
+              data={today.data}
+              loading={today.isLoading}
+              viewDate={viewDate}
+              calendarToday={calendarToday}
+            />
+          )}
+          {range === "week" && (
+            <WeekView
+              data={week.data}
+              loading={week.isLoading}
+              isCurrentWeek={isCurrentWeek}
+            />
+          )}
+          {range === "month" && (
+            <MonthView
+              data={month.data}
+              loading={month.isLoading}
+              isCurrentMonth={isCurrentMonth}
+            />
+          )}
         </div>
       )}
     </PageBody>
-  );
-}
-
-function RangeTabs({ value, onChange }: { value: Range; onChange: (r: Range) => void }) {
-  const opts: { id: Range; label: string }[] = [
-    { id: "today", label: "Today" },
-    { id: "week", label: "Week" },
-    { id: "month", label: "Month" },
-  ];
-  return (
-    <div className="inline-flex items-center rounded-lg border border-border bg-surface p-0.5">
-      {opts.map((o) => (
-        <button
-          key={o.id}
-          onClick={() => onChange(o.id)}
-          className={
-            "rounded-md px-3 py-1.5 text-xs font-medium transition " +
-            (value === o.id
-              ? "bg-signal text-bone shadow-sm"
-              : "text-muted-foreground hover:text-foreground")
-          }
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
   );
 }

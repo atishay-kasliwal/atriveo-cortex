@@ -20,6 +20,7 @@ import {
 } from "./analytics-adapter";
 import { fetchScreenpipeHealth } from "./system-adapter";
 import { fetchAnalyticsValidation } from "./analytics-validation-adapter";
+import { fetchAnalyticsHistory } from "./analytics-history-adapter";
 import { ApiError } from "./cortex-fetch";
 
 export { ApiError };
@@ -32,6 +33,7 @@ export const api = {
     today: (date?: string) => fetchTodayActivity(date),
     week: (start?: string) => fetchWeekActivity(start),
     month: (start?: string) => fetchMonthActivity(start),
+    history: () => fetchAnalyticsHistory(),
   },
 
   projects: {

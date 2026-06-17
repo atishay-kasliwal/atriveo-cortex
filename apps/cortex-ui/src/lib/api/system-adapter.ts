@@ -10,6 +10,8 @@ export type ScreenpipeHealthStatus =
   | "offline"
   | "recovering";
 
+export type PipelineStatus = "live" | "syncing" | "stale" | "offline";
+
 export type ScreenpipeHealth = {
   running: boolean;
   status: ScreenpipeHealthStatus;
@@ -23,6 +25,15 @@ export type ScreenpipeHealth = {
   lastRestartAt: string | null;
   restartCount: number;
   lastError: string | null;
+  pipelineStatus?: PipelineStatus;
+  captureRunning?: boolean;
+  captureActive?: boolean;
+  syncHealthy?: boolean;
+  syncStale?: boolean;
+  analyticsStale?: boolean;
+  lastSyncAt?: string | null;
+  lastFrameAt?: string | null;
+  minutesSinceSync?: number | null;
 };
 
 export function screenpipeHealthStatus(

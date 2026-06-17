@@ -8,6 +8,7 @@ export const qk = {
   today: (date?: string) => ["analytics", "today", date ?? "today"] as const,
   week: (start?: string) => ["analytics", "week", start ?? "current"] as const,
   month: (start?: string) => ["analytics", "month", start ?? "current"] as const,
+  history: ["analytics", "history"] as const,
   projects: ["projects"] as const,
   project: (id: string) => ["projects", id] as const,
   actions: (bucket?: ActionBucket) => ["actions", bucket ?? "unresolved"] as const,
@@ -48,6 +49,12 @@ export const monthQuery = (start?: string) =>
     queryFn: () => api.analytics.month(start),
     staleTime: STALE,
   });
+
+export const analyticsHistoryQuery = queryOptions({
+  queryKey: qk.history,
+  queryFn: () => api.analytics.history(),
+  staleTime: STALE,
+});
 
 export const projectsQuery = queryOptions({
   queryKey: qk.projects,

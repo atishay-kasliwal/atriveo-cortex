@@ -15,15 +15,33 @@ import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
 import { EmptyState } from "@/components/dashboard/states";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
 import { hasTodayActivity } from "@/lib/activity/activity-state";
+import {
+  dayViewHeading,
+  dayViewTemporalSubtitle,
+} from "@/components/activity/activity-period-nav";
 import type { TodayActivity } from "@/lib/api/types";
 
 export function TodayView({
   data,
   loading,
+  viewDate,
+  calendarToday,
 }: {
   data: TodayActivity | undefined;
   loading: boolean;
+  viewDate?: string;
+  calendarToday?: string;
 }) {
+  const heading = dayViewHeading(viewDate ?? data?.date ?? "", calendarToday);
+  const temporalSubtitle = dayViewTemporalSubtitle(
+    viewDate ?? data?.date ?? "",
+    calendarToday,
+  );
+  const appsSubtitle =
+    viewDate && calendarToday && viewDate !== calendarToday
+      ? "Time in each app that day"
+      : "Time in each app today";
+
   if (loading) {
     return <TodaySkeleton />;
   }
@@ -40,18 +58,15 @@ export function TodayView({
 
   return (
     <div className="space-y-6">
-      <TodayHero data={data} />
-      <ActivityCard
-        title="Temporal distribution"
-        subtitle="What you did today, block by block across twenty-four hours"
-      >
+      <TodayHero data={data} heading={heading} />
+      <ActivityCard title="Temporal distribution" subtitle={temporalSubtitle}>
         <TemporalRibbon blocks={data.timeline} />
       </ActivityCard>
       <ActivityCard title="Sessions" subtitle="Stitched work blocks — not every app switch">
         <SessionList blocks={data.timeline} />
       </ActivityCard>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ActivityCard title="Applications" subtitle="Time in each app today">
+        <ActivityCard title="Applications" subtitle={appsSubtitle}>
           <AppList items={data.apps} />
         </ActivityCard>
         <ActivityCard title="Websites" subtitle="Domains you visited">
@@ -78,11 +93,11 @@ export function TodayView({
   );
 }
 
-function TodayHero({ data }: { data: TodayActivity }) {
+function TodayHero({ data, heading }: { data: TodayActivity; heading: string }) {
   return (
     <section className="surface-card rounded-xl p-5">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        What did I do today?
+        {heading}
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
         <HeroStat label="Active" value={fmtDuration(data.activeSec)} />
