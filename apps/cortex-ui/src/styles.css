@@ -217,3 +217,19 @@
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft);
 }
+
+@keyframes ribbon-rise {
+  from {
+    transform: scaleY(0.3);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@utility animate-ribbon-rise {
+  animation: ribbon-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center;
+}

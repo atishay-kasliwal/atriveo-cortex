@@ -10,7 +10,8 @@ import {
   Globe,
   Target,
 } from "lucide-react";
-import { ActivityCard, AllocationRow, CategoryLegend } from "@/components/activity/shared";
+import { ActivityCard, AllocationRow } from "@/components/activity/shared";
+import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
 import { EmptyState } from "@/components/dashboard/states";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
 import { hasTodayActivity } from "@/lib/activity/activity-state";
@@ -41,11 +42,10 @@ export function TodayView({
     <div className="space-y-6">
       <TodayHero data={data} />
       <ActivityCard
-        title="Hour by hour"
-        subtitle="What you did today, block by block"
-        action={<CategoryLegend />}
+        title="Temporal distribution"
+        subtitle="What you did today, block by block across twenty-four hours"
       >
-        <HourTimeline blocks={data.timeline} />
+        <TemporalRibbon blocks={data.timeline} />
       </ActivityCard>
       <ActivityCard title="Sessions" subtitle="Stitched work blocks — not every app switch">
         <SessionList blocks={data.timeline} />
@@ -108,60 +108,6 @@ function HeroStat({
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className={"mt-1 font-mono text-2xl font-semibold tabular-nums " + (accent ?? "")}>
         {value}
-      </div>
-    </div>
-  );
-}
-
-function HourTimeline({ blocks }: { blocks: TodayActivity["timeline"] }) {
-  const dayStart = new Date();
-  dayStart.setHours(0, 0, 0, 0);
-  const hours = Array.from({ length: 24 }, (_, h) => h);
-
-  return (
-    <div className="px-5 py-5">
-      <div className="space-y-1">
-        {hours.map((h) => {
-          const hourStart = h * 3600_000;
-          const hourEnd = (h + 1) * 3600_000;
-          const inHour = blocks.filter((b) => {
-            const s = new Date(b.startedAt).getTime() - dayStart.getTime();
-            const e = new Date(b.endedAt).getTime() - dayStart.getTime();
-            return e > hourStart && s < hourEnd;
-          });
-          const totalSec = inHour.reduce((n, b) => n + b.durationSec, 0);
-          const active = totalSec > 0;
-          return (
-            <div key={h} className="flex items-center gap-3 py-0.5">
-              <span className="w-10 shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-                {String(h).padStart(2, "0")}:00
-              </span>
-              <div className="relative h-5 flex-1 overflow-hidden rounded bg-surface-2/50">
-                {inHour.map((b) => {
-                  const s = new Date(b.startedAt).getTime() - dayStart.getTime();
-                  const e = new Date(b.endedAt).getTime() - dayStart.getTime();
-                  const left = Math.max(0, ((Math.max(s, hourStart) - hourStart) / 3600_000) * 100);
-                  const width = Math.max(
-                    1,
-                    ((Math.min(e, hourEnd) - Math.max(s, hourStart)) / 3600_000) * 100,
-                  );
-                  const style = categoryStyle[b.category];
-                  return (
-                    <div
-                      key={b.id + String(h)}
-                      title={`${b.title} · ${fmtDuration(b.durationSec)}`}
-                      className={"absolute inset-y-0 opacity-90 " + style.bar}
-                      style={{ left: `${left}%`, width: `${width}%` }}
-                    />
-                  );
-                })}
-              </div>
-              <span className="w-12 text-right font-mono text-[10px] tabular-nums text-muted-foreground">
-                {active ? fmtDuration(totalSec) : "—"}
-              </span>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
