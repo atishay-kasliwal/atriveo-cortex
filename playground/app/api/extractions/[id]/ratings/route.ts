@@ -24,7 +24,7 @@ export async function PATCH(
   }
 
   try {
-    const existing = getExtraction(id);
+    const existing = await getExtraction(id);
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -33,10 +33,10 @@ export async function PATCH(
     const current = parseStoredRatings(existing.ratings);
     const ratings: ExtractionRatings = {
       projects: parseRating(body.projects) ?? current.projects,
-      commitments: parseRating(body.commitments) ?? current.commitments,
+      actions: parseRating(body.actions) ?? current.actions,
       ideas: parseRating(body.ideas) ?? current.ideas,
     };
-    saveRatings(id, ratings);
+    await saveRatings(id, ratings);
     return NextResponse.json({ id, ratings });
   } catch (e) {
     return NextResponse.json(

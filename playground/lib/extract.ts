@@ -1,18 +1,28 @@
 import { buildWeightedEvidence } from "./evidence-builder";
+import {
+  classifyFailure,
+  parseExtractionJson,
+} from "./extraction-parse";
 import { saveExtraction } from "./memory-db";
+import { linkExtractionActionsAndIdeas } from "./action-idea-memory";
+import { syncOpenLoops } from "./open-loops";
+import { syncEvidenceTrace } from "./evidence-trace";
+import { linkExtractionProjects } from "./project-memory";
+import { normalizeExtractionProjects } from "./project-normalize";
 import {
   EVIDENCE_LIMITS,
   OLLAMA_MODEL,
+  OLLAMA_NUM_PREDICT,
+  OLLAMA_TIMEOUT_MS,
   OLLAMA_URL,
   type EvidenceLimits,
 } from "./paths";
-import { buildExtractionPrompt } from "./prompt";
+import { buildExtractionPrompt, buildJsonRecoveryPrompt } from "./prompt";
 import { fetchEvidence } from "./screenpipe-db";
 import type {
-  ExtractionItem,
   ExtractionMetadata,
   ExtractionResult,
-  ExtractionSchema,
+  FailureReason,
   OllamaMetrics,
 } from "./types";
 
@@ -21,83 +31,22 @@ type OllamaGenerateResponse = {
   prompt_eval_count?: number;
   eval_count?: number;
   total_duration?: number;
+  done_reason?: string;
 };
 
-function normalizeItem(item: unknown): ExtractionItem {
-  if (!item || typeof item !== "object") return {};
-  const row = item as Record<string, unknown>;
-  return {
-    confidence: typeof row.confidence === "number" ? row.confidence : undefined,
-    evidence: Array.isArray(row.evidence)
-      ? row.evidence.filter((e): e is string => typeof e === "string")
-      : [],
-  };
-}
-
-export function parseExtractionJson(raw: string): {
-  parsed: ExtractionSchema | null;
-  error: string | null;
-} {
-  const trimmed = raw.trim();
-  const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return { parsed: null, error: "No JSON object found in response" };
-  }
-  try {
-    const obj = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
-    return {
-      parsed: {
-        projects: Array.isArray(obj.projects)
-          ? obj.projects
-              .filter((p) => p && typeof p === "object" && "name" in p)
-              .map((p) => {
-                const row = p as Record<string, unknown>;
-                return {
-                  name: String(row.name ?? ""),
-                  ...normalizeItem(row),
-                };
-              })
-          : [],
-        commitments: Array.isArray(obj.commitments)
-          ? obj.commitments
-              .filter((c) => c && typeof c === "object" && "text" in c)
-              .map((c) => {
-                const row = c as Record<string, unknown>;
-                return {
-                  text: String(row.text ?? ""),
-                  ...normalizeItem(row),
-                };
-              })
-          : [],
-        ideas: Array.isArray(obj.ideas)
-          ? obj.ideas
-              .filter((i) => i && typeof i === "object" && "text" in i)
-              .map((i) => {
-                const row = i as Record<string, unknown>;
-                return {
-                  text: String(row.text ?? ""),
-                  ...normalizeItem(row),
-                };
-              })
-          : [],
-      },
-      error: null,
-    };
-  } catch (e) {
-    return {
-      parsed: null,
-      error: e instanceof Error ? e.message : "JSON parse failed",
-    };
-  }
-}
-
-async function callOllama(prompt: string): Promise<{
+type OllamaCallResult = {
   rawResponse: string;
   metrics: OllamaMetrics;
-}> {
+  doneReason: string | null;
+};
+
+async function callOllama(
+  prompt: string,
+  numPredict = OLLAMA_NUM_PREDICT,
+): Promise<OllamaCallResult> {
   const started = Date.now();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 9 * 60 * 1000);
+  const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
 
   try {
     const res = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -107,7 +56,7 @@ async function callOllama(prompt: string): Promise<{
         model: OLLAMA_MODEL,
         messages: [{ role: "user", content: prompt }],
         stream: false,
-        options: { temperature: 0.2, num_predict: 1536 },
+        options: { temperature: 0.2, num_predict: numPredict },
       }),
       signal: controller.signal,
     });
@@ -130,11 +79,15 @@ async function callOllama(prompt: string): Promise<{
     ).trim();
 
     if (!rawResponse) {
-      throw new Error("Ollama returned empty response");
+      const err = new Error("Ollama returned empty response");
+      (err as Error & { failureReason: FailureReason }).failureReason =
+        "empty_response";
+      throw err;
     }
 
     return {
       rawResponse,
+      doneReason: data.done_reason ?? null,
       metrics: {
         promptTokens,
         responseTokens,
@@ -145,9 +98,35 @@ async function callOllama(prompt: string): Promise<{
         latencyMs,
       },
     };
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      const err = new Error("Ollama request timed out");
+      (err as Error & { failureReason: FailureReason }).failureReason =
+        "timeout";
+      throw err;
+    }
+    throw e;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function mergeMetrics(a: OllamaMetrics, b: OllamaMetrics): OllamaMetrics {
+  return {
+    latencyMs: a.latencyMs + b.latencyMs,
+    promptTokens:
+      a.promptTokens != null && b.promptTokens != null
+        ? a.promptTokens + b.promptTokens
+        : a.promptTokens ?? b.promptTokens,
+    responseTokens:
+      a.responseTokens != null && b.responseTokens != null
+        ? a.responseTokens + b.responseTokens
+        : a.responseTokens ?? b.responseTokens,
+    totalTokens:
+      a.totalTokens != null && b.totalTokens != null
+        ? a.totalTokens + b.totalTokens
+        : a.totalTokens ?? b.totalTokens,
+  };
 }
 
 export type ExtractOptions = {
@@ -167,8 +146,100 @@ export async function extractWindow(
     opts?.customPrompt?.trim() ||
     buildExtractionPrompt(timeline, hourStart, hourEnd);
 
-  const { rawResponse, metrics } = await callOllama(prompt);
-  const { parsed, error } = parseExtractionJson(rawResponse);
+  let failureReason: FailureReason = null;
+  let jsonRecovered = false;
+  let retryAttempted = false;
+  let rawResponse = "";
+  let doneReason: string | null = null;
+  let metrics: OllamaMetrics = {
+    promptTokens: null,
+    responseTokens: null,
+    totalTokens: null,
+    latencyMs: 0,
+  };
+
+  try {
+    const first = await callOllama(prompt);
+    rawResponse = first.rawResponse;
+    doneReason = first.doneReason;
+    metrics = first.metrics;
+  } catch (e) {
+    const err = e as Error & { failureReason?: FailureReason };
+    failureReason =
+      err.failureReason ??
+      (err.message.includes("empty") ? "empty_response" : null);
+    if (failureReason === "timeout" || failureReason === "empty_response") {
+      const metadata: ExtractionMetadata = {
+        model: OLLAMA_MODEL,
+        promptChars: prompt.length,
+        evidenceChars: timeline.length,
+        responseChars: 0,
+        latencyMs: metrics.latencyMs,
+        failureReason,
+        jsonRecovered: false,
+        retryAttempted: false,
+      };
+      const result: ExtractionResult = {
+        timestamp: new Date().toISOString(),
+        hourStart,
+        hourEnd,
+        evidence,
+        timeline,
+        evidenceStats: stats,
+        prompt,
+        rawResponse: "",
+        parsedJson: null,
+        parseError: err.message,
+        metadata,
+        ratings: { projects: null, actions: null, ideas: null },
+        metrics,
+      };
+      result.id = await saveExtraction(result);
+      return result;
+    }
+    throw e;
+  }
+
+  let { parsed, error } = parseExtractionJson(rawResponse);
+  let observedProjects: Array<{ name: string; confidence?: number }> = [];
+
+  if (parsed) {
+    observedProjects = parsed.projects
+      .filter((p) => p.name.trim())
+      .map((p) => ({ name: p.name, confidence: p.confidence }));
+    parsed = await normalizeExtractionProjects(parsed);
+  }
+
+  if (!parsed) {
+    retryAttempted = true;
+    try {
+      const recovery = await callOllama(buildJsonRecoveryPrompt(rawResponse));
+      metrics = mergeMetrics(metrics, recovery.metrics);
+      const retryParse = parseExtractionJson(recovery.rawResponse);
+      if (retryParse.parsed) {
+        jsonRecovered = true;
+        rawResponse = recovery.rawResponse;
+        doneReason = recovery.doneReason;
+        observedProjects = retryParse.parsed.projects
+          .filter((p) => p.name.trim())
+          .map((p) => ({ name: p.name, confidence: p.confidence }));
+        parsed = await normalizeExtractionProjects(retryParse.parsed);
+        error = null;
+      } else {
+        error = retryParse.error ?? error;
+        doneReason = recovery.doneReason ?? doneReason;
+      }
+    } catch (e) {
+      const err = e as Error & { failureReason?: FailureReason };
+      if (!failureReason) {
+        failureReason = err.failureReason ?? null;
+      }
+    }
+  }
+
+  if (!failureReason) {
+    failureReason = classifyFailure(rawResponse, error, doneReason);
+  }
 
   const metadata: ExtractionMetadata = {
     model: OLLAMA_MODEL,
@@ -176,6 +247,9 @@ export async function extractWindow(
     evidenceChars: timeline.length,
     responseChars: rawResponse.length,
     latencyMs: metrics.latencyMs,
+    failureReason: parsed ? null : failureReason,
+    jsonRecovered,
+    retryAttempted,
   };
 
   const result: ExtractionResult = {
@@ -190,11 +264,19 @@ export async function extractWindow(
     parsedJson: parsed,
     parseError: error,
     metadata,
-    ratings: { projects: null, commitments: null, ideas: null },
+    ratings: { projects: null, actions: null, ideas: null },
     metrics,
   };
 
-  result.id = saveExtraction(result);
+  result.id = await saveExtraction(result);
+  if (result.id && observedProjects.length > 0) {
+    await linkExtractionProjects(result.id, result.timestamp, observedProjects);
+  }
+  if (result.id && parsed) {
+    await linkExtractionActionsAndIdeas(result.id, result.timestamp, parsed);
+    await syncOpenLoops();
+    await syncEvidenceTrace();
+  }
   return result;
 }
 
@@ -215,3 +297,5 @@ export async function regenerateWithPrompt(
 ): Promise<ExtractionResult> {
   return extractWindow(hourStart, hourEnd, { customPrompt: prompt, limits });
 }
+
+export { parseExtractionJson, classifyFailure } from "./extraction-parse";

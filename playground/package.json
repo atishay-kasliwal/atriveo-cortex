@@ -4,15 +4,23 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3456",
+    "dev:watchdog": "tsx scripts/start-watchdog.ts",
     "build": "next build",
     "start": "next start -p 3456",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "tsx scripts/migrate-cortex-to-neon.ts",
+    "db:verify": "tsx scripts/verify-neon.ts",
+    "sync:screenpipe": "tsx scripts/sync-screenpipe.ts",
+    "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.9.0",
+    "drizzle-orm": "^0.45.2",
     "next": "^15.3.3",
+    "postgres": "^3.4.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -21,8 +29,11 @@
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.3",
+    "tsx": "^4.22.4",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }

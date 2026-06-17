@@ -27,10 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: |
-            playground/package-lock.json
-            workers/cortex-api/package-lock.json
 
       - name: Install playground dependencies
         run: npm ci
@@ -60,8 +56,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: apps/cortex-ui/package-lock.json
 
       - name: Install UI dependencies
         run: npm ci

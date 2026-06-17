@@ -2,10 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ExtractionInspector } from "@/components/ExtractionInspector";
+import { ActionsInspector } from "@/components/ActionsInspector";
+import { IdeasInspector } from "@/components/IdeasInspector";
+import { MemoryInspector } from "@/components/MemoryInspector";
+import { RecurrenceInspector } from "@/components/RecurrenceInspector";
+import { OpenLoopsInspector } from "@/components/OpenLoopsInspector";
 import { buildExtractionPrompt } from "@/lib/prompt";
 import {
   parseStoredMetadata,
   parseStoredRatings,
+  parseStoredExtractionSchema,
 } from "@/lib/stored-extraction";
 import type {
   EvidenceStats,
@@ -17,7 +23,7 @@ import type {
 
 const EMPTY_RATINGS: ExtractionRatings = {
   projects: null,
-  commitments: null,
+  actions: null,
   ideas: null,
 };
 
@@ -37,6 +43,9 @@ export default function InspectorPage() {
   const [running, setRunning] = useState(false);
   const [savingRatings, setSavingRatings] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<
+    "extract" | "memory" | "actions" | "ideas" | "recurrence" | "open-loops"
+  >("extract");
 
   const loadHistory = useCallback(async () => {
     const res = await fetch("/api/extractions");
@@ -192,7 +201,7 @@ export default function InspectorPage() {
       },
       prompt: row.prompt,
       rawResponse: row.response,
-      parsedJson: row.parsed_json ? JSON.parse(row.parsed_json) : null,
+      parsedJson: parseStoredExtractionSchema(row.parsed_json),
       parseError: row.parsed_json ? null : "No parsed JSON stored",
       metadata: parseStoredMetadata(row.extraction_metadata) ?? {
         model: "gemma4:12b",
@@ -200,6 +209,9 @@ export default function InspectorPage() {
         evidenceChars: (row.timeline ?? "").length,
         responseChars: row.response.length,
         latencyMs: row.latency_ms ?? 0,
+        failureReason: null,
+        jsonRecovered: false,
+        retryAttempted: false,
       },
       ratings: parseStoredRatings(row.ratings),
       metrics: {
@@ -222,7 +234,53 @@ export default function InspectorPage() {
   return (
     <>
       <div className="toolbar">
-        <strong style={{ marginRight: 8 }}>Extraction Inspector</strong>
+        <div className="tab-bar">
+          <button
+            type="button"
+            className={`tab-btn${tab === "extract" ? " active" : ""}`}
+            onClick={() => setTab("extract")}
+          >
+            Extract
+          </button>
+          <button
+            type="button"
+            className={`tab-btn${tab === "memory" ? " active" : ""}`}
+            onClick={() => setTab("memory")}
+          >
+            Memory
+          </button>
+          <button
+            type="button"
+            className={`tab-btn${tab === "actions" ? " active" : ""}`}
+            onClick={() => setTab("actions")}
+          >
+            Actions
+          </button>
+          <button
+            type="button"
+            className={`tab-btn${tab === "ideas" ? " active" : ""}`}
+            onClick={() => setTab("ideas")}
+          >
+            Ideas
+          </button>
+          <button
+            type="button"
+            className={`tab-btn${tab === "recurrence" ? " active" : ""}`}
+            onClick={() => setTab("recurrence")}
+          >
+            Recurrence
+          </button>
+          <button
+            type="button"
+            className={`tab-btn${tab === "open-loops" ? " active" : ""}`}
+            onClick={() => setTab("open-loops")}
+          >
+            Open Loops
+          </button>
+        </div>
+        {tab === "extract" && (
+          <>
+            <strong style={{ marginRight: 8 }}>Extraction Inspector</strong>
         <button
           className="btn"
           disabled={running}
@@ -274,8 +332,11 @@ export default function InspectorPage() {
             );
           })}
         </select>
+          </>
+        )}
       </div>
 
+      {tab === "extract" ? (
       <ExtractionInspector
         evidence={evidence}
         timeline={timeline}
@@ -291,6 +352,17 @@ export default function InspectorPage() {
         error={error}
         windowHours={windowHours}
       />
+      ) : tab === "memory" ? (
+        <MemoryInspector />
+      ) : tab === "actions" ? (
+        <ActionsInspector />
+      ) : tab === "ideas" ? (
+        <IdeasInspector />
+      ) : tab === "recurrence" ? (
+        <RecurrenceInspector />
+      ) : (
+        <OpenLoopsInspector />
+      )}
     </>
   );
 }

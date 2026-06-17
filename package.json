@@ -1,0 +1,18 @@
+{
+  "name": "cortex",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix playground && npm run build --prefix apps/cortex-ui",
+    "start": "docker compose up -d",
+    "deploy": "docker compose build && docker compose up -d",
+    "healthcheck": "node scripts/healthcheck.mjs",
+    "cloudflare:setup": "bash scripts/setup-cloudflare.sh",
+    "cloudflare:tunnel": "bash scripts/run-cloudflare-tunnel.sh",
+    "worker:dev": "npm run dev --prefix workers/cortex-api",
+    "worker:deploy": "npm run deploy --prefix workers/cortex-api",
+    "worker:parity": "npm run parity --prefix workers/cortex-api",
+    "pages:build": "npm run build:pages --prefix apps/cortex-ui",
+    "pages:deploy": "npm run deploy:pages --prefix apps/cortex-ui",
+    "sync:screenpipe": "npm run sync:screenpipe --prefix playground"
+  }
+}

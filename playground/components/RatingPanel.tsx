@@ -75,9 +75,9 @@ export function RatingPanel({
           disabled={saving}
         />
         <RatingRow
-          label="Commitments"
-          value={ratings.commitments}
-          onSelect={(v) => setField("commitments", v)}
+          label="Actions"
+          value={ratings.actions}
+          onSelect={(v) => setField("actions", v)}
           disabled={saving}
         />
         <RatingRow

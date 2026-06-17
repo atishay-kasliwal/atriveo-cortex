@@ -9,13 +9,13 @@ export async function GET(request: Request) {
 
   try {
     if (id) {
-      const row = getExtraction(Number(id));
+      const row = await getExtraction(Number(id));
       if (!row) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }
       return NextResponse.json(row);
     }
-    return NextResponse.json({ extractions: listExtractions(30) });
+    return NextResponse.json({ extractions: await listExtractions(30) });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Failed to list extractions" },

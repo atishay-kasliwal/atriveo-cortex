@@ -1,0 +1,16 @@
+name = "cortex-api"
+main = "src/index.ts"
+compatibility_date = "2025-06-17"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+CORS_ORIGIN = "https://cortex.atriveo.com"
+
+# Set secret: wrangler secret put DATABASE_URL
+
+[[routes]]
+pattern = "cortex.atriveo.com/api/*"
+zone_name = "atriveo.com"
+
+[alias]
+"@" = "../../playground"

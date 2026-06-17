@@ -60,7 +60,7 @@ Audio filters: min 5 words, dedupe consecutive/overlapping lines, drop lines rep
 ```json
 {
   "projects": [{ "name": "", "confidence": 0.0, "evidence": [] }],
-  "commitments": [{ "text": "", "confidence": 0.0, "evidence": [] }],
+  "actions": [{ "text": "", "confidence": 0.0, "evidence": [] }],
   "ideas": [{ "text": "", "confidence": 0.0, "evidence": [] }]
 }
 ```
@@ -102,7 +102,7 @@ curl -X POST http://localhost:3456/api/extract \
 # Rate extraction
 curl -X PATCH http://localhost:3456/api/extractions/1/ratings \
   -H "Content-Type: application/json" \
-  -d '{"projects":"good","commitments":"okay","ideas":"bad"}'
+  -d '{"projects":"good","actions":"okay","ideas":"bad"}'
 ```
 
 ## Common failures
