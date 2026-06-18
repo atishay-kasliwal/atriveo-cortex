@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { ActivityBreakdown } from "@/components/activity/activity-breakdown";
 import { ActivityCard, AllocationRow } from "@/components/activity/shared";
-import { DailyLandscape } from "@/components/activity/daily-landscape";
+import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
 import { WorkTimeline } from "@/components/activity/work-timeline";
 import { EmptyState } from "@/components/dashboard/states";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
@@ -67,14 +67,8 @@ export function TodayView({
         idleSec={data.idleSec}
         sleepingSec={data.sleepingSec}
       />
-      <ActivityCard title="Daily landscape" subtitle={temporalSubtitle}>
-        <DailyLandscape
-          blocks={data.timeline}
-          viewDate={viewDate ?? data.date}
-          focusSec={data.focusSec}
-          activeSec={data.activeSec}
-          calendarToday={calendarToday}
-        />
+      <ActivityCard title="Temporal distribution" subtitle={temporalSubtitle}>
+        <TemporalRibbon blocks={data.timeline} viewDate={viewDate ?? data.date} />
       </ActivityCard>
       <ActivityCard
         title="Timeline of Work"
