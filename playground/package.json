@@ -28,6 +28,8 @@
     "migrate:review-intelligence": "tsx scripts/migrate-review-intelligence.ts",
     "backfill:daily-reviews": "tsx scripts/backfill-daily-reviews.ts",
     "backfill:weekly-reviews": "tsx scripts/backfill-weekly-reviews.ts",
+    "migrate:memory-search": "tsx scripts/migrate-memory-search.ts",
+    "backfill:memory-search": "tsx scripts/backfill-memory-search.ts",
     "audit:attribution": "tsx scripts/audit-project-attribution.ts",
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },

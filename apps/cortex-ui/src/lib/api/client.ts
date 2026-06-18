@@ -26,6 +26,8 @@ import {
   fetchLatestWeeklyReview,
   fetchWeeklyReview,
 } from "./review-adapter";
+import { fetchMemorySearch } from "./search-adapter";
+import { fetchAnalyticsHistory } from "./analytics-history-adapter";
 import { ApiError } from "./cortex-fetch";
 
 export { ApiError };
@@ -77,4 +79,9 @@ export const api = {
   },
 
   analyticsValidation: (date?: string) => fetchAnalyticsValidation(date),
+
+  search: (
+    q: string,
+    options?: { type?: string; project?: string; start?: string; end?: string },
+  ) => fetchMemorySearch(q, options),
 };

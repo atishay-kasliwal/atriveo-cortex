@@ -296,6 +296,35 @@ export type WeeklyReviewRange = {
   reviews: WeeklyReview[];
 };
 
+export type MemoryEntityType =
+  | "session"
+  | "project"
+  | "action"
+  | "idea"
+  | "open_loop"
+  | "daily_review"
+  | "weekly_review"
+  | "accomplishment";
+
+export type MemorySearchResult = {
+  type: MemoryEntityType;
+  title: string;
+  snippet: string;
+  project: string | null;
+  category: string | null;
+  confidence: number | null;
+  date: string;
+  source: string;
+  url: string;
+};
+
+export type MemorySearchResponse = {
+  query: string;
+  results: MemorySearchResult[];
+  generatedAt: ISODate;
+  latencyMs: number;
+};
+
 export type RecurrencePattern = {
   id: ID;
   subject: string;               // what recurs (action, idea, topic)

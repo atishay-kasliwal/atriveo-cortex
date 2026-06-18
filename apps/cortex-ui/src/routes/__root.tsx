@@ -11,13 +11,14 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Bell, Command, Search } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { MemorySearchDialog } from "@/components/memory-search-dialog";
 
 function NotFoundComponent() {
   return (
@@ -124,7 +125,7 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-function Topbar() {
+function Topbar({ onOpenSearch }: { onOpenSearch: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl">
       <SidebarTrigger className="-ml-1" />
@@ -135,7 +136,11 @@ function Topbar() {
         <span className="text-foreground">Cortex</span>
       </div>
       <div className="ml-auto flex items-center gap-2">
-        <button className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs text-muted-foreground transition hover:text-foreground">
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs text-muted-foreground transition hover:text-foreground"
+        >
           <Search className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Search memory…</span>
           <kbd className="ml-3 hidden items-center gap-0.5 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
@@ -153,19 +158,32 @@ function Topbar() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <SidebarProvider>
         <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar />
+          <AppSidebar onOpenSearch={() => setSearchOpen(true)} />
           <div className="flex flex-1 flex-col">
-            <Topbar />
+            <Topbar onOpenSearch={() => setSearchOpen(true)} />
             <main className="flex-1">
               <Outlet />
             </main>
           </div>
         </div>
+        <MemorySearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       </SidebarProvider>
     </QueryClientProvider>
   );

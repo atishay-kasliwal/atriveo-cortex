@@ -20,6 +20,7 @@ export const qk = {
   openLoop: (id: string) => ["open-loops", id] as const,
   review: (date: string) => ["reviews", "day", date] as const,
   weeklyReview: (weekStart: string) => ["reviews", "week", weekStart] as const,
+  search: (q: string) => ["search", q] as const,
   recurrence: ["recurrence"] as const,
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
@@ -146,6 +147,14 @@ export const weeklyReviewQuery = (weekStart: string) =>
     queryKey: qk.weeklyReview(weekStart),
     queryFn: () => api.reviews.week(weekStart),
     staleTime: STALE,
+  });
+
+export const memorySearchQuery = (q: string) =>
+  queryOptions({
+    queryKey: qk.search(q),
+    queryFn: () => api.search(q),
+    enabled: q.trim().length >= 2,
+    staleTime: 10_000,
   });
 
 export const recurrenceQuery = queryOptions({

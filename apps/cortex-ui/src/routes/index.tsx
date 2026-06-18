@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ActivityCaptureBanner } from "@/components/activity/activity-capture-banner";
 import { ActivityHistoryCoverage } from "@/components/activity/activity-history-coverage";
 import {
@@ -42,6 +42,9 @@ import {
 type Range = "today" | "week" | "month";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    date: typeof search.date === "string" ? search.date : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Activity · Atriveo Cortex" },
@@ -57,10 +60,18 @@ export const Route = createFileRoute("/")({
 
 function ActivityPage() {
   const calendarToday = useMemo(() => localDateString(), []);
+  const { date: dateParam } = Route.useSearch();
   const [range, setRange] = useState<Range>("today");
-  const [viewDate, setViewDate] = useState(calendarToday);
+  const [viewDate, setViewDate] = useState(dateParam ?? calendarToday);
   const [weekEnd, setWeekEnd] = useState(calendarToday);
   const [monthKey, setMonthKey] = useState(calendarToday.slice(0, 7));
+
+  useEffect(() => {
+    if (dateParam) {
+      setRange("today");
+      setViewDate(dateParam);
+    }
+  }, [dateParam]);
 
   const weekStart = weekRangeFromEnd(weekEnd).start;
   const isCurrentWeek = weekEnd === calendarToday;

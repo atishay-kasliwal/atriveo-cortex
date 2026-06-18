@@ -57,7 +57,7 @@ const nav = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ onOpenSearch }: { onOpenSearch?: () => void }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
@@ -117,7 +117,14 @@ export function AppSidebar() {
             <span className="text-xs font-medium">Workspace</span>
             <span className="text-[10px] text-muted-foreground">Connected · live</span>
           </div>
-          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className="rounded-md p-1 text-muted-foreground transition hover:text-foreground"
+            aria-label="Search memory"
+          >
+            <Search className="h-3.5 w-3.5" />
+          </button>
         </div>
       </SidebarFooter>
     </Sidebar>

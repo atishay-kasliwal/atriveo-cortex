@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { CalendarRange } from "lucide-react";
 import {
   ActivityPeriodNav,
@@ -21,6 +21,9 @@ import {
 import { weeklyReviewQuery } from "@/lib/api/queries";
 
 export const Route = createFileRoute("/weekly-review")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    start: typeof search.start === "string" ? search.start : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Weekly Review · Atriveo Cortex" },
@@ -35,8 +38,16 @@ export const Route = createFileRoute("/weekly-review")({
 
 function WeeklyReviewPage() {
   const calendarToday = useMemo(() => localDateString(), []);
-  const [weekEnd, setWeekEnd] = useState(shiftDate(calendarToday, -1));
+  const { start: startParam } = Route.useSearch();
+  const defaultEnd = shiftDate(calendarToday, -1);
+  const [weekEnd, setWeekEnd] = useState(
+    startParam ? shiftDate(startParam, 6) : defaultEnd,
+  );
   const weekStart = weekRangeFromEnd(weekEnd).start;
+
+  useEffect(() => {
+    if (startParam) setWeekEnd(shiftDate(startParam, 6));
+  }, [startParam]);
 
   const review = useQuery(weeklyReviewQuery(weekStart));
   const rangeLabel = formatShortRange(weekStart, weekEnd);

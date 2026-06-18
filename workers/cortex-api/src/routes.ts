@@ -60,6 +60,7 @@ import {
   buildLatestReview,
   buildReviewRange,
 } from "@/lib/review/daily-review-api";
+import { runMemorySearch } from "@/lib/memory-search-api";
 import { apiError, apiSuccess } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
@@ -116,6 +117,25 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, await buildWeekActivity(range.startDate, range.endDate));
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load week analytics", 500);
+    }
+  });
+
+  app.get("/api/search", async (c) => {
+    try {
+      const q = c.req.query("q")?.trim();
+      if (!q) return apiError(c, "q is required", 400);
+      return apiSuccess(
+        c,
+        await runMemorySearch({
+          q,
+          type: c.req.query("type") ?? null,
+          project: c.req.query("project") ?? null,
+          start: c.req.query("start") ?? null,
+          end: c.req.query("end") ?? null,
+        }),
+      );
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Search failed", 500);
     }
   });
 

@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { BookOpen } from "lucide-react";
 import {
   ActivityPeriodNav,
@@ -22,6 +22,9 @@ import {
 import { reviewQuery } from "@/lib/api/queries";
 
 export const Route = createFileRoute("/review")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    date: typeof search.date === "string" ? search.date : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Daily Review · Atriveo Cortex" },
@@ -33,7 +36,14 @@ export const Route = createFileRoute("/review")({
 
 function ReviewPage() {
   const calendarToday = useMemo(() => localDateString(), []);
-  const [viewDate, setViewDate] = useState(yesterdayDate(calendarToday));
+  const { date: dateParam } = Route.useSearch();
+  const [viewDate, setViewDate] = useState(
+    dateParam ?? yesterdayDate(calendarToday),
+  );
+
+  useEffect(() => {
+    if (dateParam) setViewDate(dateParam);
+  }, [dateParam]);
 
   const review = useQuery(reviewQuery(viewDate));
   const heading = dayViewHeading(viewDate, calendarToday);
