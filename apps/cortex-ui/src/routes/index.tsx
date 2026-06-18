@@ -41,7 +41,7 @@ function HomePage() {
   }, [dateParam]);
 
   return (
-    <PageBody>
+    <PageBody compact>
       <div className="mt-2">
         <ActivityPeriodNav
           range="today"

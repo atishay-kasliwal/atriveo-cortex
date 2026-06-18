@@ -28,4 +28,16 @@ export type SyncStatusResponse = {
   canManualSync: boolean;
   capturePortOpen: boolean;
   captureApiReachable: boolean;
+  memoryFreshness: {
+    score: number;
+    overall: "fresh" | "degraded" | "stale";
+    lastCaptureAt: string | null;
+    lastSyncAt: string | null;
+    lastReviewGeneratedAt: string | null;
+    lastIndexRebuildAt: string | null;
+    staleCapture: boolean;
+    staleSync: boolean;
+    staleReview: boolean;
+    staleIndex: boolean;
+  };
 };

@@ -33,6 +33,7 @@ import {
   fetchWeekAttention,
 } from "./attention-adapter";
 import { fetchMemorySearch } from "./search-adapter";
+import { fetchProjectsHealth } from "./project-health-adapter";
 import { fetchAnalyticsHistory } from "./analytics-history-adapter";
 import { ApiError } from "./cortex-fetch";
 
@@ -52,6 +53,7 @@ export const api = {
   projects: {
     list: () => fetchProjects(),
     get: (id: string) => fetchProjectDetail(id),
+    health: (date?: string) => fetchProjectsHealth(date ? { date } : undefined),
   },
 
   actions: {

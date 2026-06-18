@@ -30,6 +30,16 @@ export function PageHeader({
   );
 }
 
-export function PageBody({ children }: { children: ReactNode }) {
-  return <div className="mx-auto w-full max-w-7xl px-6 py-8">{children}</div>;
+export function PageBody({
+  children,
+  compact,
+}: {
+  children: ReactNode;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`mx-auto w-full max-w-7xl px-6 ${compact ? "py-5" : "py-8"}`}>
+      {children}
+    </div>
+  );
 }

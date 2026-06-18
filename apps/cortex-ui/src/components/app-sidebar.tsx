@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Brain,
   Activity,
+  HeartPulse,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -38,7 +39,10 @@ const nav = [
   },
   {
     group: "Work",
-    items: [{ title: "Projects", url: "/projects", icon: FolderKanban }],
+    items: [
+      { title: "Projects", url: "/projects", icon: FolderKanban },
+      { title: "Project Health", url: "/projects/health", icon: HeartPulse },
+    ],
   },
   {
     group: "Memory",
@@ -65,7 +69,10 @@ const nav = [
   },
   {
     group: "Debug",
-    items: [{ title: "Activity Log", url: "/activity", icon: Activity }],
+    items: [
+      { title: "Activity Log", url: "/activity", icon: Activity },
+      { title: "Telemetry", url: "/debug/telemetry", icon: Activity },
+    ],
   },
 ];
 

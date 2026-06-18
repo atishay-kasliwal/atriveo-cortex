@@ -49,6 +49,8 @@ import {
   getIdeaRecurrenceReport,
 } from "@/lib/recurrence";
 import { getCloudScreenpipeHealth } from "@/lib/system/screenpipe-health-cloud";
+import { getSystemHealth } from "@/lib/system/system-health";
+import { buildProjectsHealth } from "@/lib/project-health-api";
 import { getAnalyticsHistory } from "@/lib/analytics/history";
 import {
   buildLatestWeekReview,
@@ -514,11 +516,32 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/projects/health", async (c) => {
+    try {
+      const date = c.req.query("date") ?? null;
+      const project = c.req.query("project") ?? null;
+      return apiSuccess(c, await buildProjectsHealth({ date, project }));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load project health", 500);
+    }
+  });
+
   app.get("/api/system/screenpipe-health", async (c) => {
     try {
       return apiSuccess(c, await getCloudScreenpipeHealth());
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load ScreenPipe health", 500);
+    }
+  });
+
+  app.get("/api/system/health", async (c) => {
+    try {
+      const health = await getSystemHealth();
+      const code =
+        health.status === "healthy" ? 200 : health.status === "degraded" ? 200 : 503;
+      return c.json({ success: true, data: health }, code);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load system health", 500);
     }
   });
 

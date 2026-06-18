@@ -1,0 +1,755 @@
+{
+  "summary": {
+    "version": "v2",
+    "auditedAt": "2026-06-18T03:29:59.749Z",
+    "today": "2026-06-17",
+    "questionCount": 15,
+    "avgConfidence": 0.52,
+    "avgUsefulness": 0.76,
+    "citationCoverage": 0.67,
+    "unansweredRate": 0.13,
+    "passRateUsefulnessGte70": 0.93,
+    "targetMet": true
+  },
+  "results": [
+    {
+      "group": "History",
+      "question": "What did I do yesterday?",
+      "expectedIntent": "history_yesterday",
+      "actualIntent": "history_yesterday",
+      "expectedAnswer": "Daily review: Cortex — 1 Verified Win | 17 sessions; projects: Atriveo Cortex, Gemma-based AI Development",
+      "actualAnswer": "Finished: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'. 4 items still in progress. Next: Configure and run the system (including Ollama) on an external hard drive.. You logged 3.4 hours across 17 work sessions on Cortex.",
+      "confidence": "MEDIUM",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "daily_review",
+          "title": "Cortex — 1 Verified Win",
+          "date": "2026-06-16",
+          "project": "Atriveo Cortex",
+          "evidence": "Finished: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'. 4 items still in progress. Next: Configure and run the system (including Ollama) on an external hard drive..",
+          "url": "/review?date=2026-06-16",
+          "confidence": 0.8
+        },
+        {
+          "type": "session",
+          "title": "Atriveo Cortex Research",
+          "date": "2026-06-16",
+          "project": "Atriveo Cortex",
+          "evidence": "RESEARCH · 11m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0.38
+        },
+        {
+          "type": "session",
+          "title": "Communication",
+          "date": "2026-06-16",
+          "project": null,
+          "evidence": "COMMUNICATION · 0m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0
+        },
+        {
+          "type": "session",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-16",
+          "project": "Atriveo Cortex",
+          "evidence": "BUILD · 13m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0.38
+        },
+        {
+          "type": "session",
+          "title": "Communication",
+          "date": "2026-06-16",
+          "project": null,
+          "evidence": "COMMUNICATION · 0m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0
+        }
+      ],
+      "latencyMs": 619,
+      "scores": {
+        "usefulness": 0.7000000000000001,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "History",
+      "question": "What did I work on this week?",
+      "expectedIntent": "history_last_week",
+      "actualIntent": "history_last_week",
+      "expectedAnswer": "46 sessions this week",
+      "actualAnswer": "This week you logged 3.4 hours across 17 sessions. Active projects: Cortex, New Agent / Automations, Gemma-based AI Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "project",
+          "title": "Atriveo Cortex",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex",
+          "evidence": "3.8h · 11 sessions · last 2026-06-17",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "project",
+          "title": "New Agent / Automations",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "3.4h · 9 sessions · last 2026-06-17",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "project",
+          "title": "Gemma-based AI Development",
+          "date": "2026-06-16",
+          "project": "Gemma-based AI Development",
+          "evidence": "0.4h · 1 session · last 2026-06-16",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "session",
+          "title": "Atriveo Cortex Research",
+          "date": "2026-06-16",
+          "project": "Atriveo Cortex",
+          "evidence": "RESEARCH · 11m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0.38
+        },
+        {
+          "type": "session",
+          "title": "Communication",
+          "date": "2026-06-16",
+          "project": null,
+          "evidence": "COMMUNICATION · 0m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0
+        }
+      ],
+      "latencyMs": 469,
+      "scores": {
+        "usefulness": 0.75,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "History",
+      "question": "What changed since Monday?",
+      "expectedIntent": "delta_since",
+      "actualIntent": "delta_since",
+      "expectedAnswer": "Changelog since Monday: 46 sessions",
+      "actualAnswer": "Changes since 2026-06-15: • 15 work sessions (4.6 hours, mostly New Agent / Automations). • 4 open loops active. • 1 review generated.",
+      "confidence": "MEDIUM",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development",
+          "evidence": "Status: ACTIVE · 3 mentions",
+          "url": "/open-loops/2",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/4",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/5",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex",
+          "evidence": "Status: COMPLETED · 2 mentions",
+          "url": "/open-loops/3",
+          "confidence": 0.3
+        },
+        {
+          "type": "daily_review",
+          "title": "New Agent / Automations Work Day",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "No verified completions today. 4 items still in progress. Most work centered on New Agent / Automations. Next: New Agent / Automations Research.",
+          "url": "/review?date=2026-06-17",
+          "confidence": 0.27
+        }
+      ],
+      "latencyMs": 478,
+      "scores": {
+        "usefulness": 0.75,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Projects",
+      "question": "What is happening with Cortex?",
+      "expectedIntent": "project_progress",
+      "actualIntent": "project_progress",
+      "expectedAnswer": "11 Cortex sessions in 14d",
+      "actualAnswer": "Recent work on Cortex: 3.8 hours across 11 sessions. Open loops: Atriveo Cortex Development; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'. Completed: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'. Momentum: gaining momentum (+100%) · 3.8 hours.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "project",
+          "title": "Atriveo Cortex",
+          "date": "2026-06-15",
+          "project": "Atriveo Cortex",
+          "evidence": "gaining momentum (+100%) · 3.8 hours",
+          "url": "/weekly-review?start=2026-06-15",
+          "confidence": 0.8
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex",
+          "evidence": "Open loop closed (COMPLETED)",
+          "url": "/review?date=2026-06-16",
+          "confidence": 1
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-15",
+          "project": "Atriveo Application Platform / Atriveo Cortex",
+          "evidence": "Open loop closed (COMPLETED)",
+          "url": "/review?date=2026-06-15",
+          "confidence": 1
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/5",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex",
+          "evidence": "Status: COMPLETED · 2 mentions",
+          "url": "/open-loops/3",
+          "confidence": 0.3
+        }
+      ],
+      "latencyMs": 459,
+      "scores": {
+        "usefulness": 0.75,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Projects",
+      "question": "What projects are active?",
+      "expectedIntent": "projects_active",
+      "actualIntent": "projects_active",
+      "expectedAnswer": "Active: Atriveo Cortex, Gemma-based AI Development, New Agent / Automations",
+      "actualAnswer": "Active projects this week (3): • Cortex — 3.8h · 11 sessions · last 2026-06-17 • New Agent / Automations — 3.4h · 9 sessions · last 2026-06-17 • Gemma-based AI Development — 0.4h · 1 session · last 2026-06-16",
+      "confidence": "HIGH",
+      "citationCount": 6,
+      "citations": [
+        {
+          "type": "project",
+          "title": "Atriveo Cortex",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex",
+          "evidence": "3.8h · 11 sessions · last 2026-06-17",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "project",
+          "title": "New Agent / Automations",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "3.4h · 9 sessions · last 2026-06-17",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "project",
+          "title": "Gemma-based AI Development",
+          "date": "2026-06-16",
+          "project": "Gemma-based AI Development",
+          "evidence": "0.4h · 1 session · last 2026-06-16",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development",
+          "evidence": "Status: ACTIVE · 3 mentions",
+          "url": "/open-loops/2",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/4",
+          "confidence": 0.3
+        }
+      ],
+      "latencyMs": 1151,
+      "scores": {
+        "usefulness": 0.75,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Projects",
+      "question": "What has stalled?",
+      "expectedIntent": "projects_stalled",
+      "actualIntent": "projects_stalled",
+      "expectedAnswer": "Stalled candidates: 3 open loops",
+      "actualAnswer": "No stalled projects detected.",
+      "confidence": "LOW",
+      "citationCount": 0,
+      "citations": [],
+      "latencyMs": 427,
+      "scores": {
+        "usefulness": 0.8,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.3,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Open Loops",
+      "question": "What remains unfinished?",
+      "expectedIntent": "open_loops_unfinished",
+      "actualIntent": "open_loops_unfinished",
+      "expectedAnswer": "3 open: Configure and run the system (including Ollama) on an external hard drive.; Maintain and monitor screenpipe background processes; Atriveo Cortex Development",
+      "actualAnswer": "10 open items still in progress: • Maintain and monitor screenpipe background processes (Gemma-based AI Development) — Status: ACTIVE · 3 mentions • Configure and run the system (including Ollama) on an external hard drive. (New Agent / Automations) — Status: ACTIVE · 2 mentions • Atriveo Cortex Development (Cortex) — Status: ACTIVE · 2 mentions • Configure and run the system (including Ollama) on an external hard drive. (New Agent / Automations) — Still in progress · open_loop • Maintain and monitor screenpipe background processes (Gemma-based AI Development) — Still in progress · open_loop • Atriveo Cortex Development (Cortex) — Still in progress · open_loop",
+      "confidence": "LOW",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development",
+          "evidence": "Status: ACTIVE · 3 mentions",
+          "url": "/open-loops/2",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/4",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/5",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-16",
+          "project": "New Agent / Automations",
+          "evidence": "Still in progress · open_loop",
+          "url": "/review?date=2026-06-16",
+          "confidence": 0.5
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-16",
+          "project": "Gemma-based AI Development",
+          "evidence": "Still in progress · open_loop",
+          "url": "/review?date=2026-06-16",
+          "confidence": 0.5
+        }
+      ],
+      "latencyMs": 421,
+      "scores": {
+        "usefulness": 0.7000000000000001,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Open Loops",
+      "question": "What keeps resurfacing?",
+      "expectedIntent": "open_loops_resurfacing",
+      "actualIntent": "open_loops_resurfacing",
+      "expectedAnswer": "Nothing resurfacing",
+      "actualAnswer": "Nothing is resurfacing currently.",
+      "confidence": "LOW",
+      "citationCount": 0,
+      "citations": [],
+      "latencyMs": 428,
+      "scores": {
+        "usefulness": 0.85,
+        "accuracy": 0.9,
+        "completeness": 0.85,
+        "citationQuality": 0.3,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Open Loops",
+      "question": "What should I finish next?",
+      "expectedIntent": "next_action",
+      "actualIntent": "next_action",
+      "expectedAnswer": "3 open: Configure and run the system (including Ollama) on an external hard drive.; Maintain and monitor screenpipe background processes; Atriveo Cortex Development",
+      "actualAnswer": "Top actions to finish next: • Maintain and monitor screenpipe background processes (Gemma-based AI Development) — Status: ACTIVE · 3 mentions • Configure and run the system (including Ollama) on an external hard drive. (New Agent / Automations) — Status: ACTIVE · 2 mentions • Atriveo Cortex Development (Cortex) — Status: ACTIVE · 2 mentions",
+      "confidence": "LOW",
+      "citationCount": 3,
+      "citations": [
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development",
+          "evidence": "Status: ACTIVE · 3 mentions",
+          "url": "/open-loops/2",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/4",
+          "confidence": 0.3
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex",
+          "evidence": "Status: ACTIVE · 2 mentions",
+          "url": "/open-loops/5",
+          "confidence": 0.3
+        }
+      ],
+      "latencyMs": 425,
+      "scores": {
+        "usefulness": 0.75,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Reviews",
+      "question": "What did I accomplish this week?",
+      "expectedIntent": "accomplishments_week",
+      "actualIntent": "accomplishments_week",
+      "expectedAnswer": "No accomplishments",
+      "actualAnswer": "You have 1 verified accomplishment this week: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' (Application Platform / Atriveo Cortex)",
+      "confidence": "MEDIUM",
+      "citationCount": 3,
+      "citations": [
+        {
+          "type": "daily_review",
+          "title": "Cortex — 1 Verified Win",
+          "date": "2026-06-16",
+          "project": "Atriveo Cortex",
+          "evidence": "Finished: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'. 4 items still in progress. Next: Configure and run the system (including Ollama) on an external hard drive..",
+          "url": "/review?date=2026-06-16",
+          "confidence": 0.8
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex",
+          "evidence": "Open loop closed (COMPLETED)",
+          "url": "/review?date=2026-06-16",
+          "confidence": 1
+        },
+        {
+          "type": "daily_review",
+          "title": "New Agent / Automations Work Day",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "No verified completions today. 4 items still in progress. Most work centered on New Agent / Automations. Next: New Agent / Automations Research.",
+          "url": "/review?date=2026-06-17",
+          "confidence": 0.27
+        }
+      ],
+      "latencyMs": 472,
+      "scores": {
+        "usefulness": 0.9,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Reviews",
+      "question": "What progress did I make?",
+      "expectedIntent": "progress_week",
+      "actualIntent": "progress_week",
+      "expectedAnswer": "46 sessions this week",
+      "actualAnswer": "This week: 3.4 hours across 17 sessions. Projects: Cortex (3.8h); New Agent / Automations (3.4h); Gemma-based AI Development (0.4h).",
+      "confidence": "MEDIUM",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "project",
+          "title": "Atriveo Cortex",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex",
+          "evidence": "3.8h · 11 sessions · last 2026-06-17",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "project",
+          "title": "New Agent / Automations",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations",
+          "evidence": "3.4h · 9 sessions · last 2026-06-17",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "project",
+          "title": "Gemma-based AI Development",
+          "date": "2026-06-16",
+          "project": "Gemma-based AI Development",
+          "evidence": "0.4h · 1 session · last 2026-06-16",
+          "url": "/projects",
+          "confidence": 0.85
+        },
+        {
+          "type": "session",
+          "title": "Atriveo Cortex Research",
+          "date": "2026-06-16",
+          "project": "Atriveo Cortex",
+          "evidence": "RESEARCH · 11m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0.38
+        },
+        {
+          "type": "session",
+          "title": "Communication",
+          "date": "2026-06-16",
+          "project": null,
+          "evidence": "COMMUNICATION · 0m",
+          "url": "/?date=2026-06-16",
+          "confidence": 0
+        }
+      ],
+      "latencyMs": 461,
+      "scores": {
+        "usefulness": 0.7000000000000001,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Reviews",
+      "question": "What am I avoiding?",
+      "expectedIntent": "avoidance",
+      "actualIntent": "avoidance",
+      "expectedAnswer": "Intent=avoidance",
+      "actualAnswer": "No matching memory found for this question.",
+      "confidence": "LOW",
+      "citationCount": 0,
+      "citations": [],
+      "latencyMs": 444,
+      "scores": {
+        "usefulness": 0.55,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.3,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Search",
+      "question": "Find everything related to ScreenPipe.",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "6 hits: ScreenPipe Infrastructure Management; ScreenPipe Setup and Integration; Screenpipe System Integration",
+      "actualAnswer": "Memory for \"screenpipe\" (6 items): Sessions (1): • Maintain And Monitor Screenpipe Background (2026-06-16) Open loops (1): • Maintain and monitor screenpipe background processes (2026-06-17) Projects (3): • ScreenPipe Infrastructure Management (2026-06-17) • ScreenPipe Setup and Integration (2026-06-17) • Screenpipe System Integration (2026-06-17) Actions (1): • Maintain and monitor screenpipe background processes (2026-06-17)",
+      "confidence": "HIGH",
+      "citationCount": 6,
+      "citations": [
+        {
+          "type": "session",
+          "title": "Maintain And Monitor Screenpipe Background",
+          "date": "2026-06-16",
+          "project": "Gemma-based AI Development",
+          "evidence": "Maintain And Monitor Screenpipe Background Terminal · BUILD",
+          "url": "/?date=2026-06-16",
+          "confidence": 0.87
+        },
+        {
+          "type": "project",
+          "title": "ScreenPipe Infrastructure Management",
+          "date": "2026-06-17",
+          "project": "ScreenPipe Infrastructure Management",
+          "evidence": "ScreenPipe Infrastructure Management 1 mentions",
+          "url": "/projects/ScreenPipe%20Infrastructure%20Management",
+          "confidence": 1
+        },
+        {
+          "type": "project",
+          "title": "ScreenPipe Setup and Integration",
+          "date": "2026-06-17",
+          "project": "ScreenPipe Setup and Integration",
+          "evidence": "ScreenPipe Setup and Integration 1 mentions",
+          "url": "/projects/ScreenPipe%20Setup%20and%20Integration",
+          "confidence": 1
+        },
+        {
+          "type": "project",
+          "title": "Screenpipe System Integration",
+          "date": "2026-06-17",
+          "project": "Screenpipe System Integration",
+          "evidence": "Screenpipe System Integration 1 mentions",
+          "url": "/projects/Screenpipe%20System%20Integration",
+          "confidence": 1
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development",
+          "evidence": "Maintain and monitor screenpipe background processes Status: ACTIVE",
+          "url": "/open-loops/2",
+          "confidence": 0.3
+        }
+      ],
+      "latencyMs": 491,
+      "scores": {
+        "usefulness": 0.9,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.8,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Search",
+      "question": "Find everything related to Attribution.",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "No hits for \"Attribution\"",
+      "actualAnswer": "No memory found for \"attribution\".",
+      "confidence": "LOW",
+      "citationCount": 0,
+      "citations": [],
+      "latencyMs": 480,
+      "scores": {
+        "usefulness": 0.85,
+        "accuracy": 0.9,
+        "completeness": 0.85,
+        "citationQuality": 0.3,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Search",
+      "question": "Find everything related to Reviews.",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "No hits for \"Reviews\"",
+      "actualAnswer": "No memory found for \"reviews\".",
+      "confidence": "LOW",
+      "citationCount": 0,
+      "citations": [],
+      "latencyMs": 522,
+      "scores": {
+        "usefulness": 0.7000000000000001,
+        "accuracy": 0.7,
+        "completeness": 0.6,
+        "citationQuality": 0.3,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    }
+  ]
+}

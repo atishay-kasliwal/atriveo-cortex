@@ -24,7 +24,6 @@ import {
   startAnalyticsRun,
 } from "./analytics-db";
 import { detectActivityStates } from "./idle-detector";
-import { computeAndPersistDayAttention } from "./attention-db";
 import { buildProjectSignalIndex } from "./project-signals";
 import { loadExtendedSessionEvidence } from "./session-evidence";
 import { enrichSessions } from "./session-intelligence";
@@ -66,7 +65,6 @@ export async function syncDay(date: string): Promise<SyncResult> {
       stateResult.totals,
     );
     await saveDailySummary(summary);
-    await computeAndPersistDayAttention(date);
 
     await completeAnalyticsRun(runId, "completed", recordsProcessed);
     return { date, runId, recordsProcessed };

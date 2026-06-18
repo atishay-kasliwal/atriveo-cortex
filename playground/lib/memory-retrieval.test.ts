@@ -50,6 +50,7 @@ describe("memory-retrieval", () => {
   it("extracts project hints", () => {
     expect(extractProjectHint("What progress have I made on Cortex?")).toBe("Cortex");
     expect(extractProjectHint("What is still open for ScreenPipe?")).toBe("ScreenPipe");
+    expect(extractProjectHint("What did I work on this week?")).toBeNull();
   });
 
   it("extracts search terms from free-form queries", () => {
@@ -63,24 +64,24 @@ describe("memory-retrieval", () => {
     expect(week.start <= week.end).toBe(true);
   });
 
-  it("builds context packet ranked by type and relevance", () => {
-    const bundle: RetrievalBundle = {
-      intent: "search",
-      question: "Cortex",
+  it("builds context packet via evidence selection", () => {
+    const packet = buildContextPacket({
+      intent: "projects_active",
+      question: "What projects are active?",
       dateRange: { start: "2026-06-16", end: "2026-06-17" },
-      projectHint: "Cortex",
-      searchTerms: "cortex",
+      projectHint: null,
+      searchTerms: "",
       records: [
-        record({ type: "session", title: "Session A", relevanceScore: 120 }),
+        record({ type: "session", title: "Session A", project: "Cortex", content: "build · 120m", relevanceScore: 120 }),
         record({
           type: "accomplishment",
           title: "Shipped feature",
           relevanceScore: 80,
         }),
       ],
-    };
-    const packet = buildContextPacket(bundle);
-    expect(packet.records[0]?.type).toBe("accomplishment");
+    });
+    expect(packet.records.some((r) => r.type === "accomplishment")).toBe(false);
+    expect(packet.records.some((r) => r.type === "project")).toBe(true);
   });
 
   it("composes grounded answers from sessions and reviews", () => {
@@ -112,7 +113,7 @@ describe("memory-retrieval", () => {
     expect(citations.length).toBeGreaterThan(0);
   });
 
-  it("admits insufficient evidence when no records exist", () => {
+  it("admits empty accomplishments week", () => {
     const packet = buildContextPacket({
       intent: "accomplishments_week",
       question: "What did I accomplish this week?",
@@ -121,8 +122,13 @@ describe("memory-retrieval", () => {
       searchTerms: "",
       records: [],
     });
-    const { answer } = composeGroundedAnswer(packet);
-    expect(answer).toContain("Insufficient evidence");
+    const { answer } = composeGroundedAnswer({
+      ...packet,
+      searchTerms: "",
+      termMatchRatio: 0,
+      usedFallback: false,
+    });
+    expect(answer).toContain("No verified accomplishments");
   });
 
   it("computes confidence from citation strength", () => {

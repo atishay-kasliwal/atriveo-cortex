@@ -21,9 +21,11 @@ import { Route as AskRouteImport } from './routes/ask'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjectsHealthRouteImport } from './routes/projects.health'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
 import { Route as OpenLoopsIdRouteImport } from './routes/open-loops.$id'
 import { Route as IdeasIdRouteImport } from './routes/ideas.$id'
+import { Route as DebugTelemetryRouteImport } from './routes/debug.telemetry'
 import { Route as DebugAnalyticsRouteImport } from './routes/debug.analytics'
 import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 
@@ -87,6 +89,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsHealthRoute = ProjectsHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => ProjectsRoute,
+} as any)
 const ProjectsIdRoute = ProjectsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -101,6 +108,11 @@ const IdeasIdRoute = IdeasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => IdeasRoute,
+} as any)
+const DebugTelemetryRoute = DebugTelemetryRouteImport.update({
+  id: '/debug/telemetry',
+  path: '/debug/telemetry',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DebugAnalyticsRoute = DebugAnalyticsRouteImport.update({
   id: '/debug/analytics',
@@ -128,9 +140,11 @@ export interface FileRoutesByFullPath {
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
+  '/debug/telemetry': typeof DebugTelemetryRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
+  '/projects/health': typeof ProjectsHealthRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -147,9 +161,11 @@ export interface FileRoutesByTo {
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
+  '/debug/telemetry': typeof DebugTelemetryRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
+  '/projects/health': typeof ProjectsHealthRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -167,9 +183,11 @@ export interface FileRoutesById {
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
+  '/debug/telemetry': typeof DebugTelemetryRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
+  '/projects/health': typeof ProjectsHealthRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -188,9 +206,11 @@ export interface FileRouteTypes {
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
+    | '/debug/telemetry'
     | '/ideas/$id'
     | '/open-loops/$id'
     | '/projects/$id'
+    | '/projects/health'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -207,9 +227,11 @@ export interface FileRouteTypes {
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
+    | '/debug/telemetry'
     | '/ideas/$id'
     | '/open-loops/$id'
     | '/projects/$id'
+    | '/projects/health'
   id:
     | '__root__'
     | '/'
@@ -226,9 +248,11 @@ export interface FileRouteTypes {
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
+    | '/debug/telemetry'
     | '/ideas/$id'
     | '/open-loops/$id'
     | '/projects/$id'
+    | '/projects/health'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -245,6 +269,7 @@ export interface RootRouteChildren {
   ReviewRoute: typeof ReviewRoute
   WeeklyReviewRoute: typeof WeeklyReviewRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
+  DebugTelemetryRoute: typeof DebugTelemetryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -333,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/health': {
+      id: '/projects/health'
+      path: '/health'
+      fullPath: '/projects/health'
+      preLoaderRoute: typeof ProjectsHealthRouteImport
+      parentRoute: typeof ProjectsRoute
+    }
     '/projects/$id': {
       id: '/projects/$id'
       path: '/$id'
@@ -353,6 +385,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ideas/$id'
       preLoaderRoute: typeof IdeasIdRouteImport
       parentRoute: typeof IdeasRoute
+    }
+    '/debug/telemetry': {
+      id: '/debug/telemetry'
+      path: '/debug/telemetry'
+      fullPath: '/debug/telemetry'
+      preLoaderRoute: typeof DebugTelemetryRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/debug/analytics': {
       id: '/debug/analytics'
@@ -406,10 +445,12 @@ const OpenLoopsRouteWithChildren = OpenLoopsRoute._addFileChildren(
 
 interface ProjectsRouteChildren {
   ProjectsIdRoute: typeof ProjectsIdRoute
+  ProjectsHealthRoute: typeof ProjectsHealthRoute
 }
 
 const ProjectsRouteChildren: ProjectsRouteChildren = {
   ProjectsIdRoute: ProjectsIdRoute,
+  ProjectsHealthRoute: ProjectsHealthRoute,
 }
 
 const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
@@ -430,6 +471,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewRoute: ReviewRoute,
   WeeklyReviewRoute: WeeklyReviewRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
+  DebugTelemetryRoute: DebugTelemetryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

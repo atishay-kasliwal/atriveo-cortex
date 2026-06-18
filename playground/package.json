@@ -35,6 +35,7 @@
     "backfill:attention": "tsx scripts/backfill-attention.ts",
     "audit:attribution": "tsx scripts/audit-project-attribution.ts",
     "audit:chat": "tsx scripts/audit-conversational-cortex.ts",
+    "audit:chat:v2": "tsx scripts/audit-conversational-cortex.ts",
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {

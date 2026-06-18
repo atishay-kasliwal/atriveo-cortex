@@ -7,6 +7,19 @@ import type { PipelineStatus } from "./system-adapter";
 
 export type SyncFreshness = "fresh" | "stale" | "unknown";
 
+export type MemoryFreshnessSummary = {
+  score: number;
+  overall: "fresh" | "degraded" | "stale";
+  lastCaptureAt: string | null;
+  lastSyncAt: string | null;
+  lastReviewGeneratedAt: string | null;
+  lastIndexRebuildAt: string | null;
+  staleCapture: boolean;
+  staleSync: boolean;
+  staleReview: boolean;
+  staleIndex: boolean;
+};
+
 export type SyncStatus = {
   pipelineStatus: PipelineStatus;
   lastSyncAt: string | null;
@@ -18,6 +31,7 @@ export type SyncStatus = {
   canManualSync: boolean;
   capturePortOpen: boolean;
   captureApiReachable: boolean;
+  memoryFreshness: MemoryFreshnessSummary;
 };
 
 export type ManualSyncResult = {
@@ -73,6 +87,15 @@ export const syncPipelineStyles: Record<
     text: "text-muted-foreground",
   },
 };
+
+export function formatDurationMs(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const sec = Math.round(ms / 1000);
+  if (sec < 60) return `${sec}s`;
+  const min = Math.floor(sec / 60);
+  const rem = sec % 60;
+  return rem > 0 ? `${min}m ${rem}s` : `${min}m`;
+}
 
 export function formatLastSyncAt(iso: string | null): string {
   if (!iso) return "Never";

@@ -23,6 +23,16 @@ import {
   tokenizeQuery,
 } from "@/lib/memory-search";
 import type { MemorySearchResult } from "@/lib/memory-search-types";
+import {
+  calibrateConfidence,
+  computeAnswerConfidence,
+  matchesProjectHint,
+  selectEvidence,
+} from "@/lib/evidence-selection";
+import {
+  formatProjectHealthAnswer,
+  retrieveProjectHealthRecords,
+} from "@/lib/project-health-retrieval";
 import type {
   AnswerConfidence,
   ChatResponse,
@@ -84,15 +94,73 @@ const SEARCH_STOP_WORDS = new Set([
   "resurfacing",
   "happened",
   "happen",
+  "changed",
+  "since",
+  "monday",
+  "active",
+  "stalled",
+  "happening",
+  "going",
+  "find",
+  "should",
+  "next",
+  "projects",
+  "project",
+  "avoiding",
 ]);
 
 export function classifyQuestion(question: string): QuestionIntent {
   const q = question.toLowerCase();
-  if (/yesterday/.test(q) && /(work|did|happen)/.test(q)) return "history_yesterday";
-  if (/last week/.test(q) && /(happen|work|did)/.test(q)) return "history_last_week";
-  if (/(accomplish|finish|finished|shipped|completed)/.test(q) && /week/.test(q)) {
+  if (/what changed since|what's changed since|what changed this week/.test(q)) {
+    return "delta_since";
+  }
+  if (/what should i finish next|what should i work on next/.test(q)) {
+    return "next_action";
+  }
+  if (/what projects are active|which projects are active|projects are active/.test(q)) {
+    return "projects_active";
+  }
+  if (
+    /which project(s)? (is|are) at risk|what project(s)? (is|are) at risk|projects? at risk/.test(
+      q,
+    )
+  ) {
+    return "projects_at_risk";
+  }
+  if (
+    /which project(s)? gained momentum|what project(s)? gained momentum|gaining momentum/.test(
+      q,
+    )
+  ) {
+    return "projects_gaining_momentum";
+  }
+  if (
+    /which project(s)? needs? attention|what project(s)? needs? attention|project(s)? need attention/.test(
+      q,
+    )
+  ) {
+    return "projects_need_attention";
+  }
+  if (/what has stalled|which projects stalled|what stalled/.test(q)) {
+    return "projects_stalled";
+  }
+  if (/what progress did i make/.test(q) && !/(on|for|with)\s+[a-z]/i.test(q)) {
+    return "progress_week";
+  }
+  if (/what am i avoiding|what have i been avoiding/.test(q)) {
+    return "avoidance";
+  }
+  if (/yesterday/.test(q) && /(work|did|happen|do)/.test(q)) return "history_yesterday";
+  if (/(what did i accomplish|accomplish)/.test(q) && /week/.test(q)) {
     return "accomplishments_week";
   }
+  if (/what did i finish/.test(q) && /week/.test(q)) {
+    return "accomplishments_week";
+  }
+  if (/this week/.test(q) && /(work|did|happen)/.test(q)) return "history_last_week";
+  if (/last week/.test(q) && /(happen|work|did)/.test(q)) return "history_last_week";
+  if (/how is .+ progressing/.test(q)) return "project_progress";
+  if (/(happening with|going on with)/.test(q)) return "project_progress";
   if (/(progress|advanced|moved forward)/.test(q) && /(on|for|with)/.test(q)) {
     return "project_progress";
   }
@@ -118,8 +186,20 @@ export function classifyQuestion(question: string): QuestionIntent {
   return "search";
 }
 
+function isValidProjectHint(hint: string): boolean {
+  const h = hint.toLowerCase().trim();
+  if (!h || SEARCH_STOP_WORDS.has(h)) return false;
+  if (/^(this|last)\s+week$/.test(h)) return false;
+  if (/^(this|last)\s+(monday|month|year)$/.test(h)) return false;
+  const tokens = h.split(/\s+/).filter(Boolean);
+  if (tokens.length > 0 && tokens.every((t) => SEARCH_STOP_WORDS.has(t))) return false;
+  return true;
+}
+
 export function extractProjectHint(question: string): string | null {
   const patterns = [
+    /(?:happening|going on)\s+with\s+([A-Za-z0-9][A-Za-z0-9 /.-]{2,40}?)(?:\?|$|,|\.)/i,
+    /how\s+is\s+([A-Za-z0-9][A-Za-z0-9 /.-]{2,40}?)\s+progressing/i,
     /\bon\s+([A-Za-z0-9][A-Za-z0-9 /.-]{2,40}?)(?:\?|$|,|\.)/i,
     /\bfor\s+([A-Za-z0-9][A-Za-z0-9 /.-]{2,40}?)(?:\?|$|,|\.)/i,
     /\bwith\s+([A-Za-z0-9][A-Za-z0-9 /.-]{2,40}?)(?:\?|$|,|\.)/i,
@@ -128,7 +208,7 @@ export function extractProjectHint(question: string): string | null {
     const m = question.match(re);
     if (m?.[1]) {
       const hint = m[1].trim();
-      if (!SEARCH_STOP_WORDS.has(hint.toLowerCase())) return hint;
+      if (isValidProjectHint(hint)) return hint;
     }
   }
   return null;
@@ -157,8 +237,14 @@ export function resolveDateRange(
       const d = shiftDate(today, -1);
       return { start: d, end: d };
     }
+    case "delta_since": {
+      const start = isoWeekStart(today);
+      return { start, end: today };
+    }
     case "history_last_week":
+    case "progress_week":
     case "accomplishments_week":
+    case "projects_active":
     case "attention_where_week":
     case "attention_top_project":
     case "attention_interruptions":
@@ -167,6 +253,21 @@ export function resolveDateRange(
       const range = weekRange(yesterday);
       return { start: range.startDate, end: range.endDate };
     }
+    case "project_progress": {
+      return { start: shiftDate(today, -14), end: today };
+    }
+    case "projects_stalled": {
+      return { start: shiftDate(today, -21), end: today };
+    }
+    case "projects_at_risk":
+    case "projects_gaining_momentum":
+    case "projects_need_attention": {
+      const yesterday = shiftDate(today, -1);
+      const range = weekRange(yesterday);
+      return { start: range.startDate, end: range.endDate };
+    }
+    case "next_action":
+      return { start: shiftDate(today, -30), end: today };
     default:
       return { start: shiftDate(today, -30), end: today };
   }
@@ -362,19 +463,32 @@ async function retrieveAttentionRecords(
   return records;
 }
 
-function matchesProjectHint(record: MemoryRecord, hint: string): boolean {
-  const h = hint.toLowerCase();
-  return (
-    (record.project?.toLowerCase().includes(h) ?? false) ||
-    record.title.toLowerCase().includes(h) ||
-    record.content.toLowerCase().includes(h)
-  );
+function momentumToRecord(
+  projectName: string,
+  trend: string,
+  changePercent: number | null,
+  durationSec: number,
+  weekStart: string,
+): MemoryRecord {
+  return {
+    type: "project",
+    entityId: `momentum:${projectName}`,
+    title: projectName,
+    content: `${trend} momentum${changePercent != null ? ` (${changePercent > 0 ? "+" : ""}${changePercent}%)` : ""} · ${fmtHours(durationSec)}`,
+    project: projectName,
+    category: "momentum",
+    confidence: 0.8,
+    date: weekStart,
+    source: "weekly_review.momentum",
+    url: buildResultUrl("weekly_review", weekStart, weekStart),
+    relevanceScore: 420 + durationSec / 60,
+  };
 }
 
 function dedupeRecords(records: MemoryRecord[]): MemoryRecord[] {
   const seen = new Set<string>();
   const out: MemoryRecord[] = [];
-  for (const r of records.sort((a, b) => b.relevanceScore - a.relevanceScore)) {
+  for (const r of records) {
     const key = `${r.type}:${r.entityId}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -383,6 +497,20 @@ function dedupeRecords(records: MemoryRecord[]): MemoryRecord[] {
   return out;
 }
 
+const ACCOMPLISHMENT_INTENTS = new Set<QuestionIntent>([
+  "accomplishments_week",
+  "delta_since",
+  "project_progress",
+]);
+
+const OPEN_WORK_INTENTS = new Set<QuestionIntent>([
+  "open_loops_unfinished",
+  "next_action",
+  "project_open",
+  "project_progress",
+  "avoidance",
+]);
+
 export async function retrieveMemory(question: string): Promise<RetrievalBundle> {
   const intent = classifyQuestion(question);
   const dateRange = resolveDateRange(intent, question);
@@ -390,18 +518,27 @@ export async function retrieveMemory(question: string): Promise<RetrievalBundle>
   const searchTerms = extractSearchTerms(question);
   const records: MemoryRecord[] = [];
 
-  const search = await searchMemory(searchTerms, {
-    project: projectHint ?? undefined,
-    start: dateRange.start,
-    end: dateRange.end,
-    limit: 40,
-  });
-  records.push(...search.results.map((r) => searchToRecord(r)));
+  if (intent === "search") {
+    const search = await searchMemory(searchTerms, {
+      project: projectHint ?? undefined,
+      start: dateRange.start,
+      end: dateRange.end,
+      limit: 40,
+    });
+    records.push(...search.results.map((r) => searchToRecord(r)));
+  }
 
   const sessions = await listSessions(dateRange.start, dateRange.end);
   for (const s of sessions) {
-    if (projectHint && !matchesProjectHint(sessionToRecord(s), projectHint)) continue;
-    records.push(sessionToRecord(s));
+    const rec = sessionToRecord(s);
+    if (
+      projectHint &&
+      intent !== "search" &&
+      !matchesProjectHint(rec, projectHint)
+    ) {
+      continue;
+    }
+    records.push(rec);
   }
 
   const dailyReviews = await dailyReviewRepository.listRange(
@@ -410,43 +547,62 @@ export async function retrieveMemory(question: string): Promise<RetrievalBundle>
   );
   for (const review of dailyReviews) {
     records.push(reviewToRecord(review));
-    for (const acc of review.accomplishments) {
-      if (!acc.evidence?.length) continue;
-      records.push(
-        accomplishmentToRecord(
-          acc.title,
-          acc.projectName,
-          acc.evidence.map((e) => e.label).join(" · "),
-          review.reviewDate,
-          "daily_reviews.accomplishments",
-        ),
-      );
+    if (ACCOMPLISHMENT_INTENTS.has(intent)) {
+      for (const acc of review.accomplishments) {
+        if (!acc.evidence?.length) continue;
+        records.push(
+          accomplishmentToRecord(
+            acc.title,
+            acc.projectName,
+            acc.evidence.map((e) => e.label).join(" · "),
+            review.reviewDate,
+            "daily_reviews.accomplishments",
+          ),
+        );
+      }
     }
-    for (const item of review.openWork) {
-      records.push({
-        type: "open_loop",
-        entityId: `openwork:${review.reviewDate}:${item.title.slice(0, 40)}`,
-        title: item.title,
-        content: `Still in progress · ${item.source}`,
-        project: item.projectName,
-        category: "in_progress",
-        confidence: item.confidence === "HIGH" ? 0.8 : 0.5,
-        date: review.reviewDate,
-        source: "daily_reviews.open_work",
-        url: buildResultUrl("daily_review", review.reviewDate, review.reviewDate),
-        relevanceScore: 350,
-      });
+    if (OPEN_WORK_INTENTS.has(intent)) {
+      for (const item of review.openWork) {
+        records.push({
+          type: "open_loop",
+          entityId: `openwork:${review.reviewDate}:${item.title.slice(0, 40)}`,
+          title: item.title,
+          content: `Still in progress · ${item.source}`,
+          project: item.projectName,
+          category: "in_progress",
+          confidence: item.confidence === "HIGH" ? 0.8 : 0.5,
+          date: review.reviewDate,
+          source: "daily_reviews.open_work",
+          url: buildResultUrl("daily_review", review.reviewDate, review.reviewDate),
+          relevanceScore: 350,
+        });
+      }
     }
   }
 
   if (
     intent === "history_last_week" ||
-    intent === "accomplishments_week"
+    intent === "accomplishments_week" ||
+    intent === "progress_week" ||
+    intent === "delta_since" ||
+    intent === "projects_active" ||
+    intent === "project_progress"
   ) {
-    const weekStart = isoWeekStart(dateRange.start);
+    const weekStart = isoWeekStart(dateRange.end);
     const weekly = await weeklyReviewRepository.getByWeekStart(weekStart);
     if (weekly) {
       records.push(weeklyToRecord(weekly));
+      for (const m of weekly.momentum) {
+        records.push(
+          momentumToRecord(
+            m.projectName,
+            m.trend,
+            m.changePercent,
+            m.durationSec,
+            weekly.weekStart,
+          ),
+        );
+      }
       for (const acc of weekly.accomplishments) {
         if (!acc.evidence?.length) continue;
         records.push(
@@ -464,29 +620,48 @@ export async function retrieveMemory(question: string): Promise<RetrievalBundle>
 
   const loops = await getIntelligenceLoops();
   for (const loop of loops) {
-    if (intent === "open_loops_unfinished") {
+    const rec = loopToRecord(loop);
+    if (
+      intent === "open_loops_unfinished" ||
+      intent === "next_action"
+    ) {
       if (!["OPEN", "ACTIVE", "BLOCKED"].includes(loop.status)) continue;
     } else if (intent === "open_loops_resurfacing") {
       if (loop.resurface_count < 2) continue;
     } else if (intent === "project_open" && projectHint) {
-      if (!matchesProjectHint(loopToRecord(loop), projectHint)) continue;
+      if (!matchesProjectHint(rec, projectHint)) continue;
+      if (!["OPEN", "ACTIVE", "BLOCKED"].includes(loop.status)) continue;
+    } else if (intent === "project_progress" && projectHint) {
+      if (!matchesProjectHint(rec, projectHint)) continue;
+    } else if (intent === "projects_stalled") {
       if (!["OPEN", "ACTIVE", "BLOCKED"].includes(loop.status)) continue;
     }
-    if (projectHint && !matchesProjectHint(loopToRecord(loop), projectHint)) continue;
-    records.push(loopToRecord(loop));
+    records.push(rec);
   }
 
   if (
     intent === "attention_where_week" ||
     intent === "attention_top_project" ||
     intent === "attention_interruptions" ||
-    intent === "attention_productivity"
+    intent === "attention_productivity" ||
+    intent === "projects_active"
   ) {
     records.push(...(await retrieveAttentionRecords(intent, dateRange)));
   }
 
+  if (
+    intent === "projects_at_risk" ||
+    intent === "projects_gaining_momentum" ||
+    intent === "projects_need_attention"
+  ) {
+    records.push(...(await retrieveProjectHealthRecords(intent)));
+  }
+
   let filtered = dedupeRecords(records);
-  if (projectHint) {
+  if (
+    projectHint &&
+    ["project_progress", "project_open", "search"].includes(intent)
+  ) {
     const projectMatches = filtered.filter((r) => matchesProjectHint(r, projectHint));
     if (projectMatches.length > 0) filtered = projectMatches;
   }
@@ -497,30 +672,18 @@ export async function retrieveMemory(question: string): Promise<RetrievalBundle>
     dateRange,
     projectHint,
     searchTerms,
-    records: filtered.slice(0, 30),
+    records: filtered,
   };
 }
 
 export function buildContextPacket(bundle: RetrievalBundle): ContextPacket {
-  const typePriority: Record<string, number> = {
-    accomplishment: 5,
-    open_loop: 4,
-    daily_review: 3,
-    weekly_review: 3,
-    project: 3,
-    session: 2,
-    action: 1,
-    idea: 1,
-  };
-
-  const records = [...bundle.records].sort((a, b) => {
-    const typeDiff =
-      (typePriority[b.type] ?? 0) - (typePriority[a.type] ?? 0);
-    if (typeDiff !== 0) return typeDiff;
-    if (b.relevanceScore !== a.relevanceScore) {
-      return b.relevanceScore - a.relevanceScore;
-    }
-    return b.date.localeCompare(a.date);
+  const selection = selectEvidence({
+    intent: bundle.intent,
+    question: bundle.question,
+    projectHint: bundle.projectHint,
+    searchTerms: bundle.searchTerms,
+    dateRange: bundle.dateRange,
+    records: bundle.records,
   });
 
   return {
@@ -528,7 +691,10 @@ export function buildContextPacket(bundle: RetrievalBundle): ContextPacket {
     question: bundle.question,
     dateRange: bundle.dateRange,
     projectHint: bundle.projectHint,
-    records: records.slice(0, 20),
+    searchTerms: bundle.searchTerms,
+    termMatchRatio: selection.termMatchRatio,
+    usedFallback: selection.usedFallback,
+    records: selection.records.slice(0, 20),
   };
 }
 
@@ -542,25 +708,6 @@ export function recordToCitation(record: MemoryRecord): MemoryCitation {
     url: record.url,
     confidence: record.confidence,
   };
-}
-
-export function computeAnswerConfidence(
-  citations: MemoryCitation[],
-  hasStructuredReview: boolean,
-): AnswerConfidence {
-  if (citations.length === 0) return "LOW";
-  const strong = citations.filter(
-    (c) =>
-      c.type === "accomplishment" ||
-      c.type === "daily_review" ||
-      c.type === "weekly_review" ||
-      (c.confidence ?? 0) >= 0.7,
-  );
-  if (strong.length >= 2 || (hasStructuredReview && citations.length >= 2)) {
-    return "HIGH";
-  }
-  if (citations.length >= 1) return "MEDIUM";
-  return "LOW";
 }
 
 function topProjectFromSessions(sessions: MemoryRecord[]): string | null {
@@ -588,9 +735,21 @@ export function composeGroundedAnswer(packet: ContextPacket): {
   const projects = packet.records.filter((r) => r.type === "project");
 
   if (packet.records.length === 0) {
+    if (packet.intent === "search") {
+      const term = packet.searchTerms || "that query";
+      return { answer: `No memory found for "${term}".`, citations: [] };
+    }
+    if (packet.intent === "open_loops_resurfacing") {
+      return { answer: "Nothing is resurfacing currently.", citations: [] };
+    }
+    if (packet.intent === "accomplishments_week") {
+      return {
+        answer: "No verified accomplishments with evidence were found for this week.",
+        citations: [],
+      };
+    }
     return {
-      answer:
-        "Insufficient evidence. I could not find stored memory that answers this question.",
+      answer: "No matching memory found for this question.",
       citations: [],
     };
   }
@@ -598,6 +757,154 @@ export function composeGroundedAnswer(packet: ContextPacket): {
   const parts: string[] = [];
 
   switch (packet.intent) {
+    case "search": {
+      const term = packet.searchTerms || "your query";
+      const byType = new Map<string, MemoryRecord[]>();
+      for (const r of packet.records) {
+        const list = byType.get(r.type) ?? [];
+        list.push(r);
+        byType.set(r.type, list);
+      }
+      const labels: Array<[string, MemoryRecord["type"]]> = [
+        ["Sessions", "session"],
+        ["Reviews", "daily_review"],
+        ["Weekly reviews", "weekly_review"],
+        ["Open loops", "open_loop"],
+        ["Projects", "project"],
+        ["Actions", "action"],
+        ["Ideas", "idea"],
+        ["Accomplishments", "accomplishment"],
+      ];
+      parts.push(`Memory for "${term}" (${packet.records.length} items):`);
+      for (const [label, type] of labels) {
+        const items = byType.get(type) ?? [];
+        if (items.length === 0) continue;
+        parts.push(`${label} (${items.length}):`);
+        for (const item of items.slice(0, 4)) {
+          parts.push(`• ${item.title} (${item.date})`);
+        }
+      }
+      break;
+    }
+
+    case "projects_active": {
+      const projectRows = projects.filter((p) => p.source !== "attention_engine");
+      const attentionRows = projects.filter((p) => p.source === "attention_engine");
+      if (projectRows.length === 0 && attentionRows.length === 0) {
+        return { answer: "No active projects found in recent sessions.", citations: [] };
+      }
+      parts.push(`Active projects this week (${projectRows.length || attentionRows.length}):`);
+      for (const p of (projectRows.length ? projectRows : attentionRows).slice(0, 6)) {
+        parts.push(`• ${shortProject(p.title)} — ${p.content}`);
+      }
+      break;
+    }
+
+    case "projects_stalled": {
+      if (projects.length === 0 && loops.length === 0) {
+        return { answer: "No stalled projects detected.", citations: [] };
+      }
+      parts.push("Stalled or inactive projects:");
+      for (const p of projects.slice(0, 5)) {
+        parts.push(`• ${shortProject(p.title)} — ${p.content}`);
+      }
+      for (const l of loops.slice(0, 3)) {
+        parts.push(`• ${l.title} — open with no recent session time`);
+      }
+      break;
+    }
+
+    case "projects_at_risk":
+    case "projects_gaining_momentum":
+    case "projects_need_attention": {
+      const healthAnswer = formatProjectHealthAnswer(
+        packet.intent,
+        packet.records.filter((r) => r.source === "project_health_engine"),
+      );
+      if (healthAnswer) return { answer: healthAnswer, citations };
+      break;
+    }
+
+    case "next_action": {
+      if (loops.length === 0) {
+        return { answer: "No open loops to prioritize right now.", citations: [] };
+      }
+      parts.push("Top actions to finish next:");
+      for (const l of loops.slice(0, 3)) {
+        parts.push(
+          `• ${l.title}${l.project ? ` (${shortProject(l.project)})` : ""} — ${l.content}`,
+        );
+      }
+      break;
+    }
+
+    case "delta_since": {
+      parts.push(`Changes since ${packet.dateRange.start}:`);
+      if (sessions.length > 0) {
+        const totalMin = sessions.reduce(
+          (n, s) => n + Number(s.content.match(/(\d+)m/)?.[1] ?? 0),
+          0,
+        );
+        const top = topProjectFromSessions(sessions);
+        parts.push(
+          `• ${sessions.length} work session${sessions.length === 1 ? "" : "s"} (${fmtHours(totalMin * 60)}${top ? `, mostly ${shortProject(top)}` : ""}).`,
+        );
+      }
+      if (accomplishments.length > 0) {
+        parts.push(
+          `• ${accomplishments.length} verified accomplishment${accomplishments.length === 1 ? "" : "s"}: ${accomplishments
+            .slice(0, 3)
+            .map((a) => a.title)
+            .join("; ")}.`,
+        );
+      }
+      if (loops.length > 0) {
+        parts.push(`• ${loops.length} open loop${loops.length === 1 ? "" : "s"} active.`);
+      }
+      if (reviews.length > 0) {
+        parts.push(`• ${reviews.length} review${reviews.length === 1 ? "" : "s"} generated.`);
+      }
+      if (parts.length === 1) {
+        return {
+          answer: `No significant changes recorded since ${packet.dateRange.start}.`,
+          citations: [],
+        };
+      }
+      break;
+    }
+
+    case "progress_week": {
+      const weekly = packet.records.find((r) => r.type === "weekly_review");
+      if (weekly) parts.push(weekly.content);
+      if (sessions.length > 0) {
+        const totalMin = sessions.reduce(
+          (n, s) => n + Number(s.content.match(/(\d+)m/)?.[1] ?? 0),
+          0,
+        );
+        parts.push(
+          `This week: ${fmtHours(totalMin * 60)} across ${sessions.length} session${sessions.length === 1 ? "" : "s"}.`,
+        );
+        const projectRows = projects.filter((p) => p.source === "evidence.project_hours");
+        if (projectRows.length > 0) {
+          parts.push(
+            `Projects: ${projectRows
+              .slice(0, 4)
+              .map((p) => `${shortProject(p.title)} (${p.content.split("·")[0]?.trim()})`)
+              .join("; ")}.`,
+          );
+        }
+      }
+      if (accomplishments.length > 0) {
+        parts.push(
+          `Verified wins: ${accomplishments
+            .slice(0, 3)
+            .map((a) => a.title)
+            .join("; ")}.`,
+        );
+      }
+      break;
+    }
+
     case "history_yesterday": {
       const review = packet.records.find((r) => r.type === "daily_review");
       if (review) parts.push(review.content);
@@ -620,6 +927,24 @@ export function composeGroundedAnswer(packet: ContextPacket): {
         parts.push(weekly.content);
       } else if (reviews.length > 0) {
         parts.push(reviews[0]!.content);
+      }
+      if (sessions.length > 0) {
+        const totalMin = sessions.reduce(
+          (n, s) => n + Number(s.content.match(/(\d+)m/)?.[1] ?? 0),
+          0,
+        );
+        parts.push(
+          `This week you logged ${fmtHours(totalMin * 60)} across ${sessions.length} session${sessions.length === 1 ? "" : "s"}.`,
+        );
+        const projectRows = projects.filter((p) => p.source === "evidence.project_hours");
+        if (projectRows.length > 0) {
+          parts.push(
+            `Active projects: ${projectRows
+              .slice(0, 4)
+              .map((p) => shortProject(p.title))
+              .join(", ")}.`,
+          );
+        }
       }
       if (accomplishments.length > 0) {
         parts.push(
@@ -648,9 +973,7 @@ export function composeGroundedAnswer(packet: ContextPacket): {
         if (weekly?.content.includes("No verified completions")) {
           parts.push(weekly.content);
         } else {
-          parts.push(
-            "Insufficient evidence. No verified accomplishments with evidence were found for this week.",
-          );
+          parts.push("No verified accomplishments with evidence were found for this week.");
         }
       }
       break;
@@ -659,11 +982,11 @@ export function composeGroundedAnswer(packet: ContextPacket): {
     case "project_progress": {
       const hint = packet.projectHint ?? projects[0]?.title;
       if (hint) {
-        const projectSessions = sessions.filter((s) =>
-          matchesProjectHint(s, hint),
-        );
-        const projectAcc = accomplishments.filter((a) =>
-          matchesProjectHint(a, hint),
+        const projectSessions = sessions.filter((s) => matchesProjectHint(s, hint));
+        const projectLoops = loops.filter((l) => matchesProjectHint(l, hint));
+        const projectAcc = accomplishments.filter((a) => matchesProjectHint(a, hint));
+        const momentum = projects.filter(
+          (p) => p.source === "weekly_review.momentum" && matchesProjectHint(p, hint),
         );
         if (projectSessions.length > 0) {
           const totalMin = projectSessions.reduce(
@@ -671,13 +994,24 @@ export function composeGroundedAnswer(packet: ContextPacket): {
             0,
           );
           parts.push(
-            `${shortProject(hint)}: ${fmtHours(totalMin * 60)} across ${projectSessions.length} session${projectSessions.length === 1 ? "" : "s"}.`,
+            `Recent work on ${shortProject(hint)}: ${fmtHours(totalMin * 60)} across ${projectSessions.length} session${projectSessions.length === 1 ? "" : "s"}.`,
+          );
+        }
+        if (projectLoops.length > 0) {
+          parts.push(
+            `Open loops: ${projectLoops
+              .slice(0, 3)
+              .map((l) => l.title)
+              .join("; ")}.`,
           );
         }
         if (projectAcc.length > 0) {
           parts.push(
-            `Verified wins: ${projectAcc.map((a) => a.title).join("; ")}.`,
+            `Completed: ${projectAcc.map((a) => a.title).join("; ")}.`,
           );
+        }
+        if (momentum.length > 0) {
+          parts.push(`Momentum: ${momentum[0]!.content}.`);
         }
         const review = reviews.find((r) => matchesProjectHint(r, hint));
         if (review && parts.length === 0) parts.push(review.content);
@@ -697,24 +1031,19 @@ export function composeGroundedAnswer(packet: ContextPacket): {
           );
         }
       } else {
-        parts.push(
-          "Insufficient evidence. No active open loops match this question in stored memory.",
-        );
+        parts.push("No active open loops match this question.");
       }
       break;
     }
 
     case "open_loops_resurfacing": {
-      const resurfacing = loops.filter((l) => l.content.includes("mentions"));
-      if (resurfacing.length > 0) {
+      if (loops.length > 0) {
         parts.push("These threads keep resurfacing:");
-        for (const l of resurfacing.slice(0, 6)) {
+        for (const l of loops.slice(0, 6)) {
           parts.push(`• ${l.title} — ${l.content}`);
         }
       } else {
-        parts.push(
-          "Insufficient evidence. No repeatedly resurfacing open loops were found.",
-        );
+        return { answer: "Nothing is resurfacing currently.", citations: [] };
       }
       break;
     }
@@ -727,7 +1056,7 @@ export function composeGroundedAnswer(packet: ContextPacket): {
           parts.push(`• ${shortProject(p.title)} — ${p.content}`);
         }
       } else {
-        parts.push("Insufficient evidence. No attention allocation data found for this week.");
+        parts.push("No attention allocation data found for this week.");
       }
       break;
     }
@@ -739,7 +1068,7 @@ export function composeGroundedAnswer(packet: ContextPacket): {
       if (top) {
         parts.push(`${shortProject(top.title)} consumed the most focus: ${top.content}.`);
       } else {
-        parts.push("Insufficient evidence. No project attention data found.");
+        parts.push("No project attention data found.");
       }
       break;
     }
@@ -751,7 +1080,7 @@ export function composeGroundedAnswer(packet: ContextPacket): {
       if (interruption) {
         parts.push(interruption.content);
       } else {
-        parts.push("Insufficient evidence. No interruption metrics found in attention data.");
+        parts.push("No interruption metrics found in attention data.");
       }
       break;
     }
@@ -770,60 +1099,49 @@ export function composeGroundedAnswer(packet: ContextPacket): {
           );
         }
       } else {
-        parts.push("Insufficient evidence. No deep work blocks detected in attention data.");
+        parts.push("No deep work blocks detected in attention data.");
+      }
+      break;
+    }
+
+    case "avoidance": {
+      if (loops.length === 0) {
+        return { answer: "No clear avoidance patterns in open loops without recent session time.", citations: [] };
+      }
+      parts.push("These open threads have little or no recent session time:");
+      for (const l of loops.slice(0, 5)) {
+        parts.push(
+          `• ${l.title}${l.project ? ` (${shortProject(l.project)})` : ""} — ${l.content}`,
+        );
       }
       break;
     }
 
     default: {
-      if (accomplishments.length > 0) {
-        parts.push(
-          `Found ${accomplishments.length} verified accomplishment${accomplishments.length === 1 ? "" : "s"}:`,
-        );
-        for (const a of accomplishments.slice(0, 3)) {
-          parts.push(`• ${a.title}`);
-        }
-      }
-      if (loops.length > 0) {
-        parts.push(
-          `Open loops: ${loops
-            .slice(0, 3)
-            .map((l) => l.title)
-            .join("; ")}.`,
-        );
-      }
-      if (sessions.length > 0 && parts.length < 3) {
-        parts.push(
-          `Sessions: ${sessions
-            .slice(0, 3)
-            .map((s) => s.title)
-            .join("; ")}.`,
-        );
-      }
-      if (reviews.length > 0 && parts.length === 0) {
-        parts.push(reviews[0]!.content);
-      }
-      if (parts.length === 0 && packet.records.length > 0) {
-        parts.push(
-          `Found ${packet.records.length} related memor${packet.records.length === 1 ? "y" : "ies"}:`,
-        );
-        for (const r of packet.records.slice(0, 4)) {
-          parts.push(`• ${r.title} (${r.date})`);
-        }
+      parts.push(
+        `Found ${packet.records.length} related memor${packet.records.length === 1 ? "y" : "ies"}:`,
+      );
+      for (const r of packet.records.slice(0, 4)) {
+        parts.push(`• ${r.title} (${r.date})`);
       }
     }
   }
 
   if (parts.length === 0) {
     return {
-      answer:
-        "Insufficient evidence. I could not find stored memory that answers this question.",
+      answer: "No matching memory found for this question.",
       citations: [],
     };
   }
 
   const answer = parts.join(" ");
-  if (answer.startsWith("Insufficient evidence")) {
+  if (
+    answer.startsWith("No memory found") ||
+    answer.startsWith("Nothing is resurfacing") ||
+    answer.startsWith("No active projects") ||
+    answer.startsWith("No stalled projects") ||
+    answer.startsWith("No open loops")
+  ) {
     return { answer, citations: [] };
   }
 
@@ -835,7 +1153,7 @@ export async function answerQuestion(question: string): Promise<ChatResponse> {
   const trimmed = question.trim();
   if (!trimmed) {
     return {
-      answer: "Insufficient evidence. Please ask a question about your work memory.",
+      answer: "Please ask a question about your work memory.",
       citations: [],
       confidence: "LOW",
       sources: [],
@@ -851,8 +1169,15 @@ export async function answerQuestion(question: string): Promise<ChatResponse> {
   const hasReview = packet.records.some(
     (r) => r.type === "daily_review" || r.type === "weekly_review",
   );
-  let confidence = computeAnswerConfidence(citations, hasReview);
-  if (answer.startsWith("Insufficient evidence")) confidence = "LOW";
+  const confidence = calibrateConfidence(citations, {
+    intent: packet.intent,
+    question: trimmed,
+    searchTerms: packet.searchTerms,
+    termMatchRatio: packet.termMatchRatio,
+    usedFallback: packet.usedFallback,
+    answer,
+    hasStructuredReview: hasReview,
+  });
 
   const sources = citations.map((c) => ({
     type: c.type,
@@ -875,4 +1200,5 @@ export async function answerQuestion(question: string): Promise<ChatResponse> {
   };
 }
 
-export { tokenizeQuery };
+export { tokenizeQuery, computeAnswerConfidence } from "@/lib/evidence-selection";
+export { selectEvidence } from "@/lib/evidence-selection";

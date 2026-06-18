@@ -10,10 +10,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   fetchSyncStatus,
+  formatDurationMs,
   formatLastSyncAt,
   syncPipelineLabels,
   syncPipelineStyles,
   triggerManualSync,
+  type ManualSyncResult,
   type SyncUiState,
 } from "@/lib/api/sync-adapter";
 import { qk } from "@/lib/api/queries";
@@ -30,9 +32,27 @@ function invalidateAfterSync(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: SYNC_STATUS_KEY });
 }
 
+function syncSuccessToast(result: ManualSyncResult) {
+  const duration = formatDurationMs(result.durationMs);
+  const records =
+    result.recordsImported > 0
+      ? `${result.recordsImported} record${result.recordsImported === 1 ? "" : "s"}`
+      : "up to date";
+  const sessions =
+    result.sessionsCreated > 0
+      ? ` · ${result.sessionsCreated} session${result.sessionsCreated === 1 ? "" : "s"}`
+      : "";
+  const reviews =
+    result.reviewsUpdated > 0
+      ? ` · ${result.reviewsUpdated} review${result.reviewsUpdated === 1 ? "" : "s"}`
+      : "";
+  toast.success(`✓ Synced ${records}${sessions}${reviews} · ${duration}`);
+}
+
 export function SyncControl() {
   const queryClient = useQueryClient();
   const [uiState, setUiState] = useState<SyncUiState>("idle");
+  const [lastResult, setLastResult] = useState<ManualSyncResult | null>(null);
 
   const statusQuery = useQuery({
     queryKey: SYNC_STATUS_KEY,
@@ -45,9 +65,11 @@ export function SyncControl() {
     mutationFn: triggerManualSync,
     onMutate: () => {
       setUiState("syncing");
+      setLastResult(null);
     },
     onSuccess: (result) => {
       invalidateAfterSync(queryClient);
+      setLastResult(result);
       if (result.status === "failed") {
         setUiState("failed");
         const message =
@@ -55,16 +77,12 @@ export function SyncControl() {
           !result.screenpipeAvailable
             ? "ScreenPipe unavailable"
             : result.error || "Sync failed";
-        toast.warning(`⚠ ${message}`);
+        toast.warning(`⚠ ${message} · ${formatDurationMs(result.durationMs)}`);
         return;
       }
 
       setUiState("success");
-      const label =
-        result.recordsImported > 0
-          ? `Synced ${result.recordsImported} record${result.recordsImported === 1 ? "" : "s"}`
-          : "Sync complete — already up to date";
-      toast.success(`✓ ${label}`);
+      syncSuccessToast(result);
     },
     onError: (error: Error) => {
       setUiState("failed");
@@ -82,11 +100,21 @@ export function SyncControl() {
   }, [uiState]);
 
   const status = statusQuery.data;
+  const freshness = status?.memoryFreshness;
   const pipelineStatus =
     uiState === "syncing" ? "syncing" : (status?.pipelineStatus ?? "offline");
   const pipelineStyle = syncPipelineStyles[pipelineStatus];
   const isSyncing = uiState === "syncing" || syncMutation.isPending;
   const canSync = status?.canManualSync !== false;
+
+  const memoryScore = freshness?.score ?? null;
+  const memoryOverall = freshness?.overall ?? "stale";
+  const memoryScoreStyle =
+    memoryOverall === "fresh"
+      ? "text-[oklch(0.78_0.14_155)]"
+      : memoryOverall === "degraded"
+        ? "text-[oklch(0.82_0.13_80)]"
+        : "text-destructive";
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
@@ -99,6 +127,11 @@ export function SyncControl() {
           <span className={`text-[11px] font-medium ${pipelineStyle.text}`}>
             {syncPipelineLabels[pipelineStatus]}
           </span>
+          {memoryScore != null ? (
+            <span className={`text-[11px] font-medium ${memoryScoreStyle}`}>
+              · Memory {memoryScore}
+            </span>
+          ) : null}
           {uiState === "success" ? (
             <span className="text-[11px] text-[oklch(0.78_0.14_155)]">· Updated</span>
           ) : null}
@@ -109,7 +142,20 @@ export function SyncControl() {
         <p className="text-[10px] text-muted-foreground">
           Last sync {formatLastSyncAt(status?.lastSyncAt ?? null)}
           {status?.freshnessLabel ? ` · ${status.freshnessLabel}` : ""}
+          {lastResult?.status === "success" && lastResult.recordsImported > 0
+            ? ` · ${lastResult.recordsImported} imported`
+            : null}
+          {lastResult?.status === "success"
+            ? ` · ${formatDurationMs(lastResult.durationMs)}`
+            : null}
         </p>
+        {freshness ? (
+          <p className="max-w-[280px] truncate text-[10px] text-muted-foreground">
+            Capture {formatLastSyncAt(freshness.lastCaptureAt)}
+            {" · "}Review {formatLastSyncAt(freshness.lastReviewGeneratedAt)}
+            {" · "}Index {formatLastSyncAt(freshness.lastIndexRebuildAt)}
+          </p>
+        ) : null}
       </div>
       <Button
         type="button"

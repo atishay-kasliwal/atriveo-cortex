@@ -9,8 +9,16 @@ export type AnswerConfidence = "HIGH" | "MEDIUM" | "LOW";
 export type QuestionIntent =
   | "history_yesterday"
   | "history_last_week"
+  | "progress_week"
+  | "delta_since"
   | "project_progress"
   | "project_open"
+  | "projects_active"
+  | "projects_stalled"
+  | "projects_at_risk"
+  | "projects_gaining_momentum"
+  | "projects_need_attention"
+  | "next_action"
   | "accomplishments_week"
   | "open_loops_unfinished"
   | "open_loops_resurfacing"
@@ -18,6 +26,7 @@ export type QuestionIntent =
   | "attention_top_project"
   | "attention_interruptions"
   | "attention_productivity"
+  | "avoidance"
   | "search";
 
 export type MemoryCitation = {
@@ -49,6 +58,9 @@ export type ContextPacket = {
   question: string;
   dateRange: { start: string; end: string };
   projectHint: string | null;
+  searchTerms: string;
+  termMatchRatio: number;
+  usedFallback: boolean;
   records: MemoryRecord[];
 };
 

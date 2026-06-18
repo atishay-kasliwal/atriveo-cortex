@@ -27,6 +27,14 @@ function ProjectsPage() {
         eyebrow="Project Explorer"
         title="Projects"
         description="Open a project to see its memory — timeline, actions, ideas and why Cortex grouped it together."
+        actions={
+          <Link
+            to="/projects/health"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Project health →
+          </Link>
+        }
       />
 
       <div className="mt-6">
