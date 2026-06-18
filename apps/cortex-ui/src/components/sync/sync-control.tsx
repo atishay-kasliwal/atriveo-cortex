@@ -73,6 +73,8 @@ export function SyncControl() {
     queryKey: SYNC_STATUS_KEY,
     queryFn: fetchSyncStatus,
     staleTime: 15_000,
+    retry: 2,
+    placeholderData: (previous) => previous,
     refetchInterval: uiState === "refreshing" ? 2000 : 30_000,
   });
 
@@ -119,11 +121,25 @@ export function SyncControl() {
   const status = statusQuery.data;
   const freshness = status?.memoryFreshness;
   const score = freshness?.score ?? null;
+  const statusLoading = statusQuery.isLoading && !status;
+  const statusUnavailable = statusQuery.isError && !status;
   const pipelineStatus =
-    uiState === "refreshing" ? "syncing" : (status?.pipelineStatus ?? "offline");
+    uiState === "refreshing"
+      ? "syncing"
+      : statusLoading
+        ? "syncing"
+        : (status?.pipelineStatus ?? (statusUnavailable ? "stale" : "offline"));
   const pipelineStyle = syncPipelineStyles[pipelineStatus];
   const isRefreshing = uiState === "refreshing" || refreshMutation.isPending;
   const canRefresh = status?.canRefreshMemory !== false;
+
+  const lastCaptureIso =
+    freshness?.lastCaptureAt ?? status?.lastFrameAt ?? status?.lastUpdatedAt ?? null;
+  const lastCaptureText = statusLoading
+    ? "Loading…"
+    : statusUnavailable && !lastCaptureIso
+      ? "Unavailable"
+      : formatLastSyncAt(lastCaptureIso);
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
@@ -134,7 +150,7 @@ export function SyncControl() {
             aria-hidden
           />
           <span className={`text-[11px] font-medium ${pipelineStyle.text}`}>
-            {syncPipelineLabels[pipelineStatus]}
+            {statusLoading ? "Syncing" : syncPipelineLabels[pipelineStatus]}
           </span>
           {score != null ? (
             <span className={`text-[11px] font-medium ${memoryFreshnessStyle(score)}`}>
@@ -149,11 +165,8 @@ export function SyncControl() {
           ) : null}
         </div>
         <p className="text-[10px] text-muted-foreground">
-          Last capture{" "}
-          {formatLastSyncAt(
-            freshness?.lastCaptureAt ?? status?.lastFrameAt ?? status?.lastUpdatedAt ?? null,
-          )}
-          {status?.freshnessLabel ? ` · ${status.freshnessLabel}` : ""}
+          Last capture {lastCaptureText}
+          {status?.freshnessLabel && !statusLoading ? ` · ${status.freshnessLabel}` : ""}
         </p>
       </div>
       <Button

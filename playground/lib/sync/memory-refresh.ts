@@ -272,8 +272,10 @@ export async function runMemoryRefresh(options?: {
     const sessionCountDates = [...new Set([...syncWindowDates, ...datesToRebuild])];
     const afterSessions = await sessionCountForDates(sessionCountDates);
     sessionsCreated = Math.max(0, afterSessions - beforeSessions);
-  } catch {
+  } catch (firstErr) {
     retryCount += 1;
+    const { closeSqlPool } = await import("@/lib/db/client");
+    closeSqlPool();
     await sleep(RETRY_DELAY_MS);
     try {
       const derived = await rebuildDerivedLayers(datesToRebuild, true);
@@ -282,6 +284,7 @@ export async function runMemoryRefresh(options?: {
       stagesCompleted.push("memory_refresh_retry");
     } catch {
       stagesCompleted.push("memory_refresh_failed");
+      console.error("[memory-refresh] rebuild failed after retry:", firstErr);
     }
   }
 

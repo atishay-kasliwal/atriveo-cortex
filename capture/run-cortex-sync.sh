@@ -19,6 +19,18 @@ source "${DRIVE_ROOT}/screenpipe-env.sh" 2>/dev/null || true
 export SCREENPIPE_DB="${SCREENPIPE_DB:-${DRIVE_ROOT}/screenpipe-data/db.sqlite}"
 export SCREENPIPE_DATA_DIR="${SCREENPIPE_DATA_DIR:-${DRIVE_ROOT}/screenpipe-data}"
 
+# launchd can start before the external volume is mounted
+elapsed=0
+max_wait=300
+while [[ ! -d "${DRIVE_ROOT}" ]] || [[ ! -d "${REPO_ROOT}/playground" ]]; do
+  if (( elapsed >= max_wait )); then
+    echo "Volume or repo not ready after ${max_wait}s" >&2
+    exit 1
+  fi
+  sleep 5
+  elapsed=$((elapsed + 5))
+done
+
 # launchd cannot read dotenv on external volumes; use local copy from install-capture-agents.sh
 LOCAL_ENV="${SCRIPT_DIR}/.env.sync"
 if [[ -f "${LOCAL_ENV}" ]]; then
