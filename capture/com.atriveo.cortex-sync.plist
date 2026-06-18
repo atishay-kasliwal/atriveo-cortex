@@ -10,8 +10,14 @@
     <string>/bin/bash</string>
     <string>__CAPTURE_DIR__/run-cortex-sync.sh</string>
   </array>
+  <key>WorkingDirectory</key>
+  <string>__CAPTURE_DIR__</string>
   <key>EnvironmentVariables</key>
   <dict>
+    <key>HOME</key>
+    <string>__HOME__</string>
+    <key>USER</key>
+    <string>__USER__</string>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>CORTEX_DRIVE_ROOT</key>

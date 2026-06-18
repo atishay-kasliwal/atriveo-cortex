@@ -53,6 +53,12 @@ export type ProjectAttentionDTO = {
   momentum: "increasing" | "steady" | "declining";
 };
 
+export type CategoryTimeDTO = {
+  category: string;
+  label: string;
+  durationSec: number;
+};
+
 export type DayAttentionDTO = {
   date: string;
   generatedAt: string;
@@ -75,6 +81,9 @@ export type DayAttentionDTO = {
     project: string | null;
     attentionScore: number;
   }>;
+  visibleTime: CategoryTimeDTO[];
+  attentionTime: CategoryTimeDTO[];
+  attentionConfidence: "high" | "medium" | "low";
 };
 
 export type WeekAttentionDTO = {
@@ -137,6 +146,9 @@ function toDayDTO(report: DailyAttentionReport): DayAttentionDTO {
         project: s.project,
         attentionScore: s.attentionScore,
       })),
+    visibleTime: report.visibleTime,
+    attentionTime: report.attentionTime,
+    attentionConfidence: report.attentionConfidence,
   };
 }
 
@@ -179,6 +191,10 @@ async function loadOrComputeDay(date: string): Promise<DailyAttentionReport> {
       deepWork,
       projectAttention: payload.projectAttention ?? [],
       segments,
+      visibleTime: payload.visibleTime ?? [],
+      attentionTime: payload.attentionTime ?? [],
+      attentionConfidence: payload.attentionConfidence ?? "low",
+      averageAttributionConfidence: payload.averageAttributionConfidence ?? 0,
     };
   }
 
@@ -188,7 +204,12 @@ async function loadOrComputeDay(date: string): Promise<DailyAttentionReport> {
   }
 
   const sessions = await analyticsRepository.listSessions(date, date);
-  return buildDailyAttentionReport(date, stateSegments, sessions);
+  return buildDailyAttentionReport(date, stateSegments, sessions, {}, undefined, {
+    visibleTime: [],
+    attentionTime: [],
+    attentionConfidence: "low",
+    averageAttributionConfidence: 0,
+  });
 }
 
 export async function buildDayAttention(date?: string | null): Promise<DayAttentionDTO | null> {

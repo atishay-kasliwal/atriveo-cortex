@@ -50,6 +50,39 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
+function CategoryTimeList({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ category: string; label: string; durationSec: number }>;
+}) {
+  if (items.length === 0) {
+    return <p className="px-5 py-4 text-sm text-muted-foreground">No data yet.</p>;
+  }
+  const max = Math.max(...items.map((i) => i.durationSec), 1);
+  return (
+    <ul className="divide-y divide-border/40">
+      {items.map((row) => (
+        <li key={`${title}-${row.category}`} className="px-5 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[13px] font-medium">{row.label}</span>
+            <span className="font-mono text-[12px] tabular-nums text-muted-foreground">
+              {fmtDuration(row.durationSec)}
+            </span>
+          </div>
+          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2/60">
+            <div
+              className="h-full rounded-full bg-primary/70"
+              style={{ width: `${Math.max(2, (row.durationSec / max) * 100)}%` }}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function DayAttentionSections({ data }: { data: DayAttention }) {
   return (
     <div className="space-y-6">
@@ -65,6 +98,41 @@ function DayAttentionSections({ data }: { data: DayAttention }) {
           <Stat label="Interruptions" value={String(data.contextSwitching.interruptionCount)} />
         </div>
       </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ActivityCard
+          title="Visible time"
+          subtitle="What was on your screens — all monitors"
+        >
+          <CategoryTimeList title="visible" items={data.visibleTime} />
+        </ActivityCard>
+        <ActivityCard
+          title="Attention time"
+          subtitle="Where interaction suggests you were actually focused"
+        >
+          <CategoryTimeList title="attention" items={data.attentionTime} />
+        </ActivityCard>
+      </div>
+
+      <ActivityCard title="Attention confidence" subtitle="How reliably we inferred attention vs visibility">
+        <div className="flex items-center gap-3 px-5 py-4">
+          <Badge
+            variant={
+              data.attentionConfidence === "high"
+                ? "default"
+                : data.attentionConfidence === "medium"
+                  ? "secondary"
+                  : "outline"
+            }
+            className="capitalize"
+          >
+            {data.attentionConfidence}
+          </Badge>
+          <p className="text-sm text-muted-foreground">
+            Based on foreground window, keyboard, mouse, scroll, focus changes, and audio signals.
+          </p>
+        </div>
+      </ActivityCard>
 
       <ActivityCard title="Attention allocation" subtitle="Where engagement went — not just clock time">
         <div className="space-y-2">

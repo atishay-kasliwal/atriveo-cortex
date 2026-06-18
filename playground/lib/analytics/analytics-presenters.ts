@@ -10,6 +10,7 @@ import {
 import {
   aggregateAppUsage,
   aggregateProjectUsage,
+  aggregateWebsiteCategories,
   aggregateWebsiteUsage,
   getEmergingIdeas,
   getOpenLoopBriefs,
@@ -156,6 +157,7 @@ export async function buildWeekActivity(
   );
   const sessionRows = await listSessions(startDate, endDate);
   const sessions = sessionsToTimeline(sessionRows);
+  const websites = aggregateWebsiteUsage(await listWebsiteUsage(startDate, endDate));
 
   return {
     startDate,
@@ -165,7 +167,8 @@ export async function buildWeekActivity(
     days,
     sessions,
     apps: aggregateAppUsage(await listApplicationUsage(startDate, endDate)),
-    websites: aggregateWebsiteUsage(await listWebsiteUsage(startDate, endDate)),
+    websites,
+    websiteCategories: aggregateWebsiteCategories(websites),
     projects: toProjectTimeDTO(aggregateProjectUsage(sessionRows)),
     appsByDay: await groupAppsByDay(startDate, endDate),
     projectsByDay: await groupProjectsByDay(startDate, endDate),
@@ -241,6 +244,8 @@ export async function buildMonthActivity(
     monthInsight = `${activeDays} active days. Peak week started ${peakWeek.weekStart} with ${Math.round(peakWeek.activeSec / 3600)}h tracked.`;
   }
 
+  const websites = aggregateWebsiteUsage(await listWebsiteUsage(startDate, endDate));
+
   return {
     startDate,
     endDate,
@@ -251,7 +256,8 @@ export async function buildMonthActivity(
     projectsByWeek,
     topProjects: projects.slice(0, 8),
     apps: aggregateAppUsage(await listApplicationUsage(startDate, endDate)),
-    websites: aggregateWebsiteUsage(await listWebsiteUsage(startDate, endDate)),
+    websites,
+    websiteCategories: aggregateWebsiteCategories(websites),
     projects,
     monthInsight,
     emergingIdeas: await getEmergingIdeas(),

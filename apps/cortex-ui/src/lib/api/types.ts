@@ -409,6 +409,9 @@ export type DayAttention = {
     project: string | null;
     attentionScore: number;
   }>;
+  visibleTime: Array<{ category: string; label: string; durationSec: number }>;
+  attentionTime: Array<{ category: string; label: string; durationSec: number }>;
+  attentionConfidence: "high" | "medium" | "low";
 };
 
 export type WeekAttention = {
@@ -528,11 +531,29 @@ export type AppUsage = {
   category: ActivityCategory;
 };
 
+export type WebsiteCategory =
+  | "build"
+  | "research"
+  | "communication"
+  | "networking"
+  | "entertainment"
+  | "shopping"
+  | "finance"
+  | "infrastructure"
+  | "unknown";
+
 export type WebsiteUsage = {
   domain: string;
   durationSec: number;
   visits: number;
-  category: ActivityCategory;
+  category: WebsiteCategory;
+  confidence: number;
+};
+
+export type WebsiteCategoryUsage = {
+  category: WebsiteCategory;
+  label: string;
+  durationSec: number;
 };
 
 export type ProjectTime = {
@@ -573,6 +594,7 @@ export type TodayActivity = {
   timeline: TimelineBlock[];
   apps: AppUsage[];
   websites: WebsiteUsage[];
+  websiteCategories: WebsiteCategoryUsage[];
   projects: ProjectTime[];
   emergingIdeas: IdeaTrend[];
   openLoops: OpenLoopBrief[];

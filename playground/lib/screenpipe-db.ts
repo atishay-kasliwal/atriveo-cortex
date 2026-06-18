@@ -24,11 +24,21 @@ export function fetchFramesForWindow(
 ): FrameRow[] {
   if (!screenpipeDbExists()) return [];
   const db = openScreenpipe();
+  const columns = new Set(
+    (db.prepare("PRAGMA table_info(frames)").all() as Array<{ name: string }>).map(
+      (c) => c.name,
+    ),
+  );
+  const extras: string[] = [];
+  if (columns.has("focused")) extras.push("focused");
+  if (columns.has("device_name")) extras.push("device_name");
+  if (columns.has("browser_url")) extras.push("browser_url");
+  const extraSql = extras.length > 0 ? `, ${extras.join(", ")}` : "";
   const frames = db
     .prepare(
       `SELECT id, timestamp, app_name, window_name, text_source,
               substr(COALESCE(full_text, accessibility_text, ''), 1, 500) AS text,
-              snapshot_path
+              snapshot_path${extraSql}
        FROM frames
        WHERE timestamp >= ? AND timestamp < ?
        ORDER BY timestamp ASC`,
@@ -38,20 +48,72 @@ export function fetchFramesForWindow(
   return frames;
 }
 
-/** UI interaction events in a time window for idle detection. */
+export type AnalyticsUiEvent = {
+  timestamp: string;
+  event_type: string;
+  app_name?: string | null;
+  window_title?: string | null;
+  browser_url?: string | null;
+};
+
+/** UI interaction events in a time window for idle + attention attribution. */
 export function fetchUiEventsForWindow(
   windowStart: string,
   windowEnd: string,
-): { timestamp: string; event_type: string }[] {
+): AnalyticsUiEvent[] {
   if (!screenpipeDbExists()) return [];
   const db = openScreenpipe();
+  const columns = new Set(
+    (db.prepare("PRAGMA table_info(ui_events)").all() as Array<{ name: string }>).map(
+      (c) => c.name,
+    ),
+  );
+  const fields = ["timestamp", "event_type"];
+  if (columns.has("app_name")) fields.push("app_name");
+  if (columns.has("window_title")) fields.push("window_title");
+  if (columns.has("browser_url")) fields.push("browser_url");
   const rows = db
     .prepare(
-      `SELECT timestamp, event_type FROM ui_events
+      `SELECT ${fields.join(", ")} FROM ui_events
        WHERE timestamp >= ? AND timestamp < ?
        ORDER BY timestamp ASC`,
     )
-    .all(windowStart, windowEnd) as { timestamp: string; event_type: string }[];
+    .all(windowStart, windowEnd) as AnalyticsUiEvent[];
+  db.close();
+  return rows;
+}
+
+/** Audio segments for media-attention detection. */
+export function fetchAudioForWindow(
+  windowStart: string,
+  windowEnd: string,
+): Array<{ timestamp: string; device: string | null; transcription: string | null }> {
+  if (!screenpipeDbExists()) return [];
+  const db = openScreenpipe();
+  const hasTable = (
+    db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='audio_transcriptions'",
+      )
+      .get() as { name: string } | undefined
+  )?.name;
+  if (!hasTable) {
+    db.close();
+    return [];
+  }
+  const rows = db
+    .prepare(
+      `SELECT timestamp, device, transcription
+       FROM audio_transcriptions
+       WHERE timestamp >= ? AND timestamp < ?
+       ORDER BY timestamp ASC
+       LIMIT 500`,
+    )
+    .all(windowStart, windowEnd) as Array<{
+    timestamp: string;
+    device: string | null;
+    transcription: string | null;
+  }>;
   db.close();
   return rows;
 }

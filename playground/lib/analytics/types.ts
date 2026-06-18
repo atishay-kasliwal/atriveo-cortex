@@ -47,6 +47,10 @@ export type FrameInput = {
   timestamp: string;
   app_name: string | null;
   window_name: string | null;
+  text?: string | null;
+  focused?: boolean | null;
+  device_name?: string | null;
+  browser_url?: string | null;
 };
 
 export type AttributionResult = {

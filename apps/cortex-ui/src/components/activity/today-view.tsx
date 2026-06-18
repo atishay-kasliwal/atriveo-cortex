@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { ActivityBreakdown } from "@/components/activity/activity-breakdown";
 import { ActivityCard, AllocationRow } from "@/components/activity/shared";
+import {
+  WebsiteCategoryBadge,
+  WebsiteCategorySummary,
+} from "@/components/activity/website-categories";
 import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
 import { WorkTimeline } from "@/components/activity/work-timeline";
 import { EmptyState } from "@/components/dashboard/states";
@@ -83,8 +87,11 @@ export function TodayView({
         <ActivityCard title="Applications" subtitle={appsSubtitle}>
           <AppList items={data.apps} />
         </ActivityCard>
-        <ActivityCard title="Websites" subtitle="Domains you visited">
-          <WebsiteList items={data.websites} />
+        <ActivityCard title="Websites" subtitle="Where your web time went">
+          <WebsiteList
+            items={data.websites}
+            categories={data.websiteCategories ?? []}
+          />
         </ActivityCard>
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -189,23 +196,47 @@ function AppList({ items }: { items: TodayActivity["apps"] }) {
   );
 }
 
-function WebsiteList({ items }: { items: TodayActivity["websites"] }) {
+function WebsiteList({
+  items,
+  categories,
+}: {
+  items: TodayActivity["websites"];
+  categories: TodayActivity["websiteCategories"];
+}) {
   if (items.length === 0) return <MiniEmpty icon={Globe} label="No websites yet" />;
   const max = Math.max(...items.map((i) => i.durationSec), 1);
   return (
-    <ul className="divide-y divide-border/40">
-      {items.slice(0, 8).map((w) => (
-        <li key={w.domain}>
-          <AllocationRow
-            label={w.domain}
-            sub={`${w.visits} visits`}
-            durationSec={w.durationSec}
-            max={max}
-            category={w.category}
-          />
-        </li>
-      ))}
-    </ul>
+    <div>
+      <WebsiteCategorySummary items={categories} />
+      <ul className="divide-y divide-border/40">
+        {items.slice(0, 8).map((w) => (
+          <li key={w.domain}>
+            <div className="group flex items-center gap-3 px-5 py-2.5 transition hover:bg-surface-2/30">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-[13px]">{w.domain}</span>
+                  <WebsiteCategoryBadge category={w.category} />
+                </div>
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2/60">
+                  <div
+                    className="h-full rounded-full bg-gradient-brand"
+                    style={{ width: `${Math.max(2, (w.durationSec / max) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-mono text-[12px] tabular-nums text-muted-foreground group-hover:text-foreground">
+                  {fmtDuration(w.durationSec)}
+                </div>
+                <div className="font-mono text-[10px] text-muted-foreground">
+                  {w.visits} visits
+                </div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

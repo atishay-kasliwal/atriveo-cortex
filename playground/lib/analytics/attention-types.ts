@@ -65,6 +65,12 @@ export type AttentionScoreBreakdown = {
   idleLeakage: number;
 };
 
+export type CategoryTimeRollup = {
+  category: string;
+  label: string;
+  durationSec: number;
+};
+
 export type DailyAttentionReport = {
   date: string;
   generatedAt: string;
@@ -74,6 +80,10 @@ export type DailyAttentionReport = {
   deepWork: DeepWorkSession[];
   projectAttention: ProjectAttention[];
   segments: AttentionSegment[];
+  visibleTime: CategoryTimeRollup[];
+  attentionTime: CategoryTimeRollup[];
+  attentionConfidence: "high" | "medium" | "low";
+  averageAttributionConfidence: number;
 };
 
 export type WeeklyAttentionReport = {

@@ -403,6 +403,10 @@ export function buildDailyAttentionReport(
   sessions: ActivitySessionRow[],
   options: AttentionEngineOptions = {},
   priorProjectPercents?: Map<string, number>,
+  attribution?: Pick<
+    DailyAttentionReport,
+    "visibleTime" | "attentionTime" | "attentionConfidence" | "averageAttributionConfidence"
+  >,
 ): DailyAttentionReport {
   const daySessions = sessions.filter((s) => s.date === date);
   const segments = buildAttentionSegments(date, stateSegments, daySessions, options);
@@ -426,5 +430,9 @@ export function buildDailyAttentionReport(
     deepWork,
     projectAttention,
     segments,
+    visibleTime: attribution?.visibleTime ?? [],
+    attentionTime: attribution?.attentionTime ?? [],
+    attentionConfidence: attribution?.attentionConfidence ?? "low",
+    averageAttributionConfidence: attribution?.averageAttributionConfidence ?? 0,
   };
 }

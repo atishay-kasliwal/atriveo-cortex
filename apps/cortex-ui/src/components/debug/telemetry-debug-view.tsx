@@ -110,7 +110,6 @@ function WebsiteList({ items }: { items: TodayActivity["websites"] }) {
             sub={`${w.visits} visits`}
             durationSec={w.durationSec}
             max={max}
-            category={w.category}
           />
         </li>
       ))}

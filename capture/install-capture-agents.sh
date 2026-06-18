@@ -12,7 +12,7 @@ LOG_DIR="${HOME}/Library/Logs/Atriveo"
 
 mkdir -p "${LOG_DIR}" "${AGENTS_DIR}" "${CAPTURE_DIR}"
 
-for script in wait-for-volume.sh run-screenpipe.sh run-cortex-sync.sh; do
+for script in launchd-env.sh wait-for-volume.sh run-screenpipe.sh run-cortex-sync.sh; do
   cp "${REPO_ROOT}/capture/${script}" "${CAPTURE_DIR}/${script}"
   chmod +x "${CAPTURE_DIR}/${script}"
 done
@@ -26,6 +26,7 @@ install_plist() {
     -e "s|__REPO_ROOT__|${REPO_ROOT}|g" \
     -e "s|__CAPTURE_DIR__|${CAPTURE_DIR}|g" \
     -e "s|__HOME__|${HOME}|g" \
+    -e "s|__USER__|$(id -un)|g" \
     "${src}" > "${dest}"
   echo "Installed ${dest}"
 }

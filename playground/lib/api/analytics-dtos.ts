@@ -4,6 +4,7 @@
 
 import { isoWeekStart, localDateString } from "@/lib/analytics/aggregator";
 import { toUiCategory } from "@/lib/analytics/category-map";
+import { sanitizeWebsiteList } from "@/lib/analytics/website-intelligence";
 import type { ActivitySessionRow } from "@/lib/analytics/types";
 
 export type TimelineBlockDTO = {
@@ -34,6 +35,13 @@ export type WebsiteUsageDTO = {
   durationSec: number;
   visits: number;
   category: string;
+  confidence: number;
+};
+
+export type WebsiteCategoryUsageDTO = {
+  category: string;
+  label: string;
+  durationSec: number;
 };
 
 export type ProjectTimeDTO = {
@@ -73,6 +81,7 @@ export type TodayActivityDTO = {
   timeline: TimelineBlockDTO[];
   apps: AppUsageDTO[];
   websites: WebsiteUsageDTO[];
+  websiteCategories: WebsiteCategoryUsageDTO[];
   projects: ProjectTimeDTO[];
   emergingIdeas: IdeaTrendDTO[];
   openLoops: OpenLoopBriefDTO[];
@@ -241,7 +250,7 @@ export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
     applicationsUsed = [];
   }
   try {
-    websitesUsed = JSON.parse(row.websites_used) as string[];
+    websitesUsed = sanitizeWebsiteList(JSON.parse(row.websites_used) as string[]);
   } catch {
     websitesUsed = [];
   }

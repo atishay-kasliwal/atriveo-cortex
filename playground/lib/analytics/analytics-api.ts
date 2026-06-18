@@ -8,6 +8,7 @@ import { getDailySummary } from "@/lib/analytics/analytics-db";
 import {
   aggregateAppUsage,
   aggregateProjectUsage,
+  aggregateWebsiteCategories,
   aggregateWebsiteUsage,
   categoryBreakdownForDay,
   getEmergingIdeas,
@@ -25,6 +26,7 @@ async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
   const sessions = await listSessions(date, date);
   const apps = aggregateAppUsage(await listApplicationUsage(date, date));
   const websites = aggregateWebsiteUsage(await listWebsiteUsage(date, date));
+  const websiteCategories = aggregateWebsiteCategories(websites);
   const projects = toProjectTimeDTO(aggregateProjectUsage(sessions));
 
   const totals = summary
@@ -48,6 +50,7 @@ async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
     timeline: sessionsToTimeline(sessions),
     apps,
     websites,
+    websiteCategories,
     projects,
     emergingIdeas: await getEmergingIdeas(),
     openLoops: await getOpenLoopBriefs(),

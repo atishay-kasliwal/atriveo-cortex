@@ -11,7 +11,13 @@ import {
   listSessions,
   listWebsiteUsage,
 } from "./analytics-db";
-import { categorizeApp, categorizeDomain, toUiCategory } from "./category-map";
+import { categorizeApp, toUiCategory } from "./category-map";
+import {
+  buildWebsiteIntel,
+  sanitizeWebsiteList,
+  websiteCategoryLabel,
+  type WebsiteCategory,
+} from "./website-intelligence";
 import type {
   ActivitySessionRow,
   ApplicationUsageRow,
@@ -45,21 +51,55 @@ export function aggregateAppUsage(
 
 export function aggregateWebsiteUsage(
   rows: WebsiteUsageRow[],
-): Array<{ domain: string; durationSec: number; visits: number; category: string }> {
+): Array<{
+  domain: string;
+  durationSec: number;
+  visits: number;
+  category: WebsiteCategory;
+  confidence: number;
+}> {
   const duration = new Map<string, number>();
   const visits = new Map<string, number>();
+  const confidence = new Map<string, number>();
+
   for (const r of rows) {
-    duration.set(r.domain, (duration.get(r.domain) ?? 0) + r.active_minutes * 60);
-    visits.set(r.domain, (visits.get(r.domain) ?? 0) + r.visit_count);
+    const intel = buildWebsiteIntel(r.domain, 0.72);
+    if (!intel) continue;
+    const { domain } = intel;
+    duration.set(domain, (duration.get(domain) ?? 0) + r.active_minutes * 60);
+    visits.set(domain, (visits.get(domain) ?? 0) + r.visit_count);
+    confidence.set(domain, Math.max(confidence.get(domain) ?? 0, intel.confidence));
   }
+
   const domains = new Set([...duration.keys(), ...visits.keys()]);
   return [...domains]
-    .map((domain) => ({
-      domain,
-      durationSec: Math.round(duration.get(domain) ?? 0),
-      visits: visits.get(domain) ?? 0,
-      category: toUiCategory(categorizeDomain(domain)),
+    .map((domain) => {
+      const intel = buildWebsiteIntel(domain, confidence.get(domain) ?? 0.72)!;
+      return {
+        domain,
+        durationSec: Math.round(duration.get(domain) ?? 0),
+        visits: visits.get(domain) ?? 0,
+        category: intel.category,
+        confidence: intel.confidence,
+      };
+    })
+    .sort((a, b) => b.durationSec - a.durationSec);
+}
+
+export function aggregateWebsiteCategories(
+  websites: Array<{ category: WebsiteCategory; durationSec: number }>,
+): Array<{ category: WebsiteCategory; label: string; durationSec: number }> {
+  const totals = new Map<WebsiteCategory, number>();
+  for (const w of websites) {
+    totals.set(w.category, (totals.get(w.category) ?? 0) + w.durationSec);
+  }
+  return [...totals.entries()]
+    .map(([category, durationSec]) => ({
+      category,
+      label: websiteCategoryLabel(category),
+      durationSec: Math.round(durationSec),
     }))
+    .filter((r) => r.durationSec > 0)
     .sort((a, b) => b.durationSec - a.durationSec);
 }
 
@@ -157,7 +197,7 @@ export function sessionsToTimeline(sessions: ActivitySessionRow[]) {
       applicationsUsed = [];
     }
     try {
-      websitesUsed = JSON.parse(s.websites_used) as string[];
+      websitesUsed = sanitizeWebsiteList(JSON.parse(s.websites_used) as string[]);
     } catch {
       websitesUsed = [];
     }

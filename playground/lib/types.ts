@@ -6,6 +6,9 @@ export type FrameRow = {
   text_source: string | null;
   text: string | null;
   snapshot_path: string | null;
+  focused?: boolean | null;
+  device_name?: string | null;
+  browser_url?: string | null;
 };
 
 export type UiEventRow = {
