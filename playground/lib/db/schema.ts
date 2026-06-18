@@ -274,6 +274,8 @@ export const activitySessions = pgTable(
     primaryProject: text("primary_project"),
     supportingProject: text("supporting_project"),
     confidence: real("confidence").notNull().default(0),
+    projectConfidence: real("project_confidence").notNull().default(0),
+    attributionEvidence: text("attribution_evidence").notNull().default("[]"),
     sessionType: text("session_type").notNull(),
     sessionLabel: text("session_label").notNull().default("Work Session"),
     applicationsUsed: text("applications_used").notNull().default("[]"),

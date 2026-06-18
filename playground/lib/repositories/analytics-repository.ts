@@ -58,12 +58,17 @@ export class AnalyticsRepository {
 
   async saveSessions(date: string, sessions: DetectedSession[]): Promise<void> {
     for (const s of sessions) {
+      const enriched = s as DetectedSession & {
+        projectConfidence?: number;
+        attributionEvidence?: unknown[];
+      };
       await runUnsafe(
         `INSERT INTO activity_sessions
          (start_time, end_time, duration_minutes, dominant_app, dominant_project,
-          primary_project, supporting_project, confidence,
-          session_type, session_label, applications_used, websites_used, date)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          primary_project, supporting_project, confidence, project_confidence,
+          attribution_evidence, session_type, session_label, applications_used,
+          websites_used, date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
         [
           s.startTime,
           s.endTime,
@@ -73,6 +78,8 @@ export class AnalyticsRepository {
           s.primaryProject ?? s.dominantProject,
           s.supportingProject ?? null,
           s.confidence ?? 0,
+          enriched.projectConfidence ?? s.confidence ?? 0,
+          JSON.stringify(enriched.attributionEvidence ?? []),
           s.sessionType,
           s.sessionLabel,
           JSON.stringify(s.applicationsUsed),
@@ -180,7 +187,8 @@ export class AnalyticsRepository {
     return runUnsafe(
       `SELECT id, start_time, end_time, duration_minutes, dominant_app,
               dominant_project, primary_project, supporting_project, confidence,
-              session_type, session_label, applications_used, websites_used, date
+              project_confidence, attribution_evidence, session_type, session_label,
+              applications_used, websites_used, date
        FROM activity_sessions
        WHERE date >= $1 AND date <= $2
        ORDER BY start_time ASC`,

@@ -149,8 +149,16 @@ export type TimelineBlock = {
   projectName?: string;
   supportingProject?: string;
   confidence?: number;
+  projectConfidence?: number;
+  attributionEvidence?: AttributionEvidence[];
   applicationsUsed?: string[];
   websitesUsed?: string[];
+};
+
+export type AttributionEvidence = {
+  type: string;
+  label: string;
+  score: number;
 };
 
 export type AppUsage = {

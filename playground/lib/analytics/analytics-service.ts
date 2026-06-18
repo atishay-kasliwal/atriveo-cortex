@@ -19,6 +19,14 @@ import type {
   WebsiteUsageRow,
 } from "./types";
 
+function parseAttributionEvidence(raw: string) {
+  try {
+    return JSON.parse(raw) as Array<{ type: string; label: string; score: number }>;
+  } catch {
+    return [];
+  }
+}
+
 export function aggregateAppUsage(
   rows: ApplicationUsageRow[],
 ): Array<{ app: string; durationSec: number; category: string }> {
@@ -161,7 +169,9 @@ export function sessionsToTimeline(sessions: ActivitySessionRow[]) {
       app: s.dominant_app,
       projectName: s.primary_project ?? s.dominant_project ?? undefined,
       supportingProject: s.supporting_project ?? undefined,
-      confidence: s.confidence ?? 0,
+      confidence: s.project_confidence ?? s.confidence ?? 0,
+      projectConfidence: s.project_confidence ?? s.confidence ?? 0,
+      attributionEvidence: parseAttributionEvidence(s.attribution_evidence),
       applicationsUsed,
       websitesUsed,
     };

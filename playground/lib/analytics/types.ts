@@ -35,6 +35,8 @@ export type DetectedSession = {
   supportingProject?: string | null;
   confidence?: number;
   projectSeconds?: Map<string, number>;
+  repoPathsUsed?: string[];
+  windowSnippets?: string[];
   sessionType: SessionType;
   sessionLabel: string;
   applicationsUsed: string[];
@@ -90,6 +92,8 @@ export type ActivitySessionRow = {
   primary_project: string | null;
   supporting_project: string | null;
   confidence: number;
+  project_confidence: number;
+  attribution_evidence: string;
   session_type: SessionType;
   session_label: string;
   applications_used: string;

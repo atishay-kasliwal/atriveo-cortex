@@ -13,7 +13,7 @@ import {
   sessionLabelForType,
   topKeysByValue,
 } from "./session-stitching";
-import { extractDomain } from "./website-parser";
+import { extractDomain, extractRepoPath } from "./website-parser";
 import type {
   AttributionResult,
   DetectedSession,
@@ -31,6 +31,8 @@ type SessionAccumulator = {
   appSeconds: Map<string, number>;
   domainSeconds: Map<string, number>;
   projectSeconds: Map<string, number>;
+  repoPathSeconds: Map<string, number>;
+  windowSnippets: Set<string>;
   categorySeconds: Map<SessionType, number>;
   bucket: ReturnType<typeof sessionCategoryBucket>;
 };
@@ -86,6 +88,8 @@ function emptyAccumulator(firstFrame: FrameInput): SessionAccumulator {
     appSeconds: new Map(),
     domainSeconds: new Map(),
     projectSeconds: new Map(),
+    repoPathSeconds: new Map(),
+    windowSnippets: new Set(),
     categorySeconds,
     bucket: sessionCategoryBucket(sessionType),
   };
@@ -114,6 +118,8 @@ function finalizeSession(
     dominantApp,
     dominantProject,
     projectSeconds: new Map(acc.projectSeconds),
+    repoPathsUsed: topKeysByValue(acc.repoPathSeconds),
+    windowSnippets: [...acc.windowSnippets].slice(0, 6),
     sessionType: dominantType,
     sessionLabel: sessionLabelForType(dominantType),
     applicationsUsed: topKeysByValue(acc.appSeconds),
@@ -138,6 +144,12 @@ function attributeGap(
 
   const project = matchProjectFrame(prev, projectNames);
   if (project) addSeconds(acc.projectSeconds, project, attribSec);
+
+  const repo = extractRepoPath(prev.window_name);
+  if (repo) addSeconds(acc.repoPathSeconds, repo, attribSec);
+
+  const snippet = (prev.window_name ?? "").trim();
+  if (snippet.length >= 4) acc.windowSnippets.add(snippet.slice(0, 120));
 }
 
 export function processFrames(

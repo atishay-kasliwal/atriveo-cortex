@@ -24,7 +24,8 @@ import {
   startAnalyticsRun,
 } from "./analytics-db";
 import { detectActivityStates } from "./idle-detector";
-import { loadSessionEvidence } from "./session-evidence";
+import { buildProjectSignalIndex } from "./project-signals";
+import { loadExtendedSessionEvidence } from "./session-evidence";
 import { enrichSessions } from "./session-intelligence";
 import { processFrames } from "./session-detector";
 
@@ -44,8 +45,9 @@ export async function syncDay(date: string): Promise<SyncResult> {
     const uiEvents = fetchUiEventsForWindow(start, end);
     const projectNames = (await listProjectSummaries()).map((p) => p.canonical_project);
     const attribution = processFrames(frames, projectNames);
-    const evidence = await loadSessionEvidence(start, end);
-    const enrichedSessions = enrichSessions(attribution.sessions, evidence);
+    const evidence = await loadExtendedSessionEvidence(start, end);
+    const signalIndex = await buildProjectSignalIndex();
+    const enrichedSessions = enrichSessions(attribution.sessions, evidence, signalIndex);
     const stateResult = detectActivityStates(date, frames, uiEvents, start, end);
     recordsProcessed = attribution.recordsProcessed + uiEvents.length;
 

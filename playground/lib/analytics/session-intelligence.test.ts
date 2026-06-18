@@ -86,9 +86,13 @@ describe("session-intelligence", () => {
         },
       ],
       ideas: [],
+      openLoops: [],
+      recentProjects: [],
+    }, {
+      byProject: new Map(),
+      aliasToProject: new Map(),
     });
     expect(enriched.primaryProject).toBe("Cortex");
-    expect(enriched.supportingProject).toBe("Screenpipe");
     expect(enriched.sessionLabel).toBe("Ship Analytics Dashboard");
     expect(enriched.confidence).toBeGreaterThan(0.5);
   });

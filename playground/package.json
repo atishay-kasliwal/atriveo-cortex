@@ -19,6 +19,8 @@
     "migrate:idle": "tsx scripts/migrate-idle-detection.ts",
     "migrate:sessions": "tsx scripts/migrate-session-intelligence.ts",
     "backfill:sessions": "tsx scripts/backfill-session-intelligence.ts",
+    "migrate:attribution": "tsx scripts/migrate-project-attribution.ts",
+    "audit:attribution": "tsx scripts/audit-project-attribution.ts",
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {

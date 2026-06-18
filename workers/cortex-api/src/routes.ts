@@ -141,6 +141,22 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/projects/attribution", async (c) => {
+    try {
+      const date = todayDateParam(c.req.query("date") ?? null);
+      const { buildProjectAttributionReport } = await import(
+        "@/lib/analytics/project-attribution-api"
+      );
+      return apiSuccess(c, await buildProjectAttributionReport(date));
+    } catch (e) {
+      return apiError(
+        c,
+        e instanceof Error ? e.message : "Failed to load project attribution",
+        500,
+      );
+    }
+  });
+
   app.get("/api/memory/projects", async (c) => {
     try {
       const { page, limit } = parsePagination(new URL(c.req.url).searchParams);

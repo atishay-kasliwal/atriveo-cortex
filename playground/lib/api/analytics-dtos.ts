@@ -17,6 +17,8 @@ export type TimelineBlockDTO = {
   projectName?: string;
   supportingProject?: string;
   confidence?: number;
+  projectConfidence?: number;
+  attributionEvidence?: Array<{ type: string; label: string; score: number }>;
   applicationsUsed?: string[];
   websitesUsed?: string[];
 };
@@ -158,9 +160,52 @@ export type WorkSessionDTO = {
   supportingProject: string | null;
   category: string;
   confidence: number;
+  projectConfidence: number;
   dominantApp: string;
   applicationsUsed: string[];
   websitesUsed: string[];
+  evidence?: AttributionEvidenceDTO[];
+};
+
+export type AttributionEvidenceDTO = {
+  type: string;
+  label: string;
+  score: number;
+};
+
+export type AttributionMetricsDTO = {
+  totalSessions: number;
+  attributedSessions: number;
+  attributionRate: number;
+  nullAttributionRate: number;
+  workSessionCount: number;
+  workAttributedSessions: number;
+  workAttributionRate: number;
+  highConfidenceSessions: number;
+  confidenceDistribution: {
+    high: number;
+    medium: number;
+    low: number;
+    none: number;
+  };
+};
+
+export type AttributedSessionDTO = WorkSessionDTO & {
+  attributed: boolean;
+  evidence: AttributionEvidenceDTO[];
+};
+
+export type ProjectAttributionReportDTO = {
+  date: string;
+  generatedAt: string;
+  metrics: AttributionMetricsDTO;
+  attributedSessions: AttributedSessionDTO[];
+  unattributedSessions: AttributedSessionDTO[];
+  failureReasons: {
+    topApps: Array<{ name: string; count: number }>;
+    topDomains: Array<{ name: string; count: number }>;
+    topReasons: string[];
+  };
 };
 
 export type ProjectAdvanceDTO = {
@@ -186,6 +231,7 @@ export type WeekSessionsDTO = {
 export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
   let applicationsUsed: string[] = [];
   let websitesUsed: string[] = [];
+  let evidence: AttributionEvidenceDTO[] = [];
   try {
     applicationsUsed = JSON.parse(row.applications_used) as string[];
   } catch {
@@ -195,6 +241,11 @@ export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
     websitesUsed = JSON.parse(row.websites_used) as string[];
   } catch {
     websitesUsed = [];
+  }
+  try {
+    evidence = JSON.parse(row.attribution_evidence) as AttributionEvidenceDTO[];
+  } catch {
+    evidence = [];
   }
   return {
     id: row.id,
@@ -206,9 +257,11 @@ export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
     supportingProject: row.supporting_project,
     category: toUiCategory(row.session_type),
     confidence: row.confidence ?? 0,
+    projectConfidence: row.project_confidence ?? row.confidence ?? 0,
     dominantApp: row.dominant_app,
     applicationsUsed,
     websitesUsed,
+    evidence,
   };
 }
 
