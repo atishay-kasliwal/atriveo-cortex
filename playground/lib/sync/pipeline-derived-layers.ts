@@ -74,8 +74,13 @@ export async function rebuildDerivedLayers(
   }
   await touchStage(SYNC_KEYS.lastAttentionComputed);
 
-  const healthReport = await buildProjectsHealth({ persist: true });
-  await touchStage(SYNC_KEYS.lastProjectHealthComputed);
+  const healthReport = await buildProjectsHealth({ persist: true }).catch((err) => {
+    console.error("[pipeline] project health persist failed:", err);
+    return { projects: [] as Awaited<ReturnType<typeof buildProjectsHealth>>["projects"] };
+  });
+  if (healthReport.projects.length > 0) {
+    await touchStage(SYNC_KEYS.lastProjectHealthComputed);
+  }
 
   return {
     loopsUpdated,

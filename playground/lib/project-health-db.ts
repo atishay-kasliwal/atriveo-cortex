@@ -19,6 +19,10 @@ function shiftDate(date: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function roundScore(value: number): number {
+  return Math.round(value);
+}
+
 export async function persistProjectHealthScores(
   results: ProjectHealthResult[],
   snapshotDate = localDateString(),
@@ -32,11 +36,11 @@ export async function persistProjectHealthScores(
       .insert(projectHealthScores)
       .values({
         project: r.projectName,
-        score: r.healthScore,
-        momentumScore: r.momentumScore,
-        executionScore: r.executionScore,
-        riskScore: r.riskScore,
-        attentionScore: r.attentionScore,
+        score: roundScore(r.healthScore),
+        momentumScore: roundScore(r.momentumScore),
+        executionScore: roundScore(r.executionScore),
+        riskScore: roundScore(r.riskScore),
+        attentionScore: roundScore(r.attentionScore),
         explanation: JSON.stringify(r.explanation),
         openLoops: r.openLoops,
         blockedWork: r.blockedWork,
@@ -47,11 +51,11 @@ export async function persistProjectHealthScores(
       .onConflictDoUpdate({
         target: [projectHealthScores.project, projectHealthScores.snapshotDate],
         set: {
-          score: r.healthScore,
-          momentumScore: r.momentumScore,
-          executionScore: r.executionScore,
-          riskScore: r.riskScore,
-          attentionScore: r.attentionScore,
+          score: roundScore(r.healthScore),
+          momentumScore: roundScore(r.momentumScore),
+          executionScore: roundScore(r.executionScore),
+          riskScore: roundScore(r.riskScore),
+          attentionScore: roundScore(r.attentionScore),
           explanation: JSON.stringify(r.explanation),
           openLoops: r.openLoops,
           blockedWork: r.blockedWork,
