@@ -51,14 +51,20 @@ export function evaluateCapturePipeline(
   const minutesSinceFrame = minutesSince(lastFrameAt, now);
   const minutesSinceSync = minutesSince(lastSyncAt, now);
 
-  const captureRunning = signals.capturePortOpen;
-  const captureActive =
-    minutesSinceFrame !== null && minutesSinceFrame * 60_000 <= CAPTURE_FRESH_MS;
   const syncHealthy =
     minutesSinceSync !== null && minutesSinceSync * 60_000 <= SYNC_FRESH_MS;
   const syncStale =
     lastSyncAt === null ||
     (minutesSinceSync !== null && minutesSinceSync * 60_000 > SYNC_STALE_MS);
+  const captureRecentlySeen =
+    minutesSinceFrame !== null &&
+    minutesSinceFrame * 60_000 <= CAPTURE_STALE_MS;
+  const captureRunning =
+    signals.capturePortOpen ||
+    signals.captureApiReachable ||
+    (syncHealthy && captureRecentlySeen);
+  const captureActive =
+    minutesSinceFrame !== null && minutesSinceFrame * 60_000 <= CAPTURE_FRESH_MS;
 
   let analyticsStale = false;
   if (lastFrameAt && lastSyncAt) {
@@ -73,26 +79,18 @@ export function evaluateCapturePipeline(
 
   let pipelineStatus: PipelineStatus;
 
-  if (
-    captureActive &&
-    syncHealthy &&
-    !analyticsStale
-  ) {
+  // Idle capture is healthy when ScreenPipe is up and sync is fresh.
+  if (captureRunning && syncHealthy && !analyticsStale) {
     pipelineStatus = "live";
   } else if (
     analyticsStale &&
-    minutesSinceFrame !== null &&
-    minutesSinceFrame * 60_000 <= CAPTURE_STALE_MS
+    (captureRunning || captureRecentlySeen)
   ) {
     pipelineStatus = "syncing";
-  } else if (
-    signals.hasHistoricalData ||
-    (minutesSinceFrame !== null && minutesSinceFrame * 60_000 <= CAPTURE_STALE_MS) ||
-    (minutesSinceSync !== null && minutesSinceSync * 60_000 <= SYNC_STALE_MS)
-  ) {
-    pipelineStatus = "stale";
+  } else if (syncStale || !captureRunning) {
+    pipelineStatus = signals.hasHistoricalData ? "stale" : "offline";
   } else {
-    pipelineStatus = "offline";
+    pipelineStatus = "syncing";
   }
 
   return {

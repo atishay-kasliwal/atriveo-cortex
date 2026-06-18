@@ -30,6 +30,7 @@ type SessionAccumulator = {
   activeSeconds: number;
   appSeconds: Map<string, number>;
   domainSeconds: Map<string, number>;
+  projectSeconds: Map<string, number>;
   categorySeconds: Map<SessionType, number>;
   bucket: ReturnType<typeof sessionCategoryBucket>;
 };
@@ -38,19 +39,41 @@ function addSeconds(map: Map<string, number>, key: string, sec: number): void {
   map.set(key, (map.get(key) ?? 0) + sec);
 }
 
+function matchProjectFrame(
+  frame: FrameInput,
+  projectNames: string[],
+): string | null {
+  if (projectNames.length === 0) return null;
+  const hay = `${frame.window_name ?? ""} ${frame.app_name ?? ""}`.toLowerCase();
+  for (const name of projectNames) {
+    if (hay.includes(name.toLowerCase())) return name;
+  }
+  return null;
+}
+
 function matchProject(
   frames: FrameInput[],
   projectNames: string[],
 ): string | null {
-  if (projectNames.length === 0) return null;
-  const lowerProjects = projectNames.map((p) => p.toLowerCase());
   for (const f of frames) {
-    const hay = `${f.window_name ?? ""} ${f.app_name ?? ""}`.toLowerCase();
-    for (let i = 0; i < projectNames.length; i++) {
-      if (hay.includes(lowerProjects[i]!)) return projectNames[i]!;
-    }
+    const hit = matchProjectFrame(f, projectNames);
+    if (hit) return hit;
   }
   return null;
+}
+
+function dominantProjectBySeconds(
+  projectSeconds: Map<string, number>,
+): string | null {
+  let best: string | null = null;
+  let bestSec = 0;
+  for (const [name, sec] of projectSeconds) {
+    if (sec > bestSec) {
+      best = name;
+      bestSec = sec;
+    }
+  }
+  return best;
 }
 
 function emptyAccumulator(firstFrame: FrameInput): SessionAccumulator {
@@ -62,6 +85,7 @@ function emptyAccumulator(firstFrame: FrameInput): SessionAccumulator {
     activeSeconds: 0,
     appSeconds: new Map(),
     domainSeconds: new Map(),
+    projectSeconds: new Map(),
     categorySeconds,
     bucket: sessionCategoryBucket(sessionType),
   };
@@ -78,13 +102,18 @@ function finalizeSession(
   const startTime = acc.frames[0]!.timestamp;
   const endTime = acc.frames[acc.frames.length - 1]!.timestamp;
 
+  const dominantProject =
+    dominantProjectBySeconds(acc.projectSeconds) ??
+    matchProject(acc.frames, projectNames);
+
   return {
     startTime,
     endTime,
     durationMinutes: acc.activeSeconds / 60,
     activeSeconds: acc.activeSeconds,
     dominantApp,
-    dominantProject: matchProject(acc.frames, projectNames),
+    dominantProject,
+    projectSeconds: new Map(acc.projectSeconds),
     sessionType: dominantType,
     sessionLabel: sessionLabelForType(dominantType),
     applicationsUsed: topKeysByValue(acc.appSeconds),
@@ -96,6 +125,7 @@ function attributeGap(
   acc: SessionAccumulator,
   prev: FrameInput,
   attribSec: number,
+  projectNames: string[],
 ): void {
   const app = normalizeAppName(prev.app_name);
   addSeconds(acc.appSeconds, app, attribSec);
@@ -105,6 +135,9 @@ function attributeGap(
   const sessionType = resolveSessionType(prev.app_name, domain);
   addSeconds(acc.categorySeconds, sessionType, attribSec);
   if (domain) addSeconds(acc.domainSeconds, domain, attribSec);
+
+  const project = matchProjectFrame(prev, projectNames);
+  if (project) addSeconds(acc.projectSeconds, project, attribSec);
 }
 
 export function processFrames(
@@ -154,7 +187,7 @@ export function processFrames(
 
     const attribMs = Math.min(gapMs, MAX_ATTRIBUTION_MS);
     const attribSec = attribMs / 1000;
-    attributeGap(acc, prev, attribSec);
+    attributeGap(acc, prev, attribSec, projectNames);
 
     const app = normalizeAppName(prev.app_name);
     addSeconds(appSeconds, app, attribSec);
@@ -176,7 +209,7 @@ export function processFrames(
       lastDomainMs = currMs;
     }
 
-    const project = matchProject([prev], projectNames);
+    const project = matchProjectFrame(prev, projectNames);
     if (project) addSeconds(projectSeconds, project, attribSec);
 
     const currDomain = extractDomain(curr.app_name, curr.window_name);

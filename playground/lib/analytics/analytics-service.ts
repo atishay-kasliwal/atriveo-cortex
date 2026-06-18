@@ -76,7 +76,9 @@ export function aggregateProjectUsage(
 
 export function sumSummaries(summaries: DailySummaryRow[]) {
   let activeSec = 0;
+  let passiveSec = 0;
   let idleSec = 0;
+  let sleepingSec = 0;
   let focusSec = 0;
   let meetingSec = 0;
   let projectsTouched = 0;
@@ -84,7 +86,9 @@ export function sumSummaries(summaries: DailySummaryRow[]) {
 
   for (const s of summaries) {
     activeSec += s.active_minutes * 60;
+    passiveSec += (s.passive_minutes ?? 0) * 60;
     idleSec += s.idle_minutes * 60;
+    sleepingSec += (s.sleeping_minutes ?? 0) * 60;
     focusSec += s.focused_minutes * 60;
     meetingSec += s.meeting_minutes * 60;
     projectsTouched = Math.max(projectsTouched, s.project_count);
@@ -93,8 +97,10 @@ export function sumSummaries(summaries: DailySummaryRow[]) {
 
   return {
     activeSec: Math.round(activeSec),
+    passiveSec: Math.round(passiveSec),
     focusSec: Math.round(focusSec),
     idleSec: Math.round(idleSec),
+    sleepingSec: Math.round(sleepingSec),
     meetingSec: Math.round(meetingSec),
     projectsTouched,
     openLoopsCount,
@@ -153,7 +159,9 @@ export function sessionsToTimeline(sessions: ActivitySessionRow[]) {
       category: toUiCategory(s.session_type),
       title: s.session_label || s.dominant_app,
       app: s.dominant_app,
-      projectName: s.dominant_project ?? undefined,
+      projectName: s.primary_project ?? s.dominant_project ?? undefined,
+      supportingProject: s.supporting_project ?? undefined,
+      confidence: s.confidence ?? 0,
       applicationsUsed,
       websitesUsed,
     };

@@ -147,6 +147,8 @@ export type TimelineBlock = {
   app?: string;
   projectId?: ID;
   projectName?: string;
+  supportingProject?: string;
+  confidence?: number;
   applicationsUsed?: string[];
   websitesUsed?: string[];
 };
@@ -191,8 +193,10 @@ export type TodayActivity = {
   date: ISODate;
   generatedAt: ISODate;
   activeSec: number;
+  passiveSec?: number;
   focusSec: number;
   idleSec: number;
+  sleepingSec?: number;
   meetingSec: number;
   projectsTouched: number;
   openLoopsCount: number;
@@ -235,8 +239,10 @@ export type WeekActivity = {
   endDate: ISODate;
   generatedAt: ISODate;
   activeSec: number;
+  passiveSec?: number;
   focusSec: number;
   idleSec: number;
+  sleepingSec?: number;
   meetingSec: number;
   projectsTouched: number;
   openLoopsCount: number;
@@ -275,8 +281,10 @@ export type MonthActivity = {
   endDate: ISODate;
   generatedAt: ISODate;
   activeSec: number;
+  passiveSec?: number;
   focusSec: number;
   idleSec: number;
+  sleepingSec?: number;
   meetingSec: number;
   projectsTouched: number;
   openLoopsCount: number;

@@ -11,6 +11,7 @@ import type {
   DetectedSession,
   WebsiteUsageRow,
 } from "./types";
+import type { ActivityStateSegment } from "./idle-detector";
 
 export async function startAnalyticsRun(
   windowStart: string,
@@ -56,6 +57,23 @@ export async function saveWebsiteUsage(
 
 export async function saveDailySummary(summary: DailySummaryRow): Promise<void> {
   await analyticsRepository.saveDailySummary(summary);
+}
+
+export async function saveStateSegments(
+  date: string,
+  segments: ActivityStateSegment[],
+): Promise<void> {
+  await analyticsRepository.saveStateSegments(
+    date,
+    segments.map((s) => ({
+      date,
+      start_time: s.startTime,
+      end_time: s.endTime,
+      state: s.state,
+      duration_minutes: s.durationMinutes,
+      confidence: s.confidence,
+    })),
+  );
 }
 
 export async function getDailySummary(date: string): Promise<DailySummaryRow | null> {

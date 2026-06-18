@@ -4,7 +4,7 @@
 
 import { getOpenLoopsReport } from "@/lib/open-loops";
 import { listProjectSummaries } from "@/lib/project-memory";
-import { fetchFramesForWindow } from "@/lib/screenpipe-db";
+import { fetchFramesForWindow, fetchUiEventsForWindow } from "@/lib/screenpipe-db";
 import {
   buildDailySummary,
   datesBetween,
@@ -19,9 +19,13 @@ import {
   saveApplicationUsage,
   saveDailySummary,
   saveSessions,
+  saveStateSegments,
   saveWebsiteUsage,
   startAnalyticsRun,
 } from "./analytics-db";
+import { detectActivityStates } from "./idle-detector";
+import { loadSessionEvidence } from "./session-evidence";
+import { enrichSessions } from "./session-intelligence";
 import { processFrames } from "./session-detector";
 
 export type SyncResult = {
@@ -37,17 +41,27 @@ export async function syncDay(date: string): Promise<SyncResult> {
 
   try {
     const frames = fetchFramesForWindow(start, end);
+    const uiEvents = fetchUiEventsForWindow(start, end);
     const projectNames = (await listProjectSummaries()).map((p) => p.canonical_project);
     const attribution = processFrames(frames, projectNames);
-    recordsProcessed = attribution.recordsProcessed;
+    const evidence = await loadSessionEvidence(start, end);
+    const enrichedSessions = enrichSessions(attribution.sessions, evidence);
+    const stateResult = detectActivityStates(date, frames, uiEvents, start, end);
+    recordsProcessed = attribution.recordsProcessed + uiEvents.length;
 
     await clearAnalyticsForDate(date);
-    await saveSessions(date, attribution.sessions);
+    await saveSessions(date, enrichedSessions);
     await saveApplicationUsage(date, attribution.appSeconds);
     await saveWebsiteUsage(date, attribution.domainSeconds, attribution.domainVisits);
+    await saveStateSegments(date, stateResult.segments);
 
     const openLoopCount = (await getOpenLoopsReport()).summary.total;
-    const summary = buildDailySummary(date, attribution, openLoopCount);
+    const summary = buildDailySummary(
+      date,
+      attribution,
+      openLoopCount,
+      stateResult.totals,
+    );
     await saveDailySummary(summary);
 
     await completeAnalyticsRun(runId, "completed", recordsProcessed);

@@ -54,6 +54,21 @@ describe("evaluateCapturePipeline", () => {
     expect(h.pipelineStatus).toBe("stale");
   });
 
+  it("reports live when idle but capture process is up and sync is fresh", () => {
+    const h = evaluateCapturePipeline({
+      lastFrameAt: isoMinutesAgo(25),
+      lastSyncAt: isoMinutesAgo(4),
+      lastSyncCompletedAt: isoMinutesAgo(4),
+      capturePortOpen: true,
+      captureApiReachable: true,
+      hasHistoricalData: true,
+      now,
+    });
+    expect(h.pipelineStatus).toBe("live");
+    expect(h.captureActive).toBe(false);
+    expect(h.syncHealthy).toBe(true);
+  });
+
   it("reports offline with no data and no recent activity", () => {
     const h = evaluateCapturePipeline({
       lastFrameAt: null,

@@ -91,9 +91,9 @@ export function activityPipelineBannerMessage(
         hour: "numeric",
         minute: "2-digit",
       });
-      return `Stale — Showing last synced data from ${label}.`;
+      return `Stale — Capture or sync paused since ${label}. Check ScreenPipe and sync on your Mac.`;
     }
-    return "Stale — Showing last synced data. Capture Mac may be offline.";
+    return "Stale — Capture or sync may be offline on your Mac.";
   }
   if (health?.lastCaptureAt) {
     const d = new Date(health.lastCaptureAt);

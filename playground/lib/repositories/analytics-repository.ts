@@ -52,6 +52,7 @@ export class AnalyticsRepository {
     await runUnsafe(`DELETE FROM activity_sessions WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM application_usage WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM website_usage WHERE date = $1`, [date]);
+    await runUnsafe(`DELETE FROM activity_state_segments WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM daily_activity_summary WHERE date = $1`, [date]);
   }
 
@@ -60,14 +61,18 @@ export class AnalyticsRepository {
       await runUnsafe(
         `INSERT INTO activity_sessions
          (start_time, end_time, duration_minutes, dominant_app, dominant_project,
+          primary_project, supporting_project, confidence,
           session_type, session_label, applications_used, websites_used, date)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [
           s.startTime,
           s.endTime,
           s.durationMinutes,
           s.dominantApp,
           s.dominantProject,
+          s.primaryProject ?? s.dominantProject,
+          s.supportingProject ?? null,
+          s.confidence ?? 0,
           s.sessionType,
           s.sessionLabel,
           JSON.stringify(s.applicationsUsed),
@@ -110,11 +115,14 @@ export class AnalyticsRepository {
   async saveDailySummary(summary: DailySummaryRow): Promise<void> {
     await runUnsafe(
       `INSERT INTO daily_activity_summary
-       (date, active_minutes, idle_minutes, focused_minutes, meeting_minutes, project_count, open_loop_count)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (date, active_minutes, passive_minutes, idle_minutes, sleeping_minutes,
+        focused_minutes, meeting_minutes, project_count, open_loop_count)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (date) DO UPDATE SET
          active_minutes = EXCLUDED.active_minutes,
+         passive_minutes = EXCLUDED.passive_minutes,
          idle_minutes = EXCLUDED.idle_minutes,
+         sleeping_minutes = EXCLUDED.sleeping_minutes,
          focused_minutes = EXCLUDED.focused_minutes,
          meeting_minutes = EXCLUDED.meeting_minutes,
          project_count = EXCLUDED.project_count,
@@ -122,7 +130,9 @@ export class AnalyticsRepository {
       [
         summary.date,
         summary.active_minutes,
+        summary.passive_minutes,
         summary.idle_minutes,
+        summary.sleeping_minutes,
         summary.focused_minutes,
         summary.meeting_minutes,
         summary.project_count,
@@ -131,10 +141,24 @@ export class AnalyticsRepository {
     );
   }
 
+  async saveStateSegments(
+    date: string,
+    segments: import("@/lib/analytics/types").ActivityStateSegmentRow[],
+  ): Promise<void> {
+    for (const s of segments) {
+      await runUnsafe(
+        `INSERT INTO activity_state_segments
+         (date, start_time, end_time, state, duration_minutes, confidence)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [date, s.start_time, s.end_time, s.state, s.duration_minutes, s.confidence],
+      );
+    }
+  }
+
   async getDailySummary(date: string): Promise<DailySummaryRow | null> {
     const row = await runUnsafeOne<DailySummaryRow>(
-      `SELECT date, active_minutes, idle_minutes, focused_minutes, meeting_minutes,
-              project_count, open_loop_count
+      `SELECT date, active_minutes, passive_minutes, idle_minutes, sleeping_minutes,
+              focused_minutes, meeting_minutes, project_count, open_loop_count
        FROM daily_activity_summary WHERE date = $1`,
       [date],
     );
@@ -143,8 +167,8 @@ export class AnalyticsRepository {
 
   async listDailySummaries(startDate: string, endDate: string): Promise<DailySummaryRow[]> {
     return runUnsafe(
-      `SELECT date, active_minutes, idle_minutes, focused_minutes, meeting_minutes,
-              project_count, open_loop_count
+      `SELECT date, active_minutes, passive_minutes, idle_minutes, sleeping_minutes,
+              focused_minutes, meeting_minutes, project_count, open_loop_count
        FROM daily_activity_summary
        WHERE date >= $1 AND date <= $2
        ORDER BY date ASC`,
@@ -155,8 +179,8 @@ export class AnalyticsRepository {
   async listSessions(startDate: string, endDate: string): Promise<ActivitySessionRow[]> {
     return runUnsafe(
       `SELECT id, start_time, end_time, duration_minutes, dominant_app,
-              dominant_project, session_type, session_label,
-              applications_used, websites_used, date
+              dominant_project, primary_project, supporting_project, confidence,
+              session_type, session_label, applications_used, websites_used, date
        FROM activity_sessions
        WHERE date >= $1 AND date <= $2
        ORDER BY start_time ASC`,

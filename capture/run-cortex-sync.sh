@@ -19,6 +19,15 @@ source "${DRIVE_ROOT}/screenpipe-env.sh" 2>/dev/null || true
 export SCREENPIPE_DB="${SCREENPIPE_DB:-${DRIVE_ROOT}/screenpipe-data/db.sqlite}"
 export SCREENPIPE_DATA_DIR="${SCREENPIPE_DATA_DIR:-${DRIVE_ROOT}/screenpipe-data}"
 
+# launchd cannot read dotenv on external volumes; use local copy from install-capture-agents.sh
+LOCAL_ENV="${SCRIPT_DIR}/.env.sync"
+if [[ -f "${LOCAL_ENV}" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "${LOCAL_ENV}"
+  set +a
+fi
+
 cd "${REPO_ROOT}/playground"
 
 {

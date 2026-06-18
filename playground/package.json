@@ -16,6 +16,9 @@
     "sync:screenpipe": "tsx scripts/sync-screenpipe.ts",
     "backfill:analytics": "tsx scripts/backfill-analytics.ts",
     "audit:history": "tsx scripts/audit-history.ts",
+    "migrate:idle": "tsx scripts/migrate-idle-detection.ts",
+    "migrate:sessions": "tsx scripts/migrate-session-intelligence.ts",
+    "backfill:sessions": "tsx scripts/backfill-session-intelligence.ts",
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {

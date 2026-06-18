@@ -15,6 +15,8 @@ export type TimelineBlockDTO = {
   title: string;
   app?: string;
   projectName?: string;
+  supportingProject?: string;
+  confidence?: number;
   applicationsUsed?: string[];
   websitesUsed?: string[];
 };
@@ -58,8 +60,10 @@ export type TodayActivityDTO = {
   date: string;
   generatedAt: string;
   activeSec: number;
+  passiveSec: number;
   focusSec: number;
   idleSec: number;
+  sleepingSec: number;
   meetingSec: number;
   projectsTouched: number;
   openLoopsCount: number;
@@ -85,8 +89,10 @@ export type WeekActivityDTO = {
   endDate: string;
   generatedAt: string;
   activeSec: number;
+  passiveSec: number;
   focusSec: number;
   idleSec: number;
+  sleepingSec: number;
   meetingSec: number;
   projectsTouched: number;
   openLoopsCount: number;
@@ -111,8 +117,10 @@ export type MonthActivityDTO = {
   endDate: string;
   generatedAt: string;
   activeSec: number;
+  passiveSec: number;
   focusSec: number;
   idleSec: number;
+  sleepingSec: number;
   meetingSec: number;
   projectsTouched: number;
   openLoopsCount: number;
@@ -131,10 +139,78 @@ export type SessionDTO = {
   durationSec: number;
   dominantApp: string;
   dominantProject: string | null;
+  primaryProject: string | null;
+  supportingProject: string | null;
+  confidence: number;
+  title: string;
   sessionType: string;
   category: string;
   date: string;
 };
+
+export type WorkSessionDTO = {
+  id: number;
+  startTime: string;
+  endTime: string;
+  durationSec: number;
+  title: string;
+  primaryProject: string | null;
+  supportingProject: string | null;
+  category: string;
+  confidence: number;
+  dominantApp: string;
+  applicationsUsed: string[];
+  websitesUsed: string[];
+};
+
+export type ProjectAdvanceDTO = {
+  projectName: string;
+  durationSec: number;
+  sessionCount: number;
+};
+
+export type DaySessionsDTO = {
+  date: string;
+  generatedAt: string;
+  sessions: WorkSessionDTO[];
+  projectsAdvanced: ProjectAdvanceDTO[];
+};
+
+export type WeekSessionsDTO = {
+  startDate: string;
+  endDate: string;
+  generatedAt: string;
+  days: DaySessionsDTO[];
+};
+
+export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
+  let applicationsUsed: string[] = [];
+  let websitesUsed: string[] = [];
+  try {
+    applicationsUsed = JSON.parse(row.applications_used) as string[];
+  } catch {
+    applicationsUsed = [];
+  }
+  try {
+    websitesUsed = JSON.parse(row.websites_used) as string[];
+  } catch {
+    websitesUsed = [];
+  }
+  return {
+    id: row.id,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    durationSec: Math.round(row.duration_minutes * 60),
+    title: row.session_label || row.dominant_app,
+    primaryProject: row.primary_project ?? row.dominant_project,
+    supportingProject: row.supporting_project,
+    category: toUiCategory(row.session_type),
+    confidence: row.confidence ?? 0,
+    dominantApp: row.dominant_app,
+    applicationsUsed,
+    websitesUsed,
+  };
+}
 
 export function toSessionDTO(row: ActivitySessionRow): SessionDTO {
   return {
@@ -144,6 +220,10 @@ export function toSessionDTO(row: ActivitySessionRow): SessionDTO {
     durationSec: Math.round(row.duration_minutes * 60),
     dominantApp: row.dominant_app,
     dominantProject: row.dominant_project,
+    primaryProject: row.primary_project ?? row.dominant_project,
+    supportingProject: row.supporting_project,
+    confidence: row.confidence ?? 0,
+    title: row.session_label || row.dominant_app,
     sessionType: row.session_type,
     category: toUiCategory(row.session_type),
     date: row.date,

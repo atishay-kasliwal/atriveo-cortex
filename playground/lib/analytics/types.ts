@@ -31,6 +31,10 @@ export type DetectedSession = {
   activeSeconds: number;
   dominantApp: string;
   dominantProject: string | null;
+  primaryProject?: string | null;
+  supportingProject?: string | null;
+  confidence?: number;
+  projectSeconds?: Map<string, number>;
   sessionType: SessionType;
   sessionLabel: string;
   applicationsUsed: string[];
@@ -57,11 +61,23 @@ export type AttributionResult = {
 export type DailySummaryRow = {
   date: string;
   active_minutes: number;
+  passive_minutes: number;
   idle_minutes: number;
+  sleeping_minutes: number;
   focused_minutes: number;
   meeting_minutes: number;
   project_count: number;
   open_loop_count: number;
+};
+
+export type ActivityStateSegmentRow = {
+  id?: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+  state: "ACTIVE" | "PASSIVE" | "IDLE" | "SLEEPING";
+  duration_minutes: number;
+  confidence: number;
 };
 
 export type ActivitySessionRow = {
@@ -71,6 +87,9 @@ export type ActivitySessionRow = {
   duration_minutes: number;
   dominant_app: string;
   dominant_project: string | null;
+  primary_project: string | null;
+  supporting_project: string | null;
+  confidence: number;
   session_type: SessionType;
   session_label: string;
   applications_used: string;

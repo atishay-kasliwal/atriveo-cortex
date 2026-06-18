@@ -10,8 +10,10 @@ import {
   Globe,
   Target,
 } from "lucide-react";
+import { ActivityBreakdown } from "@/components/activity/activity-breakdown";
 import { ActivityCard, AllocationRow } from "@/components/activity/shared";
 import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
+import { WorkTimeline } from "@/components/activity/work-timeline";
 import { EmptyState } from "@/components/dashboard/states";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
 import { hasTodayActivity } from "@/lib/activity/activity-state";
@@ -59,8 +61,20 @@ export function TodayView({
   return (
     <div className="space-y-6">
       <TodayHero data={data} heading={heading} />
+      <ActivityBreakdown
+        activeSec={data.activeSec}
+        passiveSec={data.passiveSec}
+        idleSec={data.idleSec}
+        sleepingSec={data.sleepingSec}
+      />
       <ActivityCard title="Temporal distribution" subtitle={temporalSubtitle}>
         <TemporalRibbon blocks={data.timeline} />
+      </ActivityCard>
+      <ActivityCard
+        title="Timeline of Work"
+        subtitle="What you worked on, in order — projects and outcomes inferred from activity"
+      >
+        <WorkTimeline blocks={data.timeline} />
       </ActivityCard>
       <ActivityCard title="Sessions" subtitle="Stitched work blocks — not every app switch">
         <SessionList blocks={data.timeline} />
@@ -145,6 +159,7 @@ function SessionList({ blocks }: { blocks: TodayActivity["timeline"] }) {
               <div className="text-[13px] font-medium">{b.title}</div>
               <div className="text-[11px] text-muted-foreground">
                 {fmtClock(b.startedAt)}–{fmtClock(b.endedAt)}
+                {b.projectName ? ` · ${b.projectName}` : ""}
                 {apps ? ` · ${apps}` : ""}
                 {sites ? ` · ${sites}` : ""}
               </div>

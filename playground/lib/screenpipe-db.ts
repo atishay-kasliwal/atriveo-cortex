@@ -38,6 +38,24 @@ export function fetchFramesForWindow(
   return frames;
 }
 
+/** UI interaction events in a time window for idle detection. */
+export function fetchUiEventsForWindow(
+  windowStart: string,
+  windowEnd: string,
+): { timestamp: string; event_type: string }[] {
+  if (!screenpipeDbExists()) return [];
+  const db = openScreenpipe();
+  const rows = db
+    .prepare(
+      `SELECT timestamp, event_type FROM ui_events
+       WHERE timestamp >= ? AND timestamp < ?
+       ORDER BY timestamp ASC`,
+    )
+    .all(windowStart, windowEnd) as { timestamp: string; event_type: string }[];
+  db.close();
+  return rows;
+}
+
 function fetchBucketed<T>(
   db: Database.Database,
   sql: string,

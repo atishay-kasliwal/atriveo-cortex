@@ -36,6 +36,12 @@ launchctl bootout "gui/$(id -u)/com.atriveo.cortex-sync" 2>/dev/null || true
 install_plist "${REPO_ROOT}/capture/com.atriveo.screenpipe.plist" "com.atriveo.screenpipe.plist"
 install_plist "${REPO_ROOT}/capture/com.atriveo.cortex-sync.plist" "com.atriveo.cortex-sync.plist"
 
+if [[ -f "${REPO_ROOT}/playground/.env.sync" ]]; then
+  cp "${REPO_ROOT}/playground/.env.sync" "${CAPTURE_DIR}/.env.sync"
+  chmod 600 "${CAPTURE_DIR}/.env.sync"
+  echo "Copied playground/.env.sync → ${CAPTURE_DIR}/.env.sync (launchd-safe)"
+fi
+
 launchctl bootstrap "gui/$(id -u)" "${AGENTS_DIR}/com.atriveo.screenpipe.plist"
 launchctl bootstrap "gui/$(id -u)" "${AGENTS_DIR}/com.atriveo.cortex-sync.plist"
 

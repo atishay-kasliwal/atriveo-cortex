@@ -122,6 +122,25 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/sessions/day", async (c) => {
+    try {
+      const date = todayDateParam(c.req.query("date") ?? null);
+      const { buildDaySessionsFromNeon } = await import("@/lib/analytics/sessions-api");
+      return apiSuccess(c, await buildDaySessionsFromNeon(date));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load day sessions", 500);
+    }
+  });
+
+  app.get("/api/sessions/week", async (c) => {
+    try {
+      const { buildWeekSessions } = await import("@/lib/analytics/sessions-api");
+      return apiSuccess(c, await buildWeekSessions(c.req.query("start") ?? undefined));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load week sessions", 500);
+    }
+  });
+
   app.get("/api/memory/projects", async (c) => {
     try {
       const { page, limit } = parsePagination(new URL(c.req.url).searchParams);

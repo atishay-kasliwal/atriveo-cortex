@@ -289,11 +289,14 @@ async function main() {
     "activity_sessions",
     `INSERT INTO activity_sessions
      (id, start_time, end_time, duration_minutes, dominant_app, dominant_project,
+      primary_project, supporting_project, confidence,
       session_type, session_label, applications_used, websites_used, date)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (id) DO NOTHING`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT (id) DO NOTHING`,
     (r) => [
       r.id, r.start_time, r.end_time, r.duration_minutes, r.dominant_app,
-      r.dominant_project, r.session_type, r.session_label ?? "Work Session",
+      r.dominant_project, r.primary_project ?? r.dominant_project,
+      r.supporting_project ?? null, r.confidence ?? 0,
+      r.session_type, r.session_label ?? "Work Session",
       r.applications_used ?? "[]", r.websites_used ?? "[]", r.date,
     ],
   );

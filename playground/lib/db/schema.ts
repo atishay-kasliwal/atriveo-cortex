@@ -271,6 +271,9 @@ export const activitySessions = pgTable(
     durationMinutes: real("duration_minutes").notNull(),
     dominantApp: text("dominant_app").notNull(),
     dominantProject: text("dominant_project"),
+    primaryProject: text("primary_project"),
+    supportingProject: text("supporting_project"),
+    confidence: real("confidence").notNull().default(0),
     sessionType: text("session_type").notNull(),
     sessionLabel: text("session_label").notNull().default("Work Session"),
     applicationsUsed: text("applications_used").notNull().default("[]"),
@@ -315,13 +318,32 @@ export const dailyActivitySummary = pgTable(
   {
     date: text("date").primaryKey(),
     activeMinutes: real("active_minutes").notNull().default(0),
+    passiveMinutes: real("passive_minutes").notNull().default(0),
     idleMinutes: real("idle_minutes").notNull().default(0),
+    sleepingMinutes: real("sleeping_minutes").notNull().default(0),
     focusedMinutes: real("focused_minutes").notNull().default(0),
     meetingMinutes: real("meeting_minutes").notNull().default(0),
     projectCount: integer("project_count").notNull().default(0),
     openLoopCount: integer("open_loop_count").notNull().default(0),
   },
   (t) => [index("idx_daily_activity_summary_date").on(t.date)],
+);
+
+export const activityStateSegments = pgTable(
+  "activity_state_segments",
+  {
+    id: serial("id").primaryKey(),
+    date: text("date").notNull(),
+    startTime: text("start_time").notNull(),
+    endTime: text("end_time").notNull(),
+    state: text("state").notNull(),
+    durationMinutes: real("duration_minutes").notNull().default(0),
+    confidence: real("confidence").notNull().default(0),
+  },
+  (t) => [
+    index("idx_activity_state_segments_date").on(t.date),
+    index("idx_activity_state_segments_start").on(t.startTime),
+  ],
 );
 
 export const screenpipeReliability = pgTable("screenpipe_reliability", {

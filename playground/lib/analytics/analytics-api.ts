@@ -30,8 +30,10 @@ async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
   const totals = summary
     ? {
         activeSec: Math.round(summary.active_minutes * 60),
+        passiveSec: Math.round((summary.passive_minutes ?? 0) * 60),
         focusSec: Math.round(summary.focused_minutes * 60),
         idleSec: Math.round(summary.idle_minutes * 60),
+        sleepingSec: Math.round((summary.sleeping_minutes ?? 0) * 60),
         meetingSec: Math.round(summary.meeting_minutes * 60),
         projectsTouched: summary.project_count,
         openLoopsCount: summary.open_loop_count,
