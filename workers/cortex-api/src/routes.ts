@@ -38,6 +38,11 @@ import {
   getProjectEvidence,
 } from "@/lib/evidence-trace";
 import { getOpenLoopDetail, getOpenLoopsReport } from "@/lib/open-loops";
+import {
+  buildActiveOpenLoops,
+  buildOpenLoopHistory,
+  buildProjectOpenLoops,
+} from "@/lib/open-loop-api";
 import { listProjectSummaries } from "@/lib/project-memory";
 import {
   getActionRecurrenceReport,
@@ -45,6 +50,16 @@ import {
 } from "@/lib/recurrence";
 import { getCloudScreenpipeHealth } from "@/lib/system/screenpipe-health-cloud";
 import { getAnalyticsHistory } from "@/lib/analytics/history";
+import {
+  buildLatestWeekReview,
+  buildWeekReview,
+  buildWeekReviewRange,
+} from "@/lib/review/weekly-review-api";
+import {
+  buildDayReview,
+  buildLatestReview,
+  buildReviewRange,
+} from "@/lib/review/daily-review-api";
 import { apiError, apiSuccess } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
@@ -101,6 +116,72 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, await buildWeekActivity(range.startDate, range.endDate));
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load week analytics", 500);
+    }
+  });
+
+  app.get("/api/reviews/day", async (c) => {
+    try {
+      const date = c.req.query("date");
+      const regenerate = c.req.query("regenerate") === "1";
+      const review = await buildDayReview(date, regenerate);
+      if (!review) return apiError(c, "No daily review available for this date", 404);
+      return apiSuccess(c, review);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load daily review", 500);
+    }
+  });
+
+  app.get("/api/reviews/latest", async (c) => {
+    try {
+      const review = await buildLatestReview();
+      if (!review) return apiError(c, "No daily review available yet", 404);
+      return apiSuccess(c, review);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load latest daily review", 500);
+    }
+  });
+
+  app.get("/api/reviews/range", async (c) => {
+    try {
+      const start = c.req.query("start");
+      const end = c.req.query("end");
+      const regenerate = c.req.query("regenerate") === "1";
+      return apiSuccess(c, await buildReviewRange(start, end, regenerate));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load daily review range", 500);
+    }
+  });
+
+  app.get("/api/reviews/week", async (c) => {
+    try {
+      const start = c.req.query("start");
+      const regenerate = c.req.query("regenerate") === "1";
+      const review = await buildWeekReview(start, regenerate);
+      if (!review) return apiError(c, "No weekly review available for this period", 404);
+      return apiSuccess(c, review);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load weekly review", 500);
+    }
+  });
+
+  app.get("/api/reviews/week/latest", async (c) => {
+    try {
+      const review = await buildLatestWeekReview();
+      if (!review) return apiError(c, "No weekly review available yet", 404);
+      return apiSuccess(c, review);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load latest weekly review", 500);
+    }
+  });
+
+  app.get("/api/reviews/week/range", async (c) => {
+    try {
+      const start = c.req.query("start");
+      const end = c.req.query("end");
+      const regenerate = c.req.query("regenerate") === "1";
+      return apiSuccess(c, await buildWeekReviewRange(start, end, regenerate));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load weekly review range", 500);
     }
   });
 
@@ -198,6 +279,38 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, toOpenLoopsListDTO(report, page, limit));
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load open loops", 500);
+    }
+  });
+
+  app.get("/api/open-loops/active", async (c) => {
+    try {
+      const { page, limit } = parsePagination(new URL(c.req.url).searchParams);
+      const report = await buildActiveOpenLoops();
+      return apiSuccess(c, toOpenLoopsListDTO(report, page, limit));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load active open loops", 500);
+    }
+  });
+
+  app.get("/api/open-loops/history", async (c) => {
+    try {
+      const { page, limit } = parsePagination(new URL(c.req.url).searchParams);
+      const report = await buildOpenLoopHistory();
+      return apiSuccess(c, toOpenLoopsListDTO(report, page, limit));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load open loop history", 500);
+    }
+  });
+
+  app.get("/api/open-loops/project/:project", async (c) => {
+    try {
+      const project = c.req.param("project");
+      if (!project?.trim()) return apiError(c, "project is required", 400);
+      const { page, limit } = parsePagination(new URL(c.req.url).searchParams);
+      const report = await buildProjectOpenLoops(project);
+      return apiSuccess(c, toOpenLoopsListDTO(report, page, limit));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load project open loops", 500);
     }
   });
 

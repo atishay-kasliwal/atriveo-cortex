@@ -25,6 +25,7 @@ import type {
   Mention,
   OpenLoop,
   OpenLoopDetail,
+  OpenLoopsBoard,
   OverviewSummary,
   Project,
   ProjectDetail,
@@ -156,11 +157,20 @@ function mapIdea(row: IdeaDTO, projectIds: string[] = []): Idea {
 function mapOpenLoop(row: OpenLoopDTO): OpenLoop {
   return {
     id: String(row.id),
-    title: row.actionText,
+    title: row.title || row.actionText,
+    projectName: row.projectName ?? undefined,
+    source: row.source,
+    status: row.status,
+    confidence: row.confidence,
     openedAt: row.firstSeen,
     lastTouchedAt: row.lastSeen,
     staleHours: staleHours(row.lastSeen),
     mentionCount: row.mentionCount,
+    resurfaceCount: row.resurfaceCount,
+    daysOpen: row.daysOpen,
+    daysInactive: row.daysInactive,
+    completedAt: row.completedAt ?? undefined,
+    resurfaceDates: row.resurfaceDates ?? [],
   };
 }
 
@@ -429,6 +439,24 @@ export async function fetchOpenLoops(): Promise<OpenLoop[]> {
   return flattenOpenLoops(data)
     .map(mapOpenLoop)
     .sort((a, b) => b.staleHours - a.staleHours);
+}
+
+export async function fetchOpenLoopsBoard(): Promise<OpenLoopsBoard> {
+  const data = await cortexFetch<OpenLoopsListDTO>(`/api/open-loops?limit=${LIST_LIMIT}`);
+  return {
+    active: data.active.items.map(mapOpenLoop),
+    blocked: data.blocked.items.map(mapOpenLoop),
+    completed: data.completed.items.map(mapOpenLoop),
+    summary: {
+      total: data.summary.total,
+      open: data.summary.open,
+      active: data.summary.active,
+      blocked: data.summary.blocked,
+      completed: data.summary.completed,
+      abandoned: data.summary.abandoned,
+      averageLoopAgeDays: data.summary.averageLoopAgeDays,
+    },
+  };
 }
 
 export async function fetchOpenLoopDetail(id: string): Promise<OpenLoopDetail | null> {

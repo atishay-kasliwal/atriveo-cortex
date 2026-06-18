@@ -23,7 +23,7 @@ export function buildDailySummary(
     return {
       date,
       active_minutes: roundMinutes(stateTotals.activeSeconds / 60),
-      passive_minutes: roundMinutes(stateTotals.passiveSeconds / 60),
+      background_minutes: roundMinutes(stateTotals.backgroundSeconds / 60),
       idle_minutes: roundMinutes(stateTotals.idleSeconds / 60),
       sleeping_minutes: roundMinutes(stateTotals.sleepingSeconds / 60),
       focused_minutes: roundMinutes(focusedMinutes),
@@ -39,7 +39,7 @@ export function buildDailySummary(
   return {
     date,
     active_minutes: roundMinutes(activeMinutes),
-    passive_minutes: 0,
+    background_minutes: 0,
     idle_minutes: roundMinutes(idleMinutes),
     sleeping_minutes: 0,
     focused_minutes: roundMinutes(focusedMinutes),
@@ -117,6 +117,12 @@ export function datesBetween(startDate: string, endDate: string): string[] {
 export function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y!, m! - 1, d!);
+}
+
+export function shiftDate(dateStr: string, days: number): string {
+  const d = parseLocalDate(dateStr);
+  d.setDate(d.getDate() + days);
+  return localDateString(d);
 }
 
 export function isoWeekStart(dateStr: string): string {

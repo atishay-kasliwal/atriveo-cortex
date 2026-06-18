@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WeeklyReviewRouteImport } from './routes/weekly-review'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RecurrenceRouteImport } from './routes/recurrence'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as OverviewRouteImport } from './routes/overview'
@@ -22,6 +24,16 @@ import { Route as IdeasIdRouteImport } from './routes/ideas.$id'
 import { Route as DebugAnalyticsRouteImport } from './routes/debug.analytics'
 import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 
+const WeeklyReviewRoute = WeeklyReviewRouteImport.update({
+  id: '/weekly-review',
+  path: '/weekly-review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecurrenceRoute = RecurrenceRouteImport.update({
   id: '/recurrence',
   path: '/recurrence',
@@ -91,6 +103,8 @@ export interface FileRoutesByFullPath {
   '/overview': typeof OverviewRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
+  '/review': typeof ReviewRoute
+  '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/ideas/$id': typeof IdeasIdRoute
@@ -105,6 +119,8 @@ export interface FileRoutesByTo {
   '/overview': typeof OverviewRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
+  '/review': typeof ReviewRoute
+  '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/ideas/$id': typeof IdeasIdRoute
@@ -120,6 +136,8 @@ export interface FileRoutesById {
   '/overview': typeof OverviewRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
+  '/review': typeof ReviewRoute
+  '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/ideas/$id': typeof IdeasIdRoute
@@ -136,6 +154,8 @@ export interface FileRouteTypes {
     | '/overview'
     | '/projects'
     | '/recurrence'
+    | '/review'
+    | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
     | '/ideas/$id'
@@ -150,6 +170,8 @@ export interface FileRouteTypes {
     | '/overview'
     | '/projects'
     | '/recurrence'
+    | '/review'
+    | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
     | '/ideas/$id'
@@ -164,6 +186,8 @@ export interface FileRouteTypes {
     | '/overview'
     | '/projects'
     | '/recurrence'
+    | '/review'
+    | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
     | '/ideas/$id'
@@ -179,11 +203,27 @@ export interface RootRouteChildren {
   OverviewRoute: typeof OverviewRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RecurrenceRoute: typeof RecurrenceRoute
+  ReviewRoute: typeof ReviewRoute
+  WeeklyReviewRoute: typeof WeeklyReviewRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/weekly-review': {
+      id: '/weekly-review'
+      path: '/weekly-review'
+      fullPath: '/weekly-review'
+      preLoaderRoute: typeof WeeklyReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recurrence': {
       id: '/recurrence'
       path: '/recurrence'
@@ -324,6 +364,8 @@ const rootRouteChildren: RootRouteChildren = {
   OverviewRoute: OverviewRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   RecurrenceRoute: RecurrenceRoute,
+  ReviewRoute: ReviewRoute,
+  WeeklyReviewRoute: WeeklyReviewRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
 }
 export const routeTree = rootRouteImport

@@ -55,14 +55,22 @@ export type IdeaDTO = {
 
 export type OpenLoopDTO = {
   id: number;
-  actionId: number;
+  actionId: number | null;
   actionText: string;
+  title: string;
+  projectName: string | null;
+  source: string;
   firstSeen: string;
   lastSeen: string;
   mentionCount: number;
   daysSeen: number;
+  resurfaceCount: number;
+  daysOpen: number;
+  daysInactive: number;
+  resurfaceDates: string[];
   confidence: LoopConfidence;
-  status: "open";
+  status: string;
+  completedAt: string | null;
 };
 
 export type RecurrenceDTO = {
@@ -147,6 +155,9 @@ export type OpenLoopsListDTO = {
   high: PaginatedResult<OpenLoopDTO>;
   medium: PaginatedResult<OpenLoopDTO>;
   low: PaginatedResult<OpenLoopDTO>;
+  active: PaginatedResult<OpenLoopDTO>;
+  blocked: PaginatedResult<OpenLoopDTO>;
+  completed: PaginatedResult<OpenLoopDTO>;
   summary: OpenLoopsReport["summary"];
 };
 
@@ -207,12 +218,20 @@ export function toOpenLoopDTO(row: OpenLoopRecord): OpenLoopDTO {
     id: row.id,
     actionId: row.action_id,
     actionText: row.action_text,
+    title: row.title,
+    projectName: row.project_name,
+    source: row.source,
     firstSeen: row.first_seen,
     lastSeen: row.last_seen,
     mentionCount: row.mention_count,
     daysSeen: row.days_seen,
+    resurfaceCount: row.resurface_count,
+    daysOpen: row.days_open,
+    daysInactive: row.days_inactive,
+    resurfaceDates: row.resurface_dates,
     confidence: row.confidence,
     status: row.status,
+    completedAt: row.completed_at,
   };
 }
 
@@ -335,10 +354,16 @@ export function toOpenLoopsListDTO(
   page: number,
   limit: number,
 ): OpenLoopsListDTO {
+  const activeOpen = report.active.filter((l) => l.status === "OPEN" || l.status === "ACTIVE");
+  const blocked = report.blocked;
+  const completed = report.completed;
   return {
     high: paginateArray(report.high.map(toOpenLoopDTO), page, limit),
     medium: paginateArray(report.medium.map(toOpenLoopDTO), page, limit),
     low: paginateArray(report.low.map(toOpenLoopDTO), page, limit),
+    active: paginateArray(activeOpen.map(toOpenLoopDTO), page, limit),
+    blocked: paginateArray(blocked.map(toOpenLoopDTO), page, limit),
+    completed: paginateArray(completed.map(toOpenLoopDTO), page, limit),
     summary: report.summary,
   };
 }

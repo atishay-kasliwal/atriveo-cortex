@@ -16,7 +16,10 @@ export const qk = {
   ideas: ["ideas"] as const,
   idea: (id: string) => ["ideas", id] as const,
   openLoops: ["open-loops"] as const,
+  openLoopsBoard: ["open-loops", "board"] as const,
   openLoop: (id: string) => ["open-loops", id] as const,
+  review: (date: string) => ["reviews", "day", date] as const,
+  weeklyReview: (weekStart: string) => ["reviews", "week", weekStart] as const,
   recurrence: ["recurrence"] as const,
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
@@ -114,6 +117,12 @@ export const openLoopsQuery = queryOptions({
   staleTime: STALE,
 });
 
+export const openLoopsBoardQuery = queryOptions({
+  queryKey: qk.openLoopsBoard,
+  queryFn: () => api.openLoops.board(),
+  staleTime: STALE,
+});
+
 export const openLoopQuery = (id: string) =>
   queryOptions({
     queryKey: qk.openLoop(id),
@@ -122,6 +131,20 @@ export const openLoopQuery = (id: string) =>
       if (!detail) throw new Error("Open loop not found");
       return detail;
     },
+    staleTime: STALE,
+  });
+
+export const reviewQuery = (date: string) =>
+  queryOptions({
+    queryKey: qk.review(date),
+    queryFn: () => api.reviews.day(date),
+    staleTime: STALE,
+  });
+
+export const weeklyReviewQuery = (weekStart: string) =>
+  queryOptions({
+    queryKey: qk.weeklyReview(weekStart),
+    queryFn: () => api.reviews.week(weekStart),
     staleTime: STALE,
   });
 

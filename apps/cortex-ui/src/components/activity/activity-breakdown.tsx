@@ -6,6 +6,8 @@ import { fmtDuration } from "@/components/dashboard/time";
 
 type BreakdownProps = {
   activeSec: number;
+  backgroundSec?: number;
+  /** @deprecated use backgroundSec */
   passiveSec?: number;
   idleSec?: number;
   sleepingSec?: number;
@@ -13,13 +15,15 @@ type BreakdownProps = {
 
 export function ActivityBreakdown({
   activeSec,
+  backgroundSec,
   passiveSec = 0,
   idleSec = 0,
   sleepingSec = 0,
 }: BreakdownProps) {
+  const background = backgroundSec ?? passiveSec;
   const rows = [
     { label: "Active", value: activeSec, color: "bg-signal" },
-    { label: "Passive", value: passiveSec, color: "bg-[oklch(0.72_0.12_200)]" },
+    { label: "Background", value: background, color: "bg-[oklch(0.72_0.12_200)]" },
     { label: "Idle", value: idleSec, color: "bg-[oklch(0.78_0.15_80)]" },
     { label: "Sleeping", value: sleepingSec, color: "bg-muted-foreground/50" },
   ].filter((r) => r.value > 0);

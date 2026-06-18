@@ -63,7 +63,8 @@ export type AttributionResult = {
 export type DailySummaryRow = {
   date: string;
   active_minutes: number;
-  passive_minutes: number;
+  passive_minutes?: number;
+  background_minutes?: number;
   idle_minutes: number;
   sleeping_minutes: number;
   focused_minutes: number;
@@ -77,7 +78,7 @@ export type ActivityStateSegmentRow = {
   date: string;
   start_time: string;
   end_time: string;
-  state: "ACTIVE" | "PASSIVE" | "IDLE" | "SLEEPING";
+  state: "ACTIVE" | "BACKGROUND" | "IDLE" | "SLEEPING";
   duration_minutes: number;
   confidence: number;
 };

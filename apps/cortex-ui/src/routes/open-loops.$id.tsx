@@ -39,10 +39,28 @@ function OpenLoopDetail() {
       ) : (
         <>
           <PageHeader
-            eyebrow={`Stale for ${Math.round(q.data.staleHours)}h`}
+            eyebrow={`${q.data.status} · ${q.data.daysOpen}d open · resurfaced ${q.data.resurfaceCount}×`}
             title={q.data.title}
-            description={q.data.projectName ? `From ${q.data.projectName}` : undefined}
+            description={
+              q.data.projectName
+                ? `${q.data.projectName} · ${q.data.source} · ${q.data.confidence} confidence`
+                : `${q.data.source} · ${q.data.confidence} confidence`
+            }
           />
+
+          {q.data.resurfaceDates.length > 1 ? (
+            <div className="mt-4 rounded-xl border border-border/60 bg-surface-2/30 px-4 py-3 text-[13px] text-muted-foreground">
+              Resurfaced on{" "}
+              {q.data.resurfaceDates
+                .map((d) =>
+                  new Date(`${d}T12:00:00`).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  }),
+                )
+                .join(" · ")}
+            </div>
+          ) : null}
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section className="surface-card overflow-hidden rounded-xl lg:col-span-2">

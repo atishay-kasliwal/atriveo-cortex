@@ -44,14 +44,22 @@ export type IdeaDTO = {
 
 export type OpenLoopDTO = {
   id: number;
-  actionId: number;
+  actionId: number | null;
   actionText: string;
+  title: string;
+  projectName: string | null;
+  source: string;
   firstSeen: string;
   lastSeen: string;
   mentionCount: number;
   daysSeen: number;
+  resurfaceCount: number;
+  daysOpen: number;
+  daysInactive: number;
+  resurfaceDates: string[];
   confidence: "HIGH" | "MEDIUM" | "LOW";
-  status: "open";
+  status: string;
+  completedAt: string | null;
 };
 
 export type RecurrenceDTO = {
@@ -134,11 +142,20 @@ export type OpenLoopsListDTO = {
   high: PaginatedResult<OpenLoopDTO>;
   medium: PaginatedResult<OpenLoopDTO>;
   low: PaginatedResult<OpenLoopDTO>;
+  active: PaginatedResult<OpenLoopDTO>;
+  blocked: PaginatedResult<OpenLoopDTO>;
+  completed: PaginatedResult<OpenLoopDTO>;
   summary: {
     high: number;
     medium: number;
     low: number;
     total: number;
+    open: number;
+    active: number;
+    blocked: number;
+    completed: number;
+    abandoned: number;
+    averageLoopAgeDays: number;
   };
 };
 

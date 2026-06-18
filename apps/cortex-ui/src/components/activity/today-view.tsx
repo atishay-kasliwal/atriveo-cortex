@@ -63,7 +63,7 @@ export function TodayView({
       <TodayHero data={data} heading={heading} />
       <ActivityBreakdown
         activeSec={data.activeSec}
-        passiveSec={data.passiveSec}
+        backgroundSec={data.backgroundSec ?? data.passiveSec}
         idleSec={data.idleSec}
         sleepingSec={data.sleepingSec}
       />

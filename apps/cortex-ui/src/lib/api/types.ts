@@ -92,16 +92,208 @@ export type OpenLoop = {
   title: string;
   projectId?: ID;
   projectName?: string;
+  source: string;
+  status: string;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
   openedAt: ISODate;
   lastTouchedAt: ISODate;
   staleHours: number;
   mentionCount: number;
+  resurfaceCount: number;
+  daysOpen: number;
+  daysInactive: number;
+  completedAt?: ISODate;
+  resurfaceDates: string[];
 };
 
 export type OpenLoopDetail = OpenLoop & {
   evidence: Evidence[];
   mentions: Mention[];
   why: Why;
+};
+
+export type OpenLoopsBoard = {
+  active: OpenLoop[];
+  blocked: OpenLoop[];
+  completed: OpenLoop[];
+  summary: {
+    total: number;
+    open: number;
+    active: number;
+    blocked: number;
+    completed: number;
+    abandoned: number;
+    averageLoopAgeDays: number;
+  };
+};
+
+export type DailyReviewProjectAdvance = {
+  projectName: string;
+  durationSec: number;
+  sessionCount: number;
+  confidence: number;
+  durationLabel: string;
+};
+
+export type DailyReviewAccomplishment = {
+  title: string;
+  projectName: string | null;
+  evidence: Array<{
+    type: "deployment" | "completion_keyword" | "closed_loop" | "milestone";
+    label: string;
+    sourceType: "session" | "action" | "open_loop";
+    sourceRef: string;
+  }>;
+};
+
+export type ProjectProgress = {
+  projectName: string;
+  completed: Array<{ title: string }>;
+  inProgress: Array<{ title: string }>;
+  blocked: Array<{ title: string }>;
+  abandoned: Array<{ title: string }>;
+};
+
+export type OpenWorkItem = {
+  title: string;
+  projectName: string | null;
+  source: "open_loop" | "session" | "action";
+  confidence: string;
+};
+
+export type ReviewRecommendation = {
+  title: string;
+  reason: string;
+  projectName: string | null;
+};
+
+export type ReviewQualityMetrics = {
+  accomplishmentPrecision: number;
+  openLoopCoverage: number;
+  evidenceCoverage: number;
+  attributionConfidence: number;
+};
+
+export type DailyReviewOpenLoop = {
+  title: string;
+  confidence: string;
+  projectName: string | null;
+};
+
+export type DailyReviewMetrics = {
+  activeSec: number;
+  focusSec: number;
+  idleSec: number;
+  sessionCount: number;
+  projectCount: number;
+  topApplications: Array<{ name: string; durationSec: number }>;
+  topWebsites: Array<{ name: string; durationSec: number }>;
+};
+
+export type DailyReview = {
+  reviewDate: string;
+  headline: string;
+  summary: string;
+  projectsAdvanced: DailyReviewProjectAdvance[];
+  keySessions: Array<{
+    id: number;
+    title: string;
+    projectName: string | null;
+    durationSec: number;
+    sessionType: string;
+    startTime: string;
+  }>;
+  accomplishments: DailyReviewAccomplishment[];
+  openLoops: DailyReviewOpenLoop[];
+  projectProgress: ProjectProgress[];
+  openWork: OpenWorkItem[];
+  recommendations: ReviewRecommendation[];
+  reviewConfidence: number;
+  qualityMetrics: ReviewQualityMetrics;
+  focusScore: number;
+  metrics: DailyReviewMetrics;
+  generatedAt: ISODate;
+};
+
+export type DailyReviewRange = {
+  startDate: string;
+  endDate: string;
+  generatedAt: ISODate;
+  reviews: DailyReview[];
+};
+
+export type WeeklyReviewMomentum = {
+  projectName: string;
+  durationSec: number;
+  sessionCount: number;
+  trend: string;
+  changePercent: number | null;
+  daysSinceActivity: number | null;
+  durationLabel: string;
+  trendLabel: string;
+};
+
+export type WeeklyReview = {
+  weekStart: string;
+  weekEnd: string;
+  headline: string;
+  summary: string;
+  projectsAdvanced: DailyReviewProjectAdvance[];
+  accomplishments: DailyReviewAccomplishment[];
+  openLoopsOpened: number;
+  openLoopsClosed: number;
+  openLoopAnalysis: {
+    opened: number;
+    completed: number;
+    stillOpen: number;
+    oldestOpen: { title: string; daysOpen: number } | null;
+  };
+  stalledWork: Array<{
+    title: string;
+    projectName: string | null;
+    daysInactive: number;
+    reason: string;
+  }>;
+  momentum: WeeklyReviewMomentum[];
+  timeAllocation: {
+    projects: Array<{ name: string; durationSec: number; durationLabel: string }>;
+    categories: Array<{ category: string; durationSec: number; durationLabel: string }>;
+    applications: Array<{ name: string; durationSec: number; durationLabel: string }>;
+    websites: Array<{ name: string; durationSec: number; durationLabel: string }>;
+  };
+  insights: Array<{ text: string; kind: string }>;
+  projectProgress: ProjectProgress[];
+  openWork: OpenWorkItem[];
+  recommendations: ReviewRecommendation[];
+  comparison: {
+    completed: string[];
+    accelerated: string[];
+    slowed: string[];
+    changed: string[];
+  };
+  reviewConfidence: number;
+  qualityMetrics: ReviewQualityMetrics;
+  focusScore: number;
+  metrics: {
+    activeSec: number;
+    focusSec: number;
+    idleSec: number;
+    meetingSec: number;
+    sessionCount: number;
+    projectCount: number;
+    activeDays: number;
+    avgActiveSecPerDay: number;
+    activeLabel: string;
+    focusLabel: string;
+  };
+  generatedAt: ISODate;
+};
+
+export type WeeklyReviewRange = {
+  startWeek: string;
+  endWeek: string;
+  generatedAt: ISODate;
+  reviews: WeeklyReview[];
 };
 
 export type RecurrencePattern = {
@@ -202,6 +394,7 @@ export type TodayActivity = {
   generatedAt: ISODate;
   activeSec: number;
   passiveSec?: number;
+  backgroundSec?: number;
   focusSec: number;
   idleSec: number;
   sleepingSec?: number;
@@ -248,6 +441,7 @@ export type WeekActivity = {
   generatedAt: ISODate;
   activeSec: number;
   passiveSec?: number;
+  backgroundSec?: number;
   focusSec: number;
   idleSec: number;
   sleepingSec?: number;
@@ -290,6 +484,7 @@ export type MonthActivity = {
   generatedAt: ISODate;
   activeSec: number;
   passiveSec?: number;
+  backgroundSec?: number;
   focusSec: number;
   idleSec: number;
   sleepingSec?: number;

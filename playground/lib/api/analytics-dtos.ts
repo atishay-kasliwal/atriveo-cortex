@@ -62,7 +62,8 @@ export type TodayActivityDTO = {
   date: string;
   generatedAt: string;
   activeSec: number;
-  passiveSec: number;
+  passiveSec?: number;
+  backgroundSec: number;
   focusSec: number;
   idleSec: number;
   sleepingSec: number;
@@ -91,7 +92,8 @@ export type WeekActivityDTO = {
   endDate: string;
   generatedAt: string;
   activeSec: number;
-  passiveSec: number;
+  passiveSec?: number;
+  backgroundSec: number;
   focusSec: number;
   idleSec: number;
   sleepingSec: number;
@@ -119,7 +121,8 @@ export type MonthActivityDTO = {
   endDate: string;
   generatedAt: string;
   activeSec: number;
-  passiveSec: number;
+  passiveSec?: number;
+  backgroundSec: number;
   focusSec: number;
   idleSec: number;
   sleepingSec: number;

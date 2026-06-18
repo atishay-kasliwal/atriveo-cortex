@@ -12,6 +12,8 @@ import {
   Repeat,
   Search,
   Activity,
+  BookOpen,
+  CalendarRange,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -38,7 +40,11 @@ const nav = [
   },
   {
     group: "Memory",
-    items: [{ title: "Overview", url: "/overview", icon: LayoutDashboard }],
+    items: [
+      { title: "Overview", url: "/overview", icon: LayoutDashboard },
+      { title: "Daily Review", url: "/review", icon: BookOpen },
+      { title: "Weekly Review", url: "/weekly-review", icon: CalendarRange },
+    ],
   },
   {
     group: "Extracted",

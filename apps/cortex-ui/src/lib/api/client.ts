@@ -7,6 +7,7 @@ import {
   fetchIdeas,
   fetchOpenLoopDetail,
   fetchOpenLoops,
+  fetchOpenLoopsBoard,
   fetchOverview,
   fetchProjectDetail,
   fetchProjects,
@@ -20,7 +21,11 @@ import {
 } from "./analytics-adapter";
 import { fetchScreenpipeHealth } from "./system-adapter";
 import { fetchAnalyticsValidation } from "./analytics-validation-adapter";
-import { fetchAnalyticsHistory } from "./analytics-history-adapter";
+import {
+  fetchDailyReview,
+  fetchLatestWeeklyReview,
+  fetchWeeklyReview,
+} from "./review-adapter";
 import { ApiError } from "./cortex-fetch";
 
 export { ApiError };
@@ -53,7 +58,14 @@ export const api = {
 
   openLoops: {
     list: () => fetchOpenLoops(),
+    board: () => fetchOpenLoopsBoard(),
     get: (id: string) => fetchOpenLoopDetail(id),
+  },
+
+  reviews: {
+    day: (date: string) => fetchDailyReview(date),
+    week: (weekStart: string) => fetchWeeklyReview(weekStart),
+    weekLatest: () => fetchLatestWeeklyReview(),
   },
 
   recurrence: {
