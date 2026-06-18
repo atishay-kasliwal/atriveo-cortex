@@ -98,7 +98,7 @@
   --acid: oklch(0.94 0.24 122);
 
   /* Surfaces */
-  --background: oklch(0.12 0.01 270);
+  --background: oklch(0.09 0.012 270);
   --foreground: oklch(0.97 0.005 90);
   --surface: oklch(0.16 0.012 270);
   --surface-2: oklch(0.2 0.012 270);
@@ -147,7 +147,14 @@
 
   --font-display: "Work Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-sans: "Work Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-stat: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Calm Atlas accents */
+  --calm-lavender: hsl(265 85% 75%);
+  --calm-rose: hsl(350 75% 62%);
+  --calm-amber: hsl(38 90% 58%);
+  --calm-emerald: hsl(155 65% 48%);
 
   --grad-signal: linear-gradient(135deg, oklch(0.62 0.2 264), oklch(0.45 0.22 274));
   --gradient-brand: var(--grad-signal);
@@ -172,9 +179,16 @@
 
   body {
     background-image:
-      radial-gradient(1000px 500px at 85% -5%, oklch(0.55 0.22 264 / 8%), transparent 55%),
-      radial-gradient(800px 400px at -5% 15%, oklch(0.45 0.22 274 / 5%), transparent 50%);
+      radial-gradient(900px 420px at 80% -8%, hsl(265 85% 75% / 6%), transparent 55%),
+      radial-gradient(600px 300px at -5% 20%, oklch(0.12 0.02 270 / 40%), transparent 50%);
     background-attachment: fixed;
+  }
+
+  .stat-hero {
+    font-family: var(--font-stat);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
   }
 
   .font-display {
@@ -231,4 +245,29 @@
 @utility animate-ribbon-rise {
   animation: ribbon-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: center;
+}
+
+@utility calm-hero {
+  background: linear-gradient(
+    165deg,
+    oklch(0.14 0.02 270 / 95%),
+    oklch(0.1 0.015 270 / 98%)
+  );
+  box-shadow: var(--shadow-soft);
+}
+
+@keyframes calm-pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+    border-color: oklch(0.78 0.15 80 / 35%);
+  }
+  50% {
+    opacity: 0.82;
+    border-color: oklch(0.78 0.15 80 / 55%);
+  }
+}
+
+@utility animate-calm-pulse-slow {
+  animation: calm-pulse-slow 4s ease-in-out infinite;
 }

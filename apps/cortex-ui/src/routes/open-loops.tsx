@@ -6,7 +6,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, CircleDashed, RotateCcw } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
-import { EmptyState, ErrorState, LoadingRows } from "@/components/dashboard/states";
+import { EmptyState, ErrorState } from "@/components/dashboard/states";
+import {
+  AgeDistributionBar,
+  LoopStalenessDot,
+  RecurrenceBadge,
+  loopStaleness,
+  calm,
+} from "@/components/calm-atlas";
 import { openLoopsBoardQuery } from "@/lib/api/queries";
 import type { OpenLoop } from "@/lib/api/types";
 
@@ -25,6 +32,15 @@ export const Route = createFileRoute("/open-loops")({
 
 function OpenLoopsPage() {
   const q = useQuery(openLoopsBoardQuery);
+  const allLoops = q.data
+    ? [...q.data.active, ...q.data.blocked, ...q.data.completed]
+    : [];
+
+  const ageBuckets = { fresh: 0, warning: 0, critical: 0 };
+  for (const l of allLoops) {
+    const level = loopStaleness(l.daysOpen, l.daysInactive);
+    ageBuckets[level]++;
+  }
 
   return (
     <PageBody>
@@ -34,10 +50,8 @@ function OpenLoopsPage() {
         description="Work Cortex detected from sessions, actions, ideas, and reviews — tracked across days without manual entry."
       />
 
-      {q.isLoading ? (
-        <div className="mt-6">
-          <LoadingRows rows={6} />
-        </div>
+      {q.isPending ? (
+        <div className="mt-8 h-32 animate-pulse rounded-xl bg-surface-2/50" />
       ) : q.isError ? (
         <ErrorState error={q.error} onRetry={q.refetch} />
       ) : !q.data || q.data.summary.total === 0 ? (
@@ -49,15 +63,21 @@ function OpenLoopsPage() {
           />
         </div>
       ) : (
-        <div className="mt-6 space-y-6">
-          <MetricsRow summary={q.data.summary} />
+        <div className="mt-8 space-y-8">
+          <section className="surface-card rounded-xl px-6 py-5">
+            <AgeDistributionBar
+              fresh={ageBuckets.fresh}
+              warning={ageBuckets.warning}
+              critical={ageBuckets.critical}
+              total={q.data.summary.open}
+            />
+          </section>
 
           <LoopSection
             title="Active"
             description="Recently touched or newly detected"
             loops={q.data.active}
             icon={RotateCcw}
-            tone="text-emerald-500/80"
           />
 
           <LoopSection
@@ -65,7 +85,6 @@ function OpenLoopsPage() {
             description="Mentioned repeatedly with little progress"
             loops={q.data.blocked}
             icon={AlertTriangle}
-            tone="text-[color:var(--color-warning)]"
           />
 
           <LoopSection
@@ -73,48 +92,11 @@ function OpenLoopsPage() {
             description="Completion evidence detected in sessions or reviews"
             loops={q.data.completed}
             icon={CheckCircle2}
-            tone="text-emerald-500/80"
+            completed
           />
         </div>
       )}
     </PageBody>
-  );
-}
-
-function MetricsRow({
-  summary,
-}: {
-  summary: {
-    total: number;
-    open: number;
-    active: number;
-    blocked: number;
-    completed: number;
-    averageLoopAgeDays: number;
-  };
-}) {
-  const items = [
-    { label: "Open", value: summary.open },
-    { label: "Active", value: summary.active },
-    { label: "Blocked", value: summary.blocked },
-    { label: "Completed", value: summary.completed },
-    { label: "Avg age (days)", value: summary.averageLoopAgeDays },
-  ];
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-5">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className="surface-card rounded-xl border border-border/60 px-4 py-3"
-        >
-          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            {item.label}
-          </p>
-          <p className="mt-1 font-mono text-xl">{item.value}</p>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -123,56 +105,83 @@ function LoopSection({
   description,
   loops,
   icon: Icon,
-  tone,
+  completed,
 }: {
   title: string;
   description: string;
   loops: OpenLoop[];
   icon: typeof CircleDashed;
-  tone: string;
+  completed?: boolean;
 }) {
   if (loops.length === 0) return null;
 
   return (
-    <section className="surface-card overflow-hidden rounded-xl">
-      <div className="border-b border-border/40 px-5 py-4">
+    <section>
+      <div className="mb-4">
         <h2 className="text-sm font-medium">{title}</h2>
         <p className="mt-0.5 text-[12px] text-muted-foreground">{description}</p>
       </div>
-      <ul className="divide-y divide-border/40">
+      <ul className="space-y-2">
         {loops.map((loop) => (
           <li key={loop.id}>
             <Link
               to="/open-loops/$id"
               params={{ id: loop.id }}
-              className="group flex items-start gap-4 px-5 py-3.5 transition hover:bg-surface-2/40"
+              className="surface-card group flex items-start gap-4 rounded-xl px-5 py-3.5 transition hover:border-[hsl(265_85%_75%/0.25)]"
             >
-              <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${tone}`} />
+              {completed ? (
+                <CheckCircle2
+                  className="mt-1 h-4 w-4 shrink-0"
+                  style={{ color: calm.emerald }}
+                />
+              ) : (
+                <LoopStalenessDot daysOpen={loop.daysOpen} daysInactive={loop.daysInactive} />
+              )}
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm">{loop.title}</div>
-                <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-                  <span>{loop.projectName ?? "—"}</span>
-                  <span>·</span>
-                  <span>{loop.daysOpen}d open</span>
-                  <span>·</span>
-                  <span>{loop.confidence} confidence</span>
-                  {loop.resurfaceCount > 0 ? (
-                    <>
-                      <span>·</span>
-                      <span>resurfaced {loop.resurfaceCount}×</span>
-                    </>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="truncate text-sm">{loop.title}</span>
+                  <RecurrenceBadge count={loop.resurfaceCount} />
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <StatusPill
+                    label={loop.status}
+                    tone={completed ? "emerald" : loopStaleness(loop.daysOpen, loop.daysInactive)}
+                  />
+                  <StatusPill label={`${loop.daysOpen}d open`} tone="muted" />
+                  <StatusPill label={`${loop.confidence.toLowerCase()} confidence`} tone="muted" />
+                  {loop.projectName ? (
+                    <span className="text-[11px] text-muted-foreground">{loop.projectName}</span>
                   ) : null}
-                  <span>·</span>
-                  <span>{loop.source}</span>
                 </div>
               </div>
-              <span className="shrink-0 rounded-md border border-border/50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                {loop.status}
-              </span>
+              <Icon className="mt-1 h-4 w-4 shrink-0 text-muted-foreground opacity-40 transition group-hover:opacity-80" />
             </Link>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+function StatusPill({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "fresh" | "warning" | "critical" | "emerald" | "muted";
+}) {
+  const styles: Record<typeof tone, string> = {
+    fresh: "border-[hsl(265_45%_55%/0.3)] text-[hsl(265_45%_55%)]",
+    warning: "border-[hsl(38_90%_58%/0.35)] text-[hsl(38_90%_58%)]",
+    critical: "border-[hsl(350_75%_62%/0.35)] text-[hsl(350_75%_62%)]",
+    emerald: "border-[hsl(155_65%_48%/0.35)] text-[hsl(155_65%_48%)]",
+    muted: "border-border/50 text-muted-foreground",
+  };
+  return (
+    <span
+      className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${styles[tone]}`}
+    >
+      {label}
+    </span>
   );
 }

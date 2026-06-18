@@ -7,12 +7,12 @@ import {
   ArrowRight,
   CheckCircle2,
   CircleDashed,
-  Target,
 } from "lucide-react";
 import { ActivityCard } from "@/components/activity/shared";
 import type { DailyReview } from "@/lib/api/types";
 import {
   ConfidenceBadge,
+  FocusGauge,
   EvidenceList,
   OpenWorkList,
   ProjectProgressSection,
@@ -38,12 +38,7 @@ export function DailyReviewView({
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <ConfidenceBadge score={review.reviewConfidence} />
-          <div className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-surface-2/40 px-3 py-2">
-            <Target className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">
-              Focus: <span className="font-mono font-medium">{review.focusScore}</span>
-            </span>
-          </div>
+          <FocusGauge score={review.focusScore} />
         </div>
       </section>
 

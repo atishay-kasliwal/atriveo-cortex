@@ -191,41 +191,52 @@ export function TemporalRibbon({ blocks }: { blocks: TimelineBlock[] }) {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-2">
+      <section className="space-y-4">
         <div className="col-span-full">
-          <h3 className="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Category decomposition
+          <h3 className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Category overlap
           </h3>
+          <p className="text-[12px] text-muted-foreground">
+            Shared day axis — read when categories overlapped, not just totals
+          </p>
         </div>
 
-        {decompositionCategories.map((key) => {
-          const cat = categoryStyle[key];
-          const cBlocks = segments.filter((s) => s.block.category === key);
-          if (cBlocks.length === 0) return null;
-          const totalMin = totals[key] ?? 0;
-          return (
-            <div key={key} className="space-y-3">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs font-medium text-foreground/90">{cat.label}</span>
-                <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {fmtDuration(Math.round(totalMin * 60))}
-                </span>
+        <div className="relative mb-1 flex justify-between font-mono text-[10px] text-muted-foreground">
+          <span>00:00</span>
+          <span>12:00</span>
+          <span>24:00</span>
+        </div>
+
+        <div className="space-y-2 rounded-lg border border-border/40 bg-surface-2/20 p-3">
+          {decompositionCategories.map((key) => {
+            const cat = categoryStyle[key];
+            const cBlocks = segments.filter((s) => s.block.category === key);
+            if (cBlocks.length === 0) return null;
+            const totalMin = totals[key] ?? 0;
+            return (
+              <div key={key} className="flex items-center gap-3">
+                <div className="w-28 shrink-0">
+                  <span className="text-xs font-medium text-foreground/90">{cat.label}</span>
+                  <span className="ml-2 font-mono text-[10px] tabular-nums text-muted-foreground">
+                    {fmtDuration(Math.round(totalMin * 60))}
+                  </span>
+                </div>
+                <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-surface-2/80">
+                  {cBlocks.map((s) => (
+                    <div
+                      key={s.block.id}
+                      className={"absolute top-0 bottom-0 " + cat.bar}
+                      style={{
+                        left: `${(s.startMin / DAY_MIN) * 100}%`,
+                        width: `${Math.max((s.durationMin / DAY_MIN) * 100, 0.3)}%`,
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-2/80 ring-1 ring-border/60">
-                {cBlocks.map((s) => (
-                  <div
-                    key={s.block.id}
-                    className={"absolute top-0 bottom-0 " + cat.bar}
-                    style={{
-                      left: `${(s.startMin / DAY_MIN) * 100}%`,
-                      width: `${(s.durationMin / DAY_MIN) * 100}%`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </section>
     </div>
   );

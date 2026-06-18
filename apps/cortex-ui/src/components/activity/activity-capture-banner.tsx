@@ -25,7 +25,8 @@ export function ActivityCaptureBanner({
     <div
       className={
         "flex items-center gap-2.5 rounded-lg border px-4 py-2.5 text-[13px] " +
-        styles.container
+        styles.container +
+        (pipelineState === "stale" ? " animate-calm-pulse-slow" : "")
       }
       role="status"
       aria-live="polite"

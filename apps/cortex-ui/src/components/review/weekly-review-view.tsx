@@ -12,13 +12,13 @@ import {
   CircleDashed,
   Lightbulb,
   Minus,
-  Target,
   TrendingUp,
 } from "lucide-react";
 import { ActivityCard } from "@/components/activity/shared";
 import type { WeeklyReview } from "@/lib/api/types";
 import {
   ConfidenceBadge,
+  FocusGauge,
   EvidenceList,
   OpenWorkList,
   ProjectProgressSection,
@@ -50,42 +50,51 @@ export function WeeklyReviewView({
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <ConfidenceBadge score={review.reviewConfidence} />
-          <div className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-surface-2/40 px-3 py-2">
-            <Target className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">
-              Focus: <span className="font-mono font-medium">{review.focusScore}</span>
-            </span>
-          </div>
+          <FocusGauge score={review.focusScore} />
         </div>
       </section>
 
       {hasComparison ? (
         <ActivityCard title="Week Over Week">
-          <div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
-            <ComparisonList
-              title="Completed"
-              items={review.comparison.completed}
-              icon={CheckCircle2}
-              iconClass="text-emerald-500/80"
-            />
-            <ComparisonList
-              title="Accelerated"
-              items={review.comparison.accelerated}
-              icon={TrendingUp}
-              iconClass="text-emerald-500/80"
-            />
-            <ComparisonList
-              title="Slowed"
-              items={review.comparison.slowed}
-              icon={ArrowDown}
-              iconClass="text-rose-500/80"
-            />
-            <ComparisonList
-              title="Changed"
-              items={review.comparison.changed}
-              icon={Lightbulb}
-              iconClass="text-amber-500/80"
-            />
+          <div className="grid gap-6 px-5 py-4 md:grid-cols-2">
+            <div>
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-[hsl(155_65%_48%)]">
+                Gained momentum
+              </p>
+              <ComparisonList
+                title="Completed"
+                items={review.comparison.completed}
+                icon={CheckCircle2}
+                iconClass="text-emerald-500/80"
+              />
+              <div className="mt-3">
+                <ComparisonList
+                  title="Accelerated"
+                  items={review.comparison.accelerated}
+                  icon={TrendingUp}
+                  iconClass="text-emerald-500/80"
+                />
+              </div>
+            </div>
+            <div>
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-[hsl(350_75%_62%)]">
+                Lost momentum
+              </p>
+              <ComparisonList
+                title="Slowed"
+                items={review.comparison.slowed}
+                icon={ArrowDown}
+                iconClass="text-rose-500/80"
+              />
+              <div className="mt-3">
+                <ComparisonList
+                  title="Changed"
+                  items={review.comparison.changed}
+                  icon={Lightbulb}
+                  iconClass="text-amber-500/80"
+                />
+              </div>
+            </div>
           </div>
         </ActivityCard>
       ) : null}

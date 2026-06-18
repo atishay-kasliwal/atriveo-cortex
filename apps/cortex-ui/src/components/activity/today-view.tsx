@@ -135,7 +135,7 @@ function HeroStat({
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={"mt-1 font-mono text-2xl font-semibold tabular-nums " + (accent ?? "")}>
+      <div className={"mt-1 stat-hero text-2xl tabular-nums " + (accent ?? "")}>
         {value}
       </div>
     </div>
