@@ -33,7 +33,12 @@ import {
   fetchWeekAttention,
 } from "./attention-adapter";
 import { fetchMemorySearch } from "./search-adapter";
-import { fetchProjectsHealth } from "./project-health-adapter";
+import { fetchProjectsHealth, fetchProjectHealthTrends } from "./project-health-adapter";
+import {
+  fetchTodayDecisions,
+  fetchDecisionRecommendations,
+  fetchProjectDecisions,
+} from "./decision-adapter";
 import { fetchAnalyticsHistory } from "./analytics-history-adapter";
 import { ApiError } from "./cortex-fetch";
 
@@ -50,10 +55,19 @@ export const api = {
     history: () => fetchAnalyticsHistory(),
   },
 
+  decisions: {
+    today: () => fetchTodayDecisions(),
+    recommendations: (params?: { date?: string; limit?: number }) =>
+      fetchDecisionRecommendations(params),
+    project: (project: string) => fetchProjectDecisions(project),
+  },
+
   projects: {
     list: () => fetchProjects(),
     get: (id: string) => fetchProjectDetail(id),
     health: (date?: string) => fetchProjectsHealth(date ? { date } : undefined),
+    healthTrends: (params?: { project?: string; days?: number }) =>
+      fetchProjectHealthTrends(params),
   },
 
   actions: {

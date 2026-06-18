@@ -7,6 +7,7 @@ import { memorySearchRepository } from "@/lib/repositories/memory-search-reposit
 import { openLoopRepository } from "@/lib/repositories/open-loop-repository";
 import { systemRepository } from "@/lib/repositories";
 import { evaluateCapturePipeline } from "./capture-pipeline-health";
+import { resolveCloudCaptureTimestamps } from "./capture-timestamps";
 import {
   CAPTURE_STALE_MS,
   INDEX_STALE_MS,
@@ -161,8 +162,9 @@ export async function getMemoryFreshnessScore(
   now = new Date(),
 ): Promise<MemoryFreshnessScore> {
   const sync = await getSyncStatus();
+  const captureTimes = await resolveCloudCaptureTimestamps(sync);
   const pipeline = evaluateCapturePipeline({
-    lastFrameAt: sync.lastFrameTimestamp,
+    lastFrameAt: captureTimes.displayCaptureAt,
     lastSyncAt: sync.lastProcessedTimestamp,
     lastSyncCompletedAt: sync.lastSyncCompletedAt,
     capturePortOpen: sync.capturePortOpen,
@@ -189,7 +191,7 @@ export async function getMemoryFreshnessScore(
     openLoopRepository.listAllIntelligence().then((rows) => rows.length),
   ]);
 
-  const lastCaptureAt = sync.lastFrameTimestamp;
+  const lastCaptureAt = captureTimes.displayCaptureAt;
   const lastSyncAt = pipeline.lastSyncAt;
 
   const lastReviewGeneratedAt =

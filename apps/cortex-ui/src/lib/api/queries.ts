@@ -11,6 +11,9 @@ export const qk = {
   history: ["analytics", "history"] as const,
   projects: ["projects"] as const,
   projectsHealth: (date?: string) => ["projects", "health", date ?? "today"] as const,
+  projectsHealthTrends: (days?: number) => ["projects", "health", "trends", days ?? 30] as const,
+  decisionsToday: ["decisions", "today"] as const,
+  decisionsRecommendations: (date?: string) => ["decisions", "recommendations", date ?? "today"] as const,
   project: (id: string) => ["projects", id] as const,
   actions: (bucket?: ActionBucket) => ["actions", bucket ?? "unresolved"] as const,
   action: (id: string) => ["actions", id] as const,
@@ -76,6 +79,27 @@ export const projectsHealthQuery = (date?: string) =>
   queryOptions({
     queryKey: qk.projectsHealth(date),
     queryFn: () => api.projects.health(date),
+    staleTime: STALE,
+  });
+
+export const projectsHealthTrendsQuery = (days = 30) =>
+  queryOptions({
+    queryKey: qk.projectsHealthTrends(days),
+    queryFn: () => api.projects.healthTrends({ days }),
+    staleTime: STALE,
+  });
+
+export const decisionsTodayQuery = () =>
+  queryOptions({
+    queryKey: qk.decisionsToday,
+    queryFn: () => api.decisions.today(),
+    staleTime: STALE,
+  });
+
+export const decisionsRecommendationsQuery = (date?: string) =>
+  queryOptions({
+    queryKey: qk.decisionsRecommendations(date),
+    queryFn: () => api.decisions.recommendations(date ? { date } : undefined),
     staleTime: STALE,
   });
 

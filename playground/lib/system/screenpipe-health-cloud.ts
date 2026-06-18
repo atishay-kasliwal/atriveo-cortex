@@ -4,6 +4,7 @@
 
 import type { ScreenpipeHealth } from "./screenpipe-health";
 import { evaluateCapturePipeline } from "@/lib/sync/capture-pipeline-health";
+import { resolveCloudCaptureTimestamps } from "@/lib/sync/capture-timestamps";
 import { getSyncStatus } from "@/lib/sync/sync-status";
 
 /** Cloud Worker: infer capture pipeline health from Neon sync_state (Mac agent writes). */
@@ -11,8 +12,11 @@ export async function getCloudScreenpipeHealth(
   hasHistoricalData = true,
 ): Promise<ScreenpipeHealth> {
   const sync = await getSyncStatus();
+  const capture = await resolveCloudCaptureTimestamps(sync);
+  const lastCaptureAt = capture.displayCaptureAt;
+
   const pipeline = evaluateCapturePipeline({
-    lastFrameAt: sync.lastFrameTimestamp,
+    lastFrameAt: lastCaptureAt,
     lastSyncAt: sync.lastProcessedTimestamp,
     lastSyncCompletedAt: sync.lastSyncCompletedAt,
     capturePortOpen: sync.capturePortOpen,
@@ -24,8 +28,6 @@ export async function getCloudScreenpipeHealth(
   if (pipeline.pipelineStatus === "live") status = "healthy";
   else if (pipeline.pipelineStatus === "syncing") status = "recovering";
   else if (pipeline.pipelineStatus === "stale") status = "warning";
-
-  const lastCaptureAt = sync.lastFrameTimestamp ?? sync.lastSyncCompletedAt;
 
   return {
     running: pipeline.captureRunning || pipeline.captureActive,
@@ -51,7 +53,7 @@ export async function getCloudScreenpipeHealth(
     syncStale: pipeline.syncStale,
     analyticsStale: pipeline.analyticsStale,
     lastSyncAt: pipeline.lastSyncAt,
-    lastFrameAt: pipeline.lastFrameAt,
+    lastFrameAt: capture.displayCaptureAt,
     minutesSinceSync: pipeline.minutesSinceSync,
   };
 }

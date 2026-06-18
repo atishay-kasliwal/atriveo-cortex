@@ -33,6 +33,10 @@ import {
   formatProjectHealthAnswer,
   retrieveProjectHealthRecords,
 } from "@/lib/project-health-retrieval";
+import {
+  formatDecisionAnswer,
+  retrieveDecisionRecords,
+} from "@/lib/decision-retrieval";
 import type {
   AnswerConfidence,
   ChatResponse,
@@ -114,8 +118,20 @@ export function classifyQuestion(question: string): QuestionIntent {
   if (/what changed since|what's changed since|what changed this week/.test(q)) {
     return "delta_since";
   }
-  if (/what should i finish next|what should i work on next/.test(q)) {
+  if (/what should i finish next|what should i work on next|what should i do next/.test(q)) {
     return "next_action";
+  }
+  if (/what is most important|most important (thing|work|project)/.test(q)) {
+    return "decisions_most_important";
+  }
+  if (/what is slipping|what(?:'s| is) slipping|what (work|projects?) (is|are) slipping/.test(q)) {
+    return "decisions_slipping";
+  }
+  if (/what can i safely ignore|what (to|can i) ignore|safe to ignore/.test(q)) {
+    return "decisions_ignore";
+  }
+  if (/highest leverage|most leverage|what creates the most leverage/.test(q)) {
+    return "decisions_leverage";
   }
   if (/what projects are active|which projects are active|projects are active/.test(q)) {
     return "projects_active";
@@ -128,18 +144,32 @@ export function classifyQuestion(question: string): QuestionIntent {
     return "projects_at_risk";
   }
   if (
+    /which project(s)? (is|are) (the )?healthiest|what project(s)? (is|are) (the )?healthiest|healthiest project/.test(
+      q,
+    )
+  ) {
+    return "projects_healthiest";
+  }
+  if (
+    /which project(s)? (is|are) declining|what project(s)? (is|are) declining|declining project/.test(
+      q,
+    )
+  ) {
+    return "projects_declining";
+  }
+  if (
+    /which project(s)? (deserves?|needs?) attention|what project(s)? (deserves?|needs?) attention|project(s)? deserve attention/.test(
+      q,
+    )
+  ) {
+    return "projects_need_attention";
+  }
+  if (
     /which project(s)? gained momentum|what project(s)? gained momentum|gaining momentum/.test(
       q,
     )
   ) {
     return "projects_gaining_momentum";
-  }
-  if (
-    /which project(s)? needs? attention|what project(s)? needs? attention|project(s)? need attention/.test(
-      q,
-    )
-  ) {
-    return "projects_need_attention";
   }
   if (/what has stalled|which projects stalled|what stalled/.test(q)) {
     return "projects_stalled";
@@ -260,6 +290,8 @@ export function resolveDateRange(
       return { start: shiftDate(today, -21), end: today };
     }
     case "projects_at_risk":
+    case "projects_healthiest":
+    case "projects_declining":
     case "projects_gaining_momentum":
     case "projects_need_attention": {
       const yesterday = shiftDate(today, -1);
@@ -267,7 +299,11 @@ export function resolveDateRange(
       return { start: range.startDate, end: range.endDate };
     }
     case "next_action":
-      return { start: shiftDate(today, -30), end: today };
+    case "decisions_most_important":
+    case "decisions_slipping":
+    case "decisions_ignore":
+    case "decisions_leverage":
+      return { start: shiftDate(today, -14), end: today };
     default:
       return { start: shiftDate(today, -30), end: today };
   }
@@ -651,10 +687,22 @@ export async function retrieveMemory(question: string): Promise<RetrievalBundle>
 
   if (
     intent === "projects_at_risk" ||
+    intent === "projects_healthiest" ||
+    intent === "projects_declining" ||
     intent === "projects_gaining_momentum" ||
     intent === "projects_need_attention"
   ) {
     records.push(...(await retrieveProjectHealthRecords(intent)));
+  }
+
+  if (
+    intent === "next_action" ||
+    intent === "decisions_most_important" ||
+    intent === "decisions_slipping" ||
+    intent === "decisions_ignore" ||
+    intent === "decisions_leverage"
+  ) {
+    records.push(...(await retrieveDecisionRecords(intent)));
   }
 
   let filtered = dedupeRecords(records);
@@ -815,6 +863,8 @@ export function composeGroundedAnswer(packet: ContextPacket): {
     }
 
     case "projects_at_risk":
+    case "projects_healthiest":
+    case "projects_declining":
     case "projects_gaining_momentum":
     case "projects_need_attention": {
       const healthAnswer = formatProjectHealthAnswer(
@@ -825,16 +875,16 @@ export function composeGroundedAnswer(packet: ContextPacket): {
       break;
     }
 
-    case "next_action": {
-      if (loops.length === 0) {
-        return { answer: "No open loops to prioritize right now.", citations: [] };
-      }
-      parts.push("Top actions to finish next:");
-      for (const l of loops.slice(0, 3)) {
-        parts.push(
-          `• ${l.title}${l.project ? ` (${shortProject(l.project)})` : ""} — ${l.content}`,
-        );
-      }
+    case "next_action":
+    case "decisions_most_important":
+    case "decisions_slipping":
+    case "decisions_ignore":
+    case "decisions_leverage": {
+      const decisionAnswer = formatDecisionAnswer(
+        packet.intent,
+        packet.records.filter((r) => r.source === "decision_engine"),
+      );
+      if (decisionAnswer) return { answer: decisionAnswer, citations };
       break;
     }
 

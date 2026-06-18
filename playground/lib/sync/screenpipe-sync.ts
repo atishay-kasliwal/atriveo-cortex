@@ -11,6 +11,7 @@ import {
 } from "@/lib/screenpipe-db";
 import { systemRepository } from "@/lib/repositories";
 import { probeScreenpipe } from "@/lib/system/screenpipe-probe";
+import { publishObservedCaptureWatermark } from "./capture-watermark";
 import { SYNC_KEYS } from "./sync-keys";
 
 export type SyncScreenpipeResult = {
@@ -59,6 +60,11 @@ async function recordPipelineHeartbeat(opts: {
 export async function syncScreenpipeToCortex(): Promise<SyncScreenpipeResult> {
   const probe = await probeScreenpipe();
   const lastFrame = getLatestCaptureTimestamp();
+  await publishObservedCaptureWatermark({
+    lastFrame,
+    portOpen: probe.portOpen,
+    apiReachable: probe.apiReachable,
+  });
   const lastSyncedFrame = await systemRepository.getSyncState(SYNC_KEYS.lastFrame);
   const today = localDateString();
 

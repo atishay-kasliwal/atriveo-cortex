@@ -18,6 +18,7 @@ import {
   Brain,
   Activity,
   HeartPulse,
+  Crosshair,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -65,6 +66,7 @@ const nav = [
   {
     group: "Focus",
     items: [
+      { title: "Decision Center", url: "/decisions", icon: Crosshair },
       { title: "Open Loops", url: "/open-loops", icon: CircleDashed },
       { title: "Attention", url: "/attention", icon: Brain },
     ],

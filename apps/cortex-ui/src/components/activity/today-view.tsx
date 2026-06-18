@@ -68,7 +68,7 @@ export function TodayView({
         sleepingSec={data.sleepingSec}
       />
       <ActivityCard title="Temporal distribution" subtitle={temporalSubtitle}>
-        <TemporalRibbon blocks={data.timeline} />
+        <TemporalRibbon blocks={data.timeline} viewDate={viewDate ?? data.date} />
       </ActivityCard>
       <ActivityCard
         title="Timeline of Work"

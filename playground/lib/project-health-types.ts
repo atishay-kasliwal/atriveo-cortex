@@ -13,15 +13,24 @@ export type ProjectMomentumTrend = "Rising" | "Steady" | "Falling" | "Stalled";
 
 export type ProjectAttentionLevel = "High" | "Medium" | "Low" | "None";
 
+export type HealthExplanationLine = {
+  label: string;
+  delta: number;
+};
+
 export type ProjectHealthInputs = {
   projectName: string;
   lastSeen: string | null;
   attentionPercent: number;
   attentionMomentum: "increasing" | "steady" | "declining" | null;
+  deepWorkSec: number;
+  activeSec: number;
   weeklyMomentumTrend: "gaining" | "losing" | "stalled" | "steady" | null;
   daysSinceActivity: number | null;
   openLoopCount: number;
   blockedLoopCount: number;
+  completedLoopCount: number;
+  resurfaceLoopCount: number;
   completedCount: number;
   inProgressCount: number;
   stalledWorkCount: number;
@@ -34,10 +43,22 @@ export type ProjectHealthInputs = {
   sessionCount: number;
 };
 
+export type ProjectHealthPillarScores = {
+  momentum: number;
+  execution: number;
+  risk: number;
+  attention: number;
+};
+
 export type ProjectHealthResult = {
   projectName: string;
   healthScore: number;
   status: ProjectHealthStatus;
+  momentumScore: number;
+  executionScore: number;
+  riskScore: number;
+  attentionScore: number;
+  explanation: HealthExplanationLine[];
   momentumTrend: ProjectMomentumTrend;
   attentionLevel: ProjectAttentionLevel;
   attentionPercent: number;
@@ -50,6 +71,29 @@ export type ProjectHealthResult = {
   lastActivityAt: string | null;
   daysSinceActivity: number | null;
   completedCount: number;
+  completedThisWeek: number;
   inProgressCount: number;
   signals: string[];
+};
+
+export type ProjectHealthSnapshot = {
+  project: string;
+  score: number;
+  momentumScore: number;
+  executionScore: number;
+  riskScore: number;
+  attentionScore: number;
+  explanation: HealthExplanationLine[];
+  snapshotDate: string;
+  createdAt: string;
+};
+
+export type ProjectHealthTrendsDTO = {
+  generatedAt: string;
+  days: number;
+  projects: string[];
+  healthTrend: Array<{ date: string; [project: string]: number | string }>;
+  attentionTrend: Array<{ date: string; [project: string]: number | string }>;
+  loopTrend: Array<{ date: string; [project: string]: number | string }>;
+  completionTrend: Array<{ date: string; [project: string]: number | string }>;
 };

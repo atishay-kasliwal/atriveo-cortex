@@ -16,6 +16,7 @@ import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as OpenLoopsRouteImport } from './routes/open-loops'
 import { Route as IdeasRouteImport } from './routes/ideas'
+import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as AttentionRouteImport } from './routes/attention'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as ActivityRouteImport } from './routes/activity'
@@ -62,6 +63,11 @@ const OpenLoopsRoute = OpenLoopsRouteImport.update({
 const IdeasRoute = IdeasRouteImport.update({
   id: '/ideas',
   path: '/ideas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecisionsRoute = DecisionsRouteImport.update({
+  id: '/decisions',
+  path: '/decisions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AttentionRoute = AttentionRouteImport.update({
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
+  '/decisions': typeof DecisionsRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
+  '/decisions': typeof DecisionsRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
+  '/decisions': typeof DecisionsRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/ask'
     | '/attention'
+    | '/decisions'
     | '/ideas'
     | '/open-loops'
     | '/overview'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/ask'
     | '/attention'
+    | '/decisions'
     | '/ideas'
     | '/open-loops'
     | '/overview'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/ask'
     | '/attention'
+    | '/decisions'
     | '/ideas'
     | '/open-loops'
     | '/overview'
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   ActivityRoute: typeof ActivityRoute
   AskRoute: typeof AskRoute
   AttentionRoute: typeof AttentionRoute
+  DecisionsRoute: typeof DecisionsRoute
   IdeasRoute: typeof IdeasRouteWithChildren
   OpenLoopsRoute: typeof OpenLoopsRouteWithChildren
   OverviewRoute: typeof OverviewRoute
@@ -321,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/ideas'
       fullPath: '/ideas'
       preLoaderRoute: typeof IdeasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decisions': {
+      id: '/decisions'
+      path: '/decisions'
+      fullPath: '/decisions'
+      preLoaderRoute: typeof DecisionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/attention': {
@@ -463,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   ActivityRoute: ActivityRoute,
   AskRoute: AskRoute,
   AttentionRoute: AttentionRoute,
+  DecisionsRoute: DecisionsRoute,
   IdeasRoute: IdeasRouteWithChildren,
   OpenLoopsRoute: OpenLoopsRouteWithChildren,
   OverviewRoute: OverviewRoute,

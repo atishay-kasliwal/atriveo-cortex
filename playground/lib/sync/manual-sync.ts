@@ -43,7 +43,7 @@ export async function getManualSyncStatus(): Promise<SyncStatusResponse> {
   ]);
 
   const pipeline = evaluateCapturePipeline({
-    lastFrameAt: sync.lastFrameTimestamp,
+    lastFrameAt: memoryFreshness.lastCaptureAt,
     lastSyncAt: sync.lastProcessedTimestamp,
     lastSyncCompletedAt: sync.lastSyncCompletedAt,
     capturePortOpen: sync.capturePortOpen,
@@ -54,7 +54,7 @@ export async function getManualSyncStatus(): Promise<SyncStatusResponse> {
   const hasAnyMemory = capability.hasCloudMemory;
   const pipelineStatus = pipelineStatusFromScore(memoryFreshness.score, hasAnyMemory);
   const lastUpdatedAt =
-    memoryFreshness.lastReviewGeneratedAt ??
+    memoryFreshness.lastCaptureAt ??
     memoryFreshness.lastSyncAt ??
     sync.lastSyncCompletedAt;
   const minutesSinceUpdate = minutesSince(lastUpdatedAt);
@@ -62,7 +62,7 @@ export async function getManualSyncStatus(): Promise<SyncStatusResponse> {
   return {
     pipelineStatus,
     lastSyncAt: pipeline.lastSyncAt,
-    lastFrameAt: pipeline.lastFrameAt,
+    lastFrameAt: memoryFreshness.lastCaptureAt,
     freshness: freshnessFromScore(memoryFreshness.score),
     freshnessLabel: lastUpdatedLabel(minutesSinceUpdate),
     minutesSinceSync: minutesSinceUpdate,

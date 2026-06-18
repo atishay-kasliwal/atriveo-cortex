@@ -32,6 +32,7 @@ cd "${REPO_ROOT}/playground"
 
 {
   echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync start ==="
+  npm run capture:watermark || true
   npm run sync:screenpipe
   echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync done (exit $?) ==="
 } >> "${SYNC_LOG}" 2>&1

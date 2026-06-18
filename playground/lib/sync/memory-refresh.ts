@@ -263,7 +263,7 @@ export async function runMemoryRefresh(options?: {
   try {
     const derived = await rebuildDerivedLayers(
       datesToRebuild,
-      options?.forceReviews ?? recordsImported > 0 || !captureSucceeded,
+      options?.forceReviews ?? (recordsImported > 0 || !captureSucceeded),
     );
     reviewsUpdated = derived.reviewsUpdated;
     memoryRefreshed = true;

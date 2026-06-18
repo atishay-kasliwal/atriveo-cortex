@@ -50,7 +50,9 @@ import {
 } from "@/lib/recurrence";
 import { getCloudScreenpipeHealth } from "@/lib/system/screenpipe-health-cloud";
 import { getSystemHealth } from "@/lib/system/system-health";
-import { buildProjectsHealth } from "@/lib/project-health-api";
+import { buildProjectsHealth, buildProjectHealth } from "@/lib/project-health-api";
+import { buildProjectHealthTrends } from "@/lib/project-health-db";
+import { buildTodayDecisions, buildDecisions } from "@/lib/decision-api";
 import { getSyncReliabilityReport } from "@/lib/sync/sync-reliability";
 import { getMemoryFreshnessScore } from "@/lib/sync/memory-freshness";
 import { getAnalyticsHistory } from "@/lib/analytics/history";
@@ -531,6 +533,74 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
         e instanceof Error ? e.message : "Failed to load reliability metrics",
         500,
       );
+    }
+  });
+
+  app.get("/api/decisions/today", async (c) => {
+    try {
+      return apiSuccess(c, await buildTodayDecisions());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load today's decisions", 500);
+    }
+  });
+
+  app.get("/api/decisions/recommendations", async (c) => {
+    try {
+      const date = c.req.query("date") ?? null;
+      const limit = Number(c.req.query("limit") ?? "50");
+      return apiSuccess(
+        c,
+        await buildDecisions({
+          date,
+          limit: Number.isFinite(limit) ? limit : 50,
+        }),
+      );
+    } catch (e) {
+      return apiError(
+        c,
+        e instanceof Error ? e.message : "Failed to load decision recommendations",
+        500,
+      );
+    }
+  });
+
+  app.get("/api/decisions/project/:project", async (c) => {
+    try {
+      const project = decodeURIComponent(c.req.param("project"));
+      return apiSuccess(c, await buildDecisions({ project, limit: 20 }));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load project decisions", 500);
+    }
+  });
+
+  app.get("/api/projects/health/trends", async (c) => {
+    try {
+      const project = c.req.query("project") ?? null;
+      const days = Number(c.req.query("days") ?? "30");
+      return apiSuccess(
+        c,
+        await buildProjectHealthTrends({
+          project,
+          days: Number.isFinite(days) ? Math.min(90, Math.max(7, days)) : 30,
+        }),
+      );
+    } catch (e) {
+      return apiError(
+        c,
+        e instanceof Error ? e.message : "Failed to load project health trends",
+        500,
+      );
+    }
+  });
+
+  app.get("/api/projects/health/:project", async (c) => {
+    try {
+      const project = decodeURIComponent(c.req.param("project"));
+      const row = await buildProjectHealth(project);
+      if (!row) return apiError(c, "Project not found", 404);
+      return apiSuccess(c, row);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load project health", 500);
     }
   });
 

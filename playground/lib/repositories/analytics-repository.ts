@@ -241,6 +241,13 @@ export class AnalyticsRepository {
     );
     return Number(row?.count ?? 0);
   }
+
+  async getLatestActivityEndTime(): Promise<string | null> {
+    const row = await runUnsafeOne<{ end_time: string | null }>(
+      `SELECT MAX(end_time) AS end_time FROM activity_sessions`,
+    );
+    return row?.end_time ?? null;
+  }
 }
 
 export const analyticsRepository = new AnalyticsRepository();

@@ -19,8 +19,11 @@ type RibbonSegment = {
   durationMin: number;
 };
 
-function localDayStart(reference = new Date()): Date {
-  const d = new Date(reference);
+function localDayStart(reference: Date | string): Date {
+  const d =
+    typeof reference === "string"
+      ? new Date(`${reference}T00:00:00`)
+      : new Date(reference);
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -38,9 +41,18 @@ function fmtAxisClock(totalMin: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-export function TemporalRibbon({ blocks }: { blocks: TimelineBlock[] }) {
+export function TemporalRibbon({
+  blocks,
+  viewDate,
+}: {
+  blocks: TimelineBlock[];
+  viewDate?: string;
+}) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const dayStart = useMemo(() => localDayStart(), []);
+  const dayStart = useMemo(
+    () => localDayStart(viewDate ?? new Date()),
+    [viewDate],
+  );
 
   const segments = useMemo(
     () =>

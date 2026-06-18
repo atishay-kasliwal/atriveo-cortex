@@ -12,7 +12,6 @@ import {
   fetchSyncStatus,
   formatDurationMs,
   formatLastSyncAt,
-  formatLastUpdated,
   memoryFreshnessStyle,
   syncPipelineLabels,
   syncPipelineStyles,
@@ -150,8 +149,11 @@ export function SyncControl() {
           ) : null}
         </div>
         <p className="text-[10px] text-muted-foreground">
-          Last updated{" "}
-          {formatLastUpdated(status?.lastUpdatedAt ?? null, status?.freshnessLabel ?? null)}
+          Last capture{" "}
+          {formatLastSyncAt(
+            freshness?.lastCaptureAt ?? status?.lastFrameAt ?? status?.lastUpdatedAt ?? null,
+          )}
+          {status?.freshnessLabel ? ` · ${status.freshnessLabel}` : ""}
         </p>
       </div>
       <Button

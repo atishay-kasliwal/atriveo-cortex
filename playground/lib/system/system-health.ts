@@ -6,6 +6,7 @@ import { checkDatabaseConnection } from "@/lib/config/env";
 import { memorySearchRepository } from "@/lib/repositories/memory-search-repository";
 import { openLoopRepository } from "@/lib/repositories/open-loop-repository";
 import { evaluateCapturePipeline } from "@/lib/sync/capture-pipeline-health";
+import { resolveCloudCaptureTimestamps } from "@/lib/sync/capture-timestamps";
 import { getMemoryFreshnessScore } from "@/lib/sync/memory-freshness";
 import { getSyncStatus } from "@/lib/sync/sync-status";
 
@@ -76,8 +77,9 @@ export async function getSystemHealth(): Promise<SystemHealthResponse> {
     openLoopRepository.listAllIntelligence(),
   ]);
 
+  const captureTimes = await resolveCloudCaptureTimestamps(sync);
   const pipeline = evaluateCapturePipeline({
-    lastFrameAt: sync.lastFrameTimestamp,
+    lastFrameAt: captureTimes.displayCaptureAt,
     lastSyncAt: sync.lastProcessedTimestamp,
     lastSyncCompletedAt: sync.lastSyncCompletedAt,
     capturePortOpen: sync.capturePortOpen,
@@ -93,7 +95,7 @@ export async function getSystemHealth(): Promise<SystemHealthResponse> {
     database,
     memoryFreshness: freshness,
     capture: {
-      lastFrameAt: sync.lastFrameTimestamp,
+      lastFrameAt: captureTimes.displayCaptureAt,
       portOpen: sync.capturePortOpen,
       apiReachable: sync.captureApiReachable,
       pipelineStatus: pipeline.pipelineStatus,

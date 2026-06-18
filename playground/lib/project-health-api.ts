@@ -13,7 +13,8 @@ import {
 import { getIntelligenceLoops } from "@/lib/open-loop-intelligence";
 import { listProjectSummaries } from "@/lib/project-memory";
 import { computeProjectHealth } from "@/lib/project-health-engine";
-import type { ProjectHealthInputs } from "@/lib/project-health-types";
+import type { ProjectHealthInputs, ProjectHealthResult } from "@/lib/project-health-types";
+import { persistProjectHealthScores } from "@/lib/project-health-db";
 import { getActionRecurrenceReport } from "@/lib/recurrence";
 import { buildLatestReview } from "@/lib/review/daily-review-api";
 import { buildLatestWeekReview } from "@/lib/review/weekly-review-api";
@@ -29,6 +30,10 @@ function daysSince(iso: string | null, now = new Date()): number | null {
 
 function normProject(name: string): string {
   return name.trim().toLowerCase();
+}
+
+function loopsForProject(loops: IntelligenceLoopRecord[]): IntelligenceLoopRecord[] {
+  return loops;
 }
 
 function openLoopsForProject(loops: IntelligenceLoopRecord[]): IntelligenceLoopRecord[] {
@@ -64,7 +69,7 @@ function buildInputsForProject(
   projectName: string,
   lastSeen: string,
   ctx: {
-    attentionByProject: Map<string, { percent: number; momentum: "increasing" | "steady" | "declining" }>;
+    attentionByProject: Map<string, { percent: number; momentum: "increasing" | "steady" | "declining"; deepWorkSec: number; activeSec: number }>;
     momentumByProject: Map<string, { trend: "gaining" | "losing" | "stalled" | "steady"; daysSince: number | null; sessions: number }>;
     loopsByProject: Map<string, IntelligenceLoopRecord[]>;
     stalledByProject: Map<string, number>;
@@ -77,8 +82,11 @@ function buildInputsForProject(
   const key = normProject(projectName);
   const attention = ctx.attentionByProject.get(key);
   const momentum = ctx.momentumByProject.get(key);
-  const loops = openLoopsForProject(ctx.loopsByProject.get(key) ?? []);
+  const allProjectLoops = loopsForProject(ctx.loopsByProject.get(key) ?? []);
+  const loops = openLoopsForProject(allProjectLoops);
   const blocked = loops.filter((l) => l.status === "BLOCKED");
+  const completedLoops = allProjectLoops.filter((l) => l.status === "COMPLETED");
+  const resurfaceTotal = allProjectLoops.reduce((n, l) => n + (l.resurface_count ?? 0), 0);
   const progress = ctx.progressByProject.get(key);
   const oldest = loops.reduce<IntelligenceLoopRecord | null>((best, loop) => {
     if (!best || loop.days_open > best.days_open) return loop;
@@ -91,10 +99,14 @@ function buildInputsForProject(
     lastSeen,
     attentionPercent: attention?.percent ?? 0,
     attentionMomentum: attention?.momentum ?? null,
+    deepWorkSec: attention?.deepWorkSec ?? 0,
+    activeSec: attention?.activeSec ?? 0,
     weeklyMomentumTrend: momentum?.trend ?? null,
     daysSinceActivity: momentum?.daysSince ?? daysSince(lastSeen),
     openLoopCount: loops.length,
     blockedLoopCount: blocked.length,
+    completedLoopCount: completedLoops.length,
+    resurfaceLoopCount: resurfaceTotal,
     completedCount: progress?.completed.length ?? 0,
     inProgressCount: progress?.inProgress.length ?? 0,
     stalledWorkCount: ctx.stalledByProject.get(key) ?? 0,
@@ -111,6 +123,7 @@ function buildInputsForProject(
 export async function buildProjectsHealth(options?: {
   date?: string | null;
   project?: string | null;
+  persist?: boolean;
 }): Promise<ProjectsHealthDTO> {
   const date = todayDateParam(options?.date);
   const week = weekRange(date);
@@ -127,12 +140,19 @@ export async function buildProjectsHealth(options?: {
 
   const attentionByProject = new Map<
     string,
-    { percent: number; momentum: "increasing" | "steady" | "declining" }
+    {
+      percent: number;
+      momentum: "increasing" | "steady" | "declining";
+      deepWorkSec: number;
+      activeSec: number;
+    }
   >();
   for (const row of attention?.projectAttention ?? []) {
     attentionByProject.set(normProject(row.project), {
       percent: row.attentionPercent,
       momentum: row.momentum,
+      deepWorkSec: row.deepWorkSec ?? 0,
+      activeSec: row.activeSec ?? 0,
     });
   }
 
@@ -198,16 +218,17 @@ export async function buildProjectsHealth(options?: {
     ? summaries.filter((s) => normProject(s.canonical_project).includes(normProject(filterName)))
     : summaries;
 
-  const projects = targets
-    .map((summary) => {
-      const inputs = buildInputsForProject(
-        summary.canonical_project,
-        summary.last_seen,
-        ctx,
-      );
-      return toProjectHealthDTO(computeProjectHealth(inputs));
-    })
-    .sort((a, b) => b.healthScore - a.healthScore);
+  const results = targets.map((summary) =>
+    computeProjectHealth(
+      buildInputsForProject(summary.canonical_project, summary.last_seen, ctx),
+    ),
+  );
+
+  if (options?.persist === true && results.length > 0) {
+    await persistProjectHealthScores(results, date);
+  }
+
+  const projects = results.map(toProjectHealthDTO).sort((a, b) => b.healthScore - a.healthScore);
 
   return {
     generatedAt: new Date().toISOString(),

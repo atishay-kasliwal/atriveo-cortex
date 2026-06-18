@@ -82,7 +82,7 @@ export function activityPipelineBannerMessage(
     return "Syncing — New capture detected. Analytics updating.";
   }
   if (state === "stale" && hasHistoricalData) {
-    const when = health?.lastSyncAt ?? health?.lastCaptureAt;
+    const when = health?.lastCaptureAt ?? health?.lastSyncAt;
     if (when) {
       const d = new Date(when);
       const label = d.toLocaleString([], {

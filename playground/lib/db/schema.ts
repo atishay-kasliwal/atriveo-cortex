@@ -375,3 +375,27 @@ export const syncState = pgTable("sync_state", {
   value: text("value").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const projectHealthScores = pgTable(
+  "project_health_scores",
+  {
+    id: serial("id").primaryKey(),
+    project: text("project").notNull(),
+    score: integer("score").notNull(),
+    momentumScore: integer("momentum_score").notNull(),
+    executionScore: integer("execution_score").notNull(),
+    riskScore: integer("risk_score").notNull(),
+    attentionScore: integer("attention_score").notNull(),
+    explanation: text("explanation").notNull().default("[]"),
+    openLoops: integer("open_loops").notNull().default(0),
+    blockedWork: integer("blocked_work").notNull().default(0),
+    completedThisWeek: integer("completed_this_week").notNull().default(0),
+    snapshotDate: text("snapshot_date").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    index("idx_project_health_scores_project").on(t.project),
+    index("idx_project_health_scores_snapshot").on(t.snapshotDate),
+    uniqueIndex("project_health_scores_project_date").on(t.project, t.snapshotDate),
+  ],
+);

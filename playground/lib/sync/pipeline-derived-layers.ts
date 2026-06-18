@@ -9,6 +9,7 @@ import { syncOpenLoopIntelligence } from "@/lib/open-loop-intelligence";
 import { systemRepository } from "@/lib/repositories";
 import { getDailyReview } from "@/lib/review/daily-review-service";
 import { getWeeklyReview } from "@/lib/review/weekly-review-service";
+import { buildProjectsHealth } from "@/lib/project-health-api";
 import { SYNC_KEYS } from "./sync-keys";
 
 /** Ordered pipeline stages after capture + analytics. */
@@ -17,6 +18,7 @@ export const DERIVED_PIPELINE_STAGES = [
   "reviews",
   "search_index",
   "attention",
+  "project_health",
 ] as const;
 
 export type DerivedPipelineStage = (typeof DERIVED_PIPELINE_STAGES)[number];
@@ -26,6 +28,7 @@ export type DerivedLayersResult = {
   reviewsUpdated: number;
   indexEntries: number;
   attentionDates: number;
+  healthSnapshots: number;
 };
 
 function uniqueWeekStarts(dates: string[]): string[] {
@@ -71,10 +74,14 @@ export async function rebuildDerivedLayers(
   }
   await touchStage(SYNC_KEYS.lastAttentionComputed);
 
+  const healthReport = await buildProjectsHealth({ persist: true });
+  await touchStage(SYNC_KEYS.lastProjectHealthComputed);
+
   return {
     loopsUpdated,
     reviewsUpdated,
     indexEntries: indexed,
     attentionDates: targetDates.length,
+    healthSnapshots: healthReport.projects.length,
   };
 }

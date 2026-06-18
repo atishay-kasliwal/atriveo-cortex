@@ -6,6 +6,7 @@
 export const SYNC_KEYS = {
   lastProcessed: "last_processed_timestamp",
   lastFrame: "last_frame_timestamp",
+  lastObservedFrame: "last_observed_frame_at",
   lastSyncCompleted: "last_sync_completed_at",
   lastSyncRecords: "last_sync_records_processed",
   capturePortOpen: "capture_port_open",
@@ -15,6 +16,7 @@ export const SYNC_KEYS = {
   lastReviewGenerated: "last_review_generated_at",
   lastIndexRebuild: "last_index_rebuild_at",
   lastAttentionComputed: "last_attention_computed_at",
+  lastProjectHealthComputed: "last_project_health_computed_at",
 } as const;
 
 export const SYNC_FRESH_MS = 10 * 60_000;

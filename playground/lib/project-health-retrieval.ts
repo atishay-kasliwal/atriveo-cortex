@@ -7,15 +7,27 @@ import type { ProjectHealthDTO } from "@/lib/api/project-health-dtos";
 import type { MemoryRecord } from "./memory-retrieval-types";
 import type { QuestionIntent } from "./memory-retrieval-types";
 
+function formatExplanation(project: ProjectHealthDTO): string {
+  if (project.explanation.length === 0) return "";
+  return project.explanation
+    .slice(0, 4)
+    .map((line) => `${line.delta >= 0 ? "+" : ""}${line.delta} ${line.label}`)
+    .join(" · ");
+}
+
 function healthToRecord(project: ProjectHealthDTO): MemoryRecord {
+  const explain = formatExplanation(project);
   const content = [
-    `Health ${project.healthScore}/100`,
-    `Status ${project.status}`,
-    `Momentum ${project.momentumTrend}`,
+    `Health ${project.healthScore}/100 (${project.status})`,
+    `Momentum ${project.momentumTrend} (${project.momentumScore})`,
     `Attention ${project.attentionLevel} (${project.attentionPercent}%)`,
     `${project.openLoops} open loops`,
     `${project.blockedWork} blocked`,
-  ].join(" · ");
+    `${project.completedThisWeek} completed this week`,
+    explain,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return {
     type: "project",
@@ -39,6 +51,21 @@ export async function retrieveProjectHealthRecords(
   let filtered = [...report.projects];
 
   switch (intent) {
+    case "projects_healthiest":
+      filtered.sort((a, b) => b.healthScore - a.healthScore);
+      filtered = filtered.filter((p) => p.healthScore >= 70).slice(0, 5);
+      if (filtered.length === 0) filtered = report.projects.slice(0, 3);
+      break;
+    case "projects_declining":
+      filtered = filtered.filter(
+        (p) =>
+          p.momentumTrend === "Falling" ||
+          p.momentumTrend === "Stalled" ||
+          p.status === "At Risk" ||
+          p.status === "Dormant",
+      );
+      filtered.sort((a, b) => a.momentumScore - b.momentumScore || a.healthScore - b.healthScore);
+      break;
     case "projects_at_risk":
       filtered = filtered.filter(
         (p) => p.status === "At Risk" || p.status === "Dormant",
@@ -49,7 +76,7 @@ export async function retrieveProjectHealthRecords(
       filtered = filtered.filter(
         (p) => p.momentumTrend === "Rising" || p.status === "Growing",
       );
-      filtered.sort((a, b) => b.healthScore - a.healthScore);
+      filtered.sort((a, b) => b.momentumScore - a.momentumScore);
       break;
     case "projects_need_attention":
       filtered = filtered.filter(
@@ -83,6 +110,10 @@ export function formatProjectHealthAnswer(
     switch (intent) {
       case "projects_at_risk":
         return "No projects are currently at risk.";
+      case "projects_healthiest":
+        return "No project health scores yet — capture a few more sessions first.";
+      case "projects_declining":
+        return "No projects show declining momentum right now.";
       case "projects_gaining_momentum":
         return "No projects show rising momentum this week.";
       case "projects_need_attention":
@@ -94,6 +125,12 @@ export function formatProjectHealthAnswer(
 
   const parts: string[] = [];
   switch (intent) {
+    case "projects_healthiest":
+      parts.push("Healthiest projects:");
+      break;
+    case "projects_declining":
+      parts.push("Projects losing momentum:");
+      break;
     case "projects_at_risk":
       parts.push("Projects at risk:");
       break;
@@ -101,7 +138,7 @@ export function formatProjectHealthAnswer(
       parts.push("Projects gaining momentum:");
       break;
     case "projects_need_attention":
-      parts.push("Projects that need attention:");
+      parts.push("Projects that deserve attention:");
       break;
     default:
       return null;

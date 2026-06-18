@@ -1,211 +1,132 @@
-# Project Health Engine Report — Phase 16
+# Project Health Engine — Phase 16
 
-**Date:** 2026-06-17  
-**Goal:** Every project should have a measurable health score. Cortex explains whether a project is succeeding or drifting.
+## Goal
 
----
+Transform Cortex from a memory system into a **project operating system**. A user can instantly see which projects are healthy, growing, stalled, or need intervention — without opening reviews, sessions, or timelines.
 
-## Executive Summary
+No LLMs. All signals come from existing engines:
 
-Phase 16 introduces a **Project Health Engine** that fuses attention, momentum, open loops, completions, stalled work, recurrence, last activity, and review signals into a single **0–100 health score** per project, with five status states and Ask Cortex support.
+- Attention Engine
+- Open Loop Intelligence
+- Review Intelligence (daily + weekly)
+- Session Attribution / Activity History
+- Project Attribution
+- Recurrence reports
 
-| Deliverable | Status |
-|-------------|--------|
-| `GET /api/projects/health` | ✅ Playground + Worker |
-| Health scoring engine | ✅ `project-health-engine.ts` |
-| Project Health dashboard | ✅ `/projects/health` |
-| Ask Cortex intents | ✅ at risk / gaining momentum / needs attention |
-| Unit tests | ✅ 4 tests |
+## Health Score (0–100)
 
----
+Four pillars, **25% each**:
 
-## Health Score Model
+| Pillar | Signals |
+|--------|---------|
+| **Momentum** | Weekly activity trend, attention momentum, review advancement |
+| **Execution** | Completed work this week, closed loops, completion ratio |
+| **Risk** | Blocked loops, stalled work, resurfacing loops, inactivity (inverse — high = healthy) |
+| **Attention** | Focus allocation %, deep work ratio, sessions, recent engagement |
 
-### Inputs (per project)
-
-| Signal | Source |
-|--------|--------|
-| Attention | `buildWeekAttention()` → `projectAttention[]` |
-| Momentum | Weekly review `momentum[]` (gaining/losing/stalled/steady) |
-| Open loops | `getIntelligenceLoops()` filtered by `project_name` |
-| Completed work | Weekly/daily `projectProgress.completed` |
-| Stalled work | Weekly `stalledWork[]` |
-| Recurrence | `getActionRecurrenceReport()` text match |
-| Last activity | Project `last_seen` + momentum `daysSinceActivity` |
-| Review signals | Review confidence, `projectsAdvanced` |
-
-### Score composition (0–100)
-
-| Component | Weight | Logic |
-|-----------|--------|-------|
-| Attention | 0–25 | `attentionPercent × 0.25` |
-| Momentum | 0–20 | gaining=20, steady=12, losing=6, stalled=0 |
-| Open loops | 0–15 | `15 − open×1.5 − blocked×4` |
-| Completion | 0–15 | `completed / (completed+inProgress+blocked)` |
-| Activity | 0–15 | Recency of last session |
-| Recurrence | 0–10 | Rising patterns boost score |
-| Review | 0–10 | Confidence + advanced flag |
-| Stalled penalty | −4 each | Subtracted from total |
-
-### Status states
-
-| State | Criteria |
-|-------|----------|
-| **Dormant** | No activity 14+ days, zero attention/sessions |
-| **At Risk** | Score &lt; 50, blocked loops, 2+ stalled items, or losing momentum with open loops |
-| **Growing** | Momentum gaining + score ≥ 55 |
-| **Healthy** | Score ≥ 75 |
-| **Stable** | Everything else in mid-range |
-
----
-
-## API
-
-### `GET /api/projects/health`
-
-**Query params:**
-- `date` — anchor date (default today)
-- `project` — filter to matching project name
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "generatedAt": "2026-06-17T12:00:00.000Z",
-    "date": "2026-06-17",
-    "weekStart": "2026-06-09",
-    "weekEnd": "2026-06-15",
-    "projects": [
-      {
-        "projectName": "Atriveo Cortex",
-        "healthScore": 84,
-        "status": "Healthy",
-        "momentumTrend": "Rising",
-        "attentionLevel": "High",
-        "attentionPercent": 28.5,
-        "openLoops": 3,
-        "blockedWork": 0,
-        "stalledWorkCount": 0,
-        "completionRate": 0.67,
-        "oldestOpenLoop": { "title": "...", "daysOpen": 5 },
-        "confidence": 78,
-        "signals": ["Advanced in weekly review", "Momentum rising"]
-      }
-    ],
-    "summary": {
-      "healthy": 2,
-      "growing": 1,
-      "stable": 1,
-      "atRisk": 0,
-      "dormant": 0,
-      "averageScore": 76
-    }
-  }
-}
+```
+healthScore = round(momentum×0.25 + execution×0.25 + risk×0.25 + attention×0.25)
 ```
 
----
+## Project States (score bands)
 
-## Dashboard UI
+| Score | State |
+|-------|-------|
+| 90–100 | Healthy |
+| 70–89 | Growing |
+| 50–69 | Stable |
+| 30–49 | At Risk |
+| 0–29 | Dormant |
 
-**Route:** `/projects/health`  
-**Nav:** Work → Project Health
+## Explainability
 
-Each card shows:
-- Health score + status badge
-- Momentum, Attention, Open loops, Blocked, Completion %, Confidence
-- Review signals (top 3)
-- Link to project detail
+Every project returns `explanation: { label, delta }[]` with signed contributions, e.g.:
 
-Summary strip: average health, counts by status, at-risk alert banner.
+```
+Health: 82
++15 rising activity
++12 5 completed this week
++8 focus allocation
+-7 2 blocked loops
+-6 inactivity
+```
 
----
+## Database
+
+Table: `project_health_scores`
+
+| Column | Purpose |
+|--------|---------|
+| project | Canonical project name |
+| score | 0–100 health |
+| momentum_score | Pillar 0–100 |
+| execution_score | Pillar 0–100 |
+| risk_score | Pillar 0–100 |
+| attention_score | Pillar 0–100 |
+| explanation | JSON array of signed lines |
+| open_loops / blocked_work / completed_this_week | Trend snapshots |
+| snapshot_date | Local date (YYYY-MM-DD) |
+| created_at | ISO timestamp |
+
+Migration: `playground/scripts/migrate-project-health.ts`
+
+Snapshots are written at the end of `rebuildDerivedLayers()` (after attention).
+
+## APIs
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/projects/health` | All projects + summary |
+| `GET /api/projects/health/:project` | Single project health |
+| `GET /api/projects/health/trends?days=30&project=` | Historical trends |
+
+Implemented in playground (Next.js) and `workers/cortex-api`.
+
+## Dashboard
+
+`/projects/health` — operating-system view:
+
+- Summary strip (avg health + state counts)
+- Table: Project · Health · Momentum · Attention · Open Loops · Blocked · Done this week
+- Inline explanation under each project name
+- Trend charts: health, attention, open loops, completions (top projects, 30 days)
+
+`/projects` — health score badge on each card (sorted by activity heat).
 
 ## Ask Cortex
 
-New intents in `memory-retrieval.ts`:
+| Question | Intent |
+|----------|--------|
+| Which project is healthiest? | `projects_healthiest` |
+| Which project is declining? | `projects_declining` |
+| Which project deserves attention? | `projects_need_attention` |
+| What project is at risk? | `projects_at_risk` |
+| Which projects gained momentum? | `projects_gaining_momentum` |
 
-| Question pattern | Intent |
-|------------------|--------|
-| Which project is at risk? | `projects_at_risk` |
-| Which project gained momentum? | `projects_gaining_momentum` |
-| What project needs attention? | `projects_need_attention` |
-
-Answers pull from `buildProjectsHealth()` via `project-health-retrieval.ts`.
-
-**Example answer:**
-> Projects at risk: • Legacy Migration — Health 38/100 · Status At Risk · Momentum Stalled · 2 blocked
-
----
-
-## Example Card
-
-```
-Atriveo Cortex
-
-Health: 84          Status: Healthy
-Momentum: Rising    Attention: High
-Open Loops: 3       Blocked Work: 0
-Completion: 67%     Confidence: 78
-```
-
----
-
-## Files
+## Key Files
 
 | File | Role |
 |------|------|
-| `playground/lib/project-health-types.ts` | Types |
-| `playground/lib/project-health-engine.ts` | Scoring logic |
-| `playground/lib/project-health-api.ts` | Data aggregation |
+| `playground/lib/project-health-engine.ts` | 4-pillar scoring + explainability |
+| `playground/lib/project-health-api.ts` | Aggregation from all engines |
+| `playground/lib/project-health-db.ts` | Persistence + trends |
 | `playground/lib/project-health-retrieval.ts` | Ask Cortex bridge |
-| `playground/lib/api/project-health-dtos.ts` | API DTOs |
-| `playground/app/api/projects/health/route.ts` | Next.js route |
-| `workers/cortex-api/src/routes.ts` | Worker route |
+| `playground/lib/api/project-health-dtos.ts` | API shapes |
 | `apps/cortex-ui/src/routes/projects.health.tsx` | Dashboard |
-| `apps/cortex-ui/src/lib/api/project-health-adapter.ts` | UI client |
 
----
-
-## Verification
+## Tests
 
 ```bash
-# Unit tests
-cd playground && npm test -- lib/project-health-engine.test.ts
-
-# API (local)
-curl -s localhost:3000/api/projects/health | jq '.data.summary'
-
-# UI
-open /projects/health
+cd playground && npm test -- lib/project-health-engine.test.ts lib/project-health-validation.test.ts
 ```
-
-Ask Cortex:
-- "Which project is at risk?"
-- "Which project gained momentum?"
-- "What project needs attention?"
-
----
 
 ## Success Criteria
 
-| Criterion | Met |
-|-----------|-----|
-| Measurable health score per project | ✅ 0–100 |
-| Five status states | ✅ |
-| All required per-project metrics | ✅ |
-| `GET /api/projects/health` | ✅ |
-| Project Health dashboard | ✅ |
-| Ask Cortex support | ✅ 3 question types |
-| Explains success vs drift | ✅ signals + status |
-
----
-
-## Follow-ups
-
-1. Wire health badge on `/projects` list cards
-2. Show health panel on `/projects/$id` detail page
-3. Cache health scores in `sync_state` after pipeline run
-4. Add `project_health` to memory search index entity type
+- [x] 0–100 score with four named pillars
+- [x] Score-band states (Healthy → Dormant)
+- [x] Signed explanation on every project
+- [x] `project_health_scores` table + daily snapshots on sync
+- [x] List, detail, and trends APIs
+- [x] Table dashboard + trend charts
+- [x] Ask Cortex: healthiest, declining, attention, at risk
+- [x] No LLM in scoring path

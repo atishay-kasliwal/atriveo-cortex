@@ -15,10 +15,20 @@ export type ProjectMomentumTrend = "Rising" | "Steady" | "Falling" | "Stalled";
 
 export type ProjectAttentionLevel = "High" | "Medium" | "Low" | "None";
 
+export type HealthExplanationLine = {
+  label: string;
+  delta: number;
+};
+
 export type ProjectHealth = {
   projectName: string;
   healthScore: number;
   status: ProjectHealthStatus;
+  momentumScore: number;
+  executionScore: number;
+  riskScore: number;
+  attentionScore: number;
+  explanation: HealthExplanationLine[];
   momentumTrend: ProjectMomentumTrend;
   attentionLevel: ProjectAttentionLevel;
   attentionPercent: number;
@@ -31,6 +41,7 @@ export type ProjectHealth = {
   lastActivityAt: string | null;
   daysSinceActivity: number | null;
   completedCount: number;
+  completedThisWeek: number;
   inProgressCount: number;
   signals: string[];
 };
@@ -53,6 +64,16 @@ export type ProjectsHealthReport = {
   summary: ProjectsHealthSummary;
 };
 
+export type ProjectHealthTrends = {
+  generatedAt: string;
+  days: number;
+  projects: string[];
+  healthTrend: Array<{ date: string; [key: string]: number | string }>;
+  attentionTrend: Array<{ date: string; [key: string]: number | string }>;
+  loopTrend: Array<{ date: string; [key: string]: number | string }>;
+  completionTrend: Array<{ date: string; [key: string]: number | string }>;
+};
+
 export function fetchProjectsHealth(params?: {
   date?: string;
   project?: string;
@@ -62,4 +83,21 @@ export function fetchProjectsHealth(params?: {
   if (params?.project) qs.set("project", params.project);
   const suffix = qs.toString() ? `?${qs}` : "";
   return cortexFetch<ProjectsHealthReport>(`/api/projects/health${suffix}`);
+}
+
+export function fetchProjectHealth(project: string): Promise<ProjectHealth> {
+  return cortexFetch<ProjectHealth>(
+    `/api/projects/health/${encodeURIComponent(project)}`,
+  );
+}
+
+export function fetchProjectHealthTrends(params?: {
+  project?: string;
+  days?: number;
+}): Promise<ProjectHealthTrends> {
+  const qs = new URLSearchParams();
+  if (params?.project) qs.set("project", params.project);
+  if (params?.days) qs.set("days", String(params.days));
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return cortexFetch<ProjectHealthTrends>(`/api/projects/health/trends${suffix}`);
 }

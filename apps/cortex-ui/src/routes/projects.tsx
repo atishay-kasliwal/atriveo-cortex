@@ -9,7 +9,7 @@ import { ArrowUpRight, FolderKanban } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { NonZeroStats, projectRecencyHeat, calm } from "@/components/calm-atlas";
-import { projectsQuery } from "@/lib/api/queries";
+import { projectsHealthQuery, projectsQuery } from "@/lib/api/queries";
 
 export const Route = createFileRoute("/projects")({
   head: () => ({
@@ -26,6 +26,15 @@ export const Route = createFileRoute("/projects")({
 
 function ProjectsPage() {
   const q = useQuery(projectsQuery);
+  const healthQ = useQuery(projectsHealthQuery());
+
+  const healthByName = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of healthQ.data?.projects ?? []) {
+      map.set(row.projectName.toLowerCase(), row.healthScore);
+    }
+    return map;
+  }, [healthQ.data]);
 
   const sorted = useMemo(() => {
     if (!q.data) return [];
@@ -100,11 +109,18 @@ function ProjectsPage() {
                         }}
                       />
                       <div>
-                        <h3
-                          className={`font-semibold tracking-tight ${idx === 0 ? "text-base" : "text-sm"}`}
-                        >
-                          {p.name}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3
+                            className={`font-semibold tracking-tight ${idx === 0 ? "text-base" : "text-sm"}`}
+                          >
+                            {p.name}
+                          </h3>
+                          {healthByName.has(p.name.toLowerCase()) ? (
+                            <span className="stat-hero text-sm text-[hsl(265_85%_75%)]">
+                              {healthByName.get(p.name.toLowerCase())}
+                            </span>
+                          ) : null}
+                        </div>
                         {p.description ? (
                           <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-muted-foreground">
                             {p.description}
