@@ -19,6 +19,6 @@ export async function POST() {
   try {
     return apiSuccess(await triggerManualSync());
   } catch (e) {
-    return apiError(e instanceof Error ? e.message : "Sync failed", 500);
+    return apiError(e instanceof Error ? e.message : "Couldn't refresh memory right now", 500);
   }
 }

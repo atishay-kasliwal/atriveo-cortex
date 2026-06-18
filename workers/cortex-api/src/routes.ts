@@ -51,6 +51,8 @@ import {
 import { getCloudScreenpipeHealth } from "@/lib/system/screenpipe-health-cloud";
 import { getSystemHealth } from "@/lib/system/system-health";
 import { buildProjectsHealth } from "@/lib/project-health-api";
+import { getSyncReliabilityReport } from "@/lib/sync/sync-reliability";
+import { getMemoryFreshnessScore } from "@/lib/sync/memory-freshness";
 import { getAnalyticsHistory } from "@/lib/analytics/history";
 import {
   buildLatestWeekReview,
@@ -516,6 +518,22 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/system/reliability", async (c) => {
+    try {
+      const [reliability, freshness] = await Promise.all([
+        getSyncReliabilityReport(),
+        getMemoryFreshnessScore(),
+      ]);
+      return apiSuccess(c, { reliability, memoryFreshness: freshness });
+    } catch (e) {
+      return apiError(
+        c,
+        e instanceof Error ? e.message : "Failed to load reliability metrics",
+        500,
+      );
+    }
+  });
+
   app.get("/api/projects/health", async (c) => {
     try {
       const date = c.req.query("date") ?? null;
@@ -557,7 +575,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     try {
       return apiSuccess(c, await triggerManualSync());
     } catch (e) {
-      return apiError(c, e instanceof Error ? e.message : "Sync failed", 500);
+      return apiError(c, e instanceof Error ? e.message : "Couldn't refresh memory right now", 500);
     }
   });
 }

@@ -236,8 +236,6 @@ export function MemoryHomeView({
     <div className="mt-4 space-y-6">
       <MemoryStatusRibbon
         pipelineState={pipelineState}
-        health={screenpipeHealth.data}
-        hasHistoricalData={hasTodayActivity(activity.data)}
         review={review.data}
         syncStatus={syncStatus.data}
         dateLabel={dateLabel}

@@ -91,10 +91,71 @@ function scoreFromSubsystems(parts: MemoryFreshnessSubsystem[]): number {
 }
 
 function overallFromScore(score: number): MemoryFreshnessScore["overall"] {
-  if (score >= 80) return "fresh";
-  if (score >= 50) return "degraded";
+  if (score >= 90) return "fresh";
+  if (score >= 70) return "degraded";
   return "stale";
 }
+
+/** Recency-based 0–100 signal from a single timestamp. */
+function signalScore(
+  lastAt: string | null,
+  freshMs: number,
+  staleMs: number,
+  now: Date,
+): number {
+  if (!lastAt) return 0;
+  const age = ageMs(lastAt, now);
+  if (age == null) return 0;
+  if (age <= freshMs) return 100;
+  if (age >= staleMs) return 0;
+  return Math.round(100 * (1 - (age - freshMs) / (staleMs - freshMs)));
+}
+
+function computeUnifiedScore(
+  capture: number,
+  sync: number,
+  review: number,
+  index: number,
+): number {
+  const weights = [0.2, 0.3, 0.3, 0.2];
+  const parts = [capture, sync, review, index];
+  const total = parts.reduce((sum, p, i) => sum + p * weights[i]!, 0);
+  return Math.round(total);
+}
+
+function pipelineStatusFromScore(
+  score: number,
+  hasAnyMemory: boolean,
+): "live" | "syncing" | "stale" | "offline" {
+  if (!hasAnyMemory) return "offline";
+  if (score >= 80) return "live";
+  if (score >= 40) return "stale";
+  return "offline";
+}
+
+export function freshnessLabelFromScore(score: number): string {
+  if (score >= 90) return "Fresh";
+  if (score >= 70) return "Slightly stale";
+  if (score >= 40) return "Stale";
+  if (score > 0) return "Very stale";
+  return "Offline";
+}
+
+export function recommendedActionFromScore(
+  score: number,
+  hasAnyMemory: boolean,
+): string | null {
+  if (!hasAnyMemory) {
+    return "Memory will appear after your first day of activity.";
+  }
+  if (score >= 80) return null;
+  if (score >= 40) {
+    return "Tap Refresh Memory to update reviews and search from your existing data.";
+  }
+  return "Tap Refresh Memory. Your existing memory remains available.";
+}
+
+export { pipelineStatusFromScore };
 
 export async function getMemoryFreshnessScore(
   now = new Date(),
@@ -232,8 +293,37 @@ export async function getMemoryFreshnessScore(
     REVIEW_STALE_MS,
   );
 
-  const subsystems = [capture, syncSub, reviews, search, attention, loops];
-  const score = scoreFromSubsystems(subsystems);
+  const captureScore = signalScore(
+    lastCaptureAt,
+    CAPTURE_STALE_MS / 6,
+    CAPTURE_STALE_MS,
+    now,
+  );
+  const syncScore = signalScore(
+    lastSyncAt,
+    SYNC_STALE_MS / 3,
+    SYNC_STALE_MS,
+    now,
+  );
+  const reviewScore = signalScore(
+    lastReviewGeneratedAt,
+    REVIEW_STALE_MS / 4,
+    REVIEW_STALE_MS,
+    now,
+  );
+  const indexScore = signalScore(
+    lastIndexRebuildAt,
+    INDEX_STALE_MS / 4,
+    INDEX_STALE_MS,
+    now,
+  );
+
+  const hasAnyMemory = Boolean(
+    lastSyncAt || lastReviewGeneratedAt || indexCount > 0,
+  );
+  const score = hasAnyMemory
+    ? computeUnifiedScore(captureScore, syncScore, reviewScore, indexScore)
+    : 0;
 
   return {
     score,
