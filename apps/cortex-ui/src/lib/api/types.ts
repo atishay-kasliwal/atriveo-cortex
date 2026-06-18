@@ -325,6 +325,146 @@ export type MemorySearchResponse = {
   latencyMs: number;
 };
 
+export type ChatCitation = {
+  type: MemoryEntityType;
+  title: string;
+  date: string;
+  project: string | null;
+  evidence: string;
+  url: string;
+  confidence: number | null;
+};
+
+export type ChatSource = {
+  type: MemoryEntityType;
+  title: string;
+  date: string;
+  project: string | null;
+  url: string;
+};
+
+export type ChatResponse = {
+  answer: string;
+  citations: ChatCitation[];
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  sources: ChatSource[];
+  intent: string;
+  generatedAt: ISODate;
+  latencyMs: number;
+};
+
+export type AttentionAllocation = {
+  totalAttentionSec: number;
+  byProject: Array<{ project: string; attentionSec: number; percent: number }>;
+  byCategory: Array<{ category: string; attentionSec: number; percent: number }>;
+  byApplication: Array<{ application: string; attentionSec: number; percent: number }>;
+};
+
+export type ContextSwitching = {
+  applicationSwitches: number;
+  projectSwitches: number;
+  categorySwitches: number;
+  interruptionCount: number;
+  interruptionRate: number;
+  longestFocusBlockSec: number;
+};
+
+export type DeepWorkBlock = {
+  startTime: string;
+  endTime: string;
+  durationSec: number;
+  project: string | null;
+  category: string;
+  confidence: number;
+};
+
+export type ProjectAttentionRow = {
+  project: string;
+  attentionPercent: number;
+  activeSec: number;
+  deepWorkSec: number;
+  interruptions: number;
+  momentum: "increasing" | "steady" | "declining";
+};
+
+export type DayAttention = {
+  date: string;
+  generatedAt: ISODate;
+  attentionScore: number;
+  scoreBreakdown: {
+    activeRatio: number;
+    deepWorkRatio: number;
+    interruptionPenalty: number;
+    backgroundPenalty: number;
+    idleLeakage: number;
+  };
+  allocation: AttentionAllocation;
+  contextSwitching: ContextSwitching;
+  deepWork: DeepWorkBlock[];
+  projectAttention: ProjectAttentionRow[];
+  focusBlocks: Array<{
+    startTime: string;
+    endTime: string;
+    state: string;
+    project: string | null;
+    attentionScore: number;
+  }>;
+};
+
+export type WeekAttention = {
+  weekStart: string;
+  weekEnd: string;
+  generatedAt: ISODate;
+  attentionScore: number;
+  allocation: AttentionAllocation;
+  contextSwitching: ContextSwitching;
+  deepWorkSec: number;
+  projectAttention: ProjectAttentionRow[];
+  dailyScores: Array<{ date: string; score: number }>;
+};
+
+export type ProjectAttentionDetail = {
+  project: string;
+  startDate: string;
+  endDate: string;
+  generatedAt: ISODate;
+  attentionPercent: number;
+  activeSec: number;
+  deepWorkSec: number;
+  interruptions: number;
+  momentum: "increasing" | "steady" | "declining";
+  deepWorkSessions: DeepWorkBlock[];
+};
+
+export type AttentionTrends = {
+  startDate: string;
+  endDate: string;
+  generatedAt: ISODate;
+  points: Array<{
+    date: string;
+    score: number;
+    activeSec: number;
+    deepWorkSec: number;
+    interruptions: number;
+  }>;
+  dayOverDay: {
+    scoreDelta: number;
+    deepWorkDeltaSec: number;
+    interruptionDelta: number;
+  } | null;
+  weekOverWeek: {
+    scoreDelta: number;
+    deepWorkDeltaSec: number;
+    interruptionDelta: number;
+  } | null;
+  monthOverMonth: {
+    scoreDelta: number;
+    deepWorkDeltaSec: number;
+    interruptionDelta: number;
+  } | null;
+  signals: string[];
+};
+
 export type RecurrencePattern = {
   id: ID;
   subject: string;               // what recurs (action, idea, topic)

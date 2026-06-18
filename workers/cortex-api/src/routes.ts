@@ -60,7 +60,15 @@ import {
   buildLatestReview,
   buildReviewRange,
 } from "@/lib/review/daily-review-api";
+import { runChat } from "@/lib/chat-api";
+import {
+  buildAttentionTrends,
+  buildDayAttention,
+  buildProjectAttentionDetail,
+  buildWeekAttention,
+} from "@/lib/analytics/attention-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
+import { fetchSyncStatus, triggerManualSync } from "@/lib/sync/sync-api";
 import { apiError, apiSuccess } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
@@ -136,6 +144,70 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       );
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Search failed", 500);
+    }
+  });
+
+  app.post("/api/chat", async (c) => {
+    try {
+      const body = await c.req.json<{ question?: string }>();
+      const question = body.question?.trim();
+      if (!question) return apiError(c, "question is required", 400);
+      return apiSuccess(c, await runChat(question));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Chat failed", 500);
+    }
+  });
+
+  app.get("/api/attention/day", async (c) => {
+    try {
+      const data = await buildDayAttention(c.req.query("date") ?? null);
+      if (!data) return apiError(c, "No attention data for this date", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load day attention", 500);
+    }
+  });
+
+  app.get("/api/attention/week", async (c) => {
+    try {
+      const data = await buildWeekAttention(c.req.query("start") ?? null);
+      if (!data) return apiError(c, "No attention data for this week", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load week attention", 500);
+    }
+  });
+
+  app.get("/api/attention/project/:project", async (c) => {
+    try {
+      const project = decodeURIComponent(c.req.param("project"));
+      const data = await buildProjectAttentionDetail(
+        project,
+        c.req.query("start") ?? null,
+        c.req.query("end") ?? null,
+      );
+      if (!data) return apiError(c, "No attention data for this project", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(
+        c,
+        e instanceof Error ? e.message : "Failed to load project attention",
+        500,
+      );
+    }
+  });
+
+  app.get("/api/attention/trends", async (c) => {
+    try {
+      return apiSuccess(
+        c,
+        await buildAttentionTrends(
+          c.req.query("start") ?? null,
+          c.req.query("end") ?? null,
+        ),
+      );
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load attention trends", 500);
     }
   });
 
@@ -447,6 +519,22 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, await getCloudScreenpipeHealth());
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load ScreenPipe health", 500);
+    }
+  });
+
+  app.get("/api/sync", async (c) => {
+    try {
+      return apiSuccess(c, await fetchSyncStatus());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load sync status", 500);
+    }
+  });
+
+  app.post("/api/sync", async (c) => {
+    try {
+      return apiSuccess(c, await triggerManualSync());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Sync failed", 500);
     }
   });
 }

@@ -26,7 +26,7 @@ app.use(
       if (!origin || origin === allowed) return allowed;
       return origin === allowed ? origin : allowed;
     },
-    allowMethods: ["GET", "OPTIONS"],
+    allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Accept"],
     maxAge: 86400,
   }),

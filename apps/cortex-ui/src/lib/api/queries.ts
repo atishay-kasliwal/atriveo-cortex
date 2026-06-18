@@ -21,6 +21,11 @@ export const qk = {
   review: (date: string) => ["reviews", "day", date] as const,
   weeklyReview: (weekStart: string) => ["reviews", "week", weekStart] as const,
   search: (q: string) => ["search", q] as const,
+  chat: (q: string) => ["chat", q] as const,
+  attentionDay: (date: string) => ["attention", "day", date] as const,
+  attentionWeek: (start: string) => ["attention", "week", start] as const,
+  attentionTrends: (start?: string, end?: string) =>
+    ["attention", "trends", start ?? "default", end ?? "default"] as const,
   recurrence: ["recurrence"] as const,
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
@@ -175,4 +180,25 @@ export const analyticsValidationQuery = (date?: string) =>
     queryKey: qk.analyticsValidation(date),
     queryFn: () => api.analyticsValidation(date),
     staleTime: 0,
+  });
+
+export const attentionDayQuery = (date: string) =>
+  queryOptions({
+    queryKey: qk.attentionDay(date),
+    queryFn: () => api.attention.day(date),
+    staleTime: STALE,
+  });
+
+export const attentionWeekQuery = (weekStart: string) =>
+  queryOptions({
+    queryKey: qk.attentionWeek(weekStart),
+    queryFn: () => api.attention.week(weekStart),
+    staleTime: STALE,
+  });
+
+export const attentionTrendsQuery = (start?: string, end?: string) =>
+  queryOptions({
+    queryKey: qk.attentionTrends(start, end),
+    queryFn: () => api.attention.trends(start, end),
+    staleTime: STALE,
   });

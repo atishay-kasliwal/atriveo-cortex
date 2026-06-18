@@ -1,0 +1,13 @@
+# Cloudflare Tunnel — cortex.atriveo.com
+# Credentials file is NOT in git. Mount from ~/.cloudflared/<tunnel-id>.json
+
+tunnel: 8dcc0f18-dd8a-418b-a8de-71c3dc46136b
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: cortex.atriveo.com
+    service: http://nginx:80
+    originRequest:
+      noTLSVerify: false
+      connectTimeout: 30s
+  - service: http_status:404

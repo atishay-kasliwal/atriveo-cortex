@@ -1,0 +1,61 @@
+services:
+  cortex-api:
+    build:
+      context: ./playground
+      dockerfile: Dockerfile
+    env_file:
+      - ./playground/.env.production
+      - ./playground/.env.production.local
+    environment:
+      NODE_ENV: production
+      CORTEX_DEPLOYMENT: cloud
+      PORT: "3456"
+      SCREENPIPE_WATCHDOG: "0"
+      SCREENPIPE_SYNC_ENABLED: "0"
+    expose:
+      - "3456"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3456/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  cortex-ui:
+    build:
+      context: ./apps/cortex-ui
+      dockerfile: Dockerfile
+      args:
+        API_URL: http://cortex-api:3456
+    environment:
+      NODE_ENV: production
+      API_URL: http://cortex-api:3456
+      PORT: "3000"
+      HOST: 0.0.0.0
+    expose:
+      - "3000"
+    depends_on:
+      cortex-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./cloudflare
+      dockerfile: Dockerfile.nginx
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - cortex-api
+      - cortex-ui
+    restart: unless-stopped
+
+  # cloudflared runs on the Mac host (bind mounts fail on external volumes).
+  # Start: npm run cloudflare:tunnel

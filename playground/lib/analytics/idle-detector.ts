@@ -6,10 +6,12 @@
 export const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 /** Gap with no capture signals before classifying as asleep (default 30 min). */
 export const SLEEP_THRESHOLD_MS = 30 * 60 * 1000;
-/** Minimum gap to consider passive reading/watching (1 min). */
-export const PASSIVE_MIN_MS = 60 * 1000;
+/** Minimum gap before background confidence is high (1 min). */
+export const BACKGROUND_MIN_MS = 60 * 1000;
+/** @deprecated Use BACKGROUND_MIN_MS */
+export const PASSIVE_MIN_MS = BACKGROUND_MIN_MS;
 
-export type ActivityState = "ACTIVE" | "PASSIVE" | "IDLE" | "SLEEPING";
+export type ActivityState = "ACTIVE" | "BACKGROUND" | "IDLE" | "SLEEPING";
 
 export type ActivityStateSegment = {
   startTime: string;
@@ -21,7 +23,7 @@ export type ActivityStateSegment = {
 
 export type ActivityStateTotals = {
   activeSeconds: number;
-  passiveSeconds: number;
+  backgroundSeconds: number;
   idleSeconds: number;
   sleepingSeconds: number;
 };
@@ -65,6 +67,37 @@ function hadUiBetween(
   return false;
 }
 
+/** Ignore clock ticks, video flicker, and minor OCR noise. */
+export function meaningfulOcrChange(
+  prev: string | null | undefined,
+  curr: string | null | undefined,
+): boolean {
+  const a = normalizeText(prev);
+  const b = normalizeText(curr);
+  if (a === b) return false;
+  if (!a || !b) return a !== b;
+
+  if (Math.abs(a.length - b.length) >= 24) return true;
+
+  const shorter = a.length <= b.length ? a : b;
+  const longer = a.length <= b.length ? b : a;
+  if (longer.startsWith(shorter) && longer.length - shorter.length < 14) {
+    return false;
+  }
+
+  const wordsA = new Set(a.split(" ").filter((w) => w.length > 2));
+  const wordsB = new Set(b.split(" ").filter((w) => w.length > 2));
+  let newWords = 0;
+  for (const w of wordsB) {
+    if (!wordsA.has(w)) newWords++;
+  }
+  let removedWords = 0;
+  for (const w of wordsA) {
+    if (!wordsB.has(w)) removedWords++;
+  }
+  return newWords + removedWords >= 2;
+}
+
 function classifyGap(opts: {
   gapMs: number;
   uiActivity: boolean;
@@ -76,24 +109,32 @@ function classifyGap(opts: {
   if (gapMs >= SLEEP_THRESHOLD_MS) {
     return { state: "SLEEPING", confidence: 0.92 };
   }
-  if (gapMs >= IDLE_THRESHOLD_MS && !uiActivity && !ocrChanged) {
+
+  const engaged = uiActivity || ocrChanged;
+
+  if (engaged) {
+    if (uiActivity) {
+      return { state: "ACTIVE", confidence: 0.95 };
+    }
+    if (windowChanged && gapMs < BACKGROUND_MIN_MS) {
+      return { state: "ACTIVE", confidence: 0.78 };
+    }
+    return { state: "ACTIVE", confidence: 0.84 };
+  }
+
+  if (gapMs >= IDLE_THRESHOLD_MS) {
     return { state: "IDLE", confidence: 0.88 };
   }
-  if (
-    gapMs >= PASSIVE_MIN_MS &&
-    !uiActivity &&
-    !ocrChanged &&
-    !windowChanged
-  ) {
-    return { state: "PASSIVE", confidence: 0.72 };
+
+  if (gapMs >= BACKGROUND_MIN_MS) {
+    return { state: "BACKGROUND", confidence: 0.76 };
   }
-  if (uiActivity) {
-    return { state: "ACTIVE", confidence: 0.95 };
+
+  if (windowChanged) {
+    return { state: "BACKGROUND", confidence: 0.62 };
   }
-  if (ocrChanged || windowChanged) {
-    return { state: "ACTIVE", confidence: 0.82 };
-  }
-  return { state: "ACTIVE", confidence: 0.65 };
+
+  return { state: "BACKGROUND", confidence: 0.58 };
 }
 
 function pushSegment(
@@ -126,7 +167,12 @@ function pushSegment(
 }
 
 /**
- * Idle Detection V1 — classifies inter-frame gaps using UI events + OCR/window changes.
+ * Classifies inter-frame gaps using UI events + meaningful OCR changes.
+ *
+ * ACTIVE — keyboard/mouse or substantive screen edits
+ * BACKGROUND — apps open, capture running, low engagement
+ * IDLE — no interaction for ≥5 min
+ * SLEEPING — ≥30 min gap or no capture
  */
 export function detectActivityStates(
   date: string,
@@ -138,7 +184,7 @@ export function detectActivityStates(
   const segments: ActivityStateSegment[] = [];
   const totals: ActivityStateTotals = {
     activeSeconds: 0,
-    passiveSeconds: 0,
+    backgroundSeconds: 0,
     idleSeconds: 0,
     sleepingSeconds: 0,
   };
@@ -163,31 +209,21 @@ export function detectActivityStates(
     (a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp),
   );
 
-  const firstMs = Date.parse(sorted[0]!.timestamp);
-  if (firstMs > dayStartMs) {
-    const gap = firstMs - dayStartMs;
-    const { state, confidence } = classifyGap({
-      gapMs: gap,
-      uiActivity: hadUiBetween(uiTimes, dayStartMs, firstMs),
-      ocrChanged: false,
-      windowChanged: true,
-    });
-    pushSegment(segments, dayStartMs, firstMs, state, confidence);
-    addTotal(totals, state, gap / 1000);
-  }
-
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const prev = sorted[i]!;
-    const curr = sorted[i + 1]!;
-    const startMs = Date.parse(prev.timestamp);
-    const endMs = Date.parse(curr.timestamp);
+  const classifyBoundary = (
+    startMs: number,
+    endMs: number,
+    prev: IdleFrameInput | null,
+    curr: IdleFrameInput | null,
+  ) => {
     const gapMs = endMs - startMs;
-    if (gapMs <= 0) continue;
-
+    if (gapMs <= 0) return;
     const uiActivity = hadUiBetween(uiTimes, startMs, endMs);
     const ocrChanged =
-      normalizeText(prev.text) !== normalizeText(curr.text);
-    const windowChanged = windowKey(prev) !== windowKey(curr);
+      prev && curr
+        ? meaningfulOcrChange(prev.text, curr.text)
+        : false;
+    const windowChanged =
+      prev && curr ? windowKey(prev) !== windowKey(curr) : false;
 
     const { state, confidence } = classifyGap({
       gapMs,
@@ -195,22 +231,34 @@ export function detectActivityStates(
       ocrChanged,
       windowChanged,
     });
-
     pushSegment(segments, startMs, endMs, state, confidence);
     addTotal(totals, state, gapMs / 1000);
+  };
+
+  const firstMs = Date.parse(sorted[0]!.timestamp);
+  if (firstMs > dayStartMs) {
+    classifyBoundary(dayStartMs, firstMs, null, sorted[0]!);
+  }
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const prev = sorted[i]!;
+    const curr = sorted[i + 1]!;
+    classifyBoundary(
+      Date.parse(prev.timestamp),
+      Date.parse(curr.timestamp),
+      prev,
+      curr,
+    );
   }
 
   const lastMs = Date.parse(sorted[sorted.length - 1]!.timestamp);
   if (lastMs < dayEndMs) {
-    const gap = dayEndMs - lastMs;
-    const { state, confidence } = classifyGap({
-      gapMs: gap,
-      uiActivity: hadUiBetween(uiTimes, lastMs, dayEndMs),
-      ocrChanged: false,
-      windowChanged: false,
-    });
-    pushSegment(segments, lastMs, dayEndMs, state, confidence);
-    addTotal(totals, state, gap / 1000);
+    classifyBoundary(
+      lastMs,
+      dayEndMs,
+      sorted[sorted.length - 1]!,
+      null,
+    );
   }
 
   return { segments, totals, date };
@@ -222,7 +270,7 @@ function addTotal(
   seconds: number,
 ): void {
   if (state === "ACTIVE") totals.activeSeconds += seconds;
-  else if (state === "PASSIVE") totals.passiveSeconds += seconds;
+  else if (state === "BACKGROUND") totals.backgroundSeconds += seconds;
   else if (state === "IDLE") totals.idleSeconds += seconds;
   else totals.sleepingSeconds += seconds;
 }

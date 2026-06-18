@@ -26,6 +26,12 @@ import {
   fetchLatestWeeklyReview,
   fetchWeeklyReview,
 } from "./review-adapter";
+import { fetchChat } from "./chat-adapter";
+import {
+  fetchAttentionTrends,
+  fetchDayAttention,
+  fetchWeekAttention,
+} from "./attention-adapter";
 import { fetchMemorySearch } from "./search-adapter";
 import { fetchAnalyticsHistory } from "./analytics-history-adapter";
 import { ApiError } from "./cortex-fetch";
@@ -84,4 +90,12 @@ export const api = {
     q: string,
     options?: { type?: string; project?: string; start?: string; end?: string },
   ) => fetchMemorySearch(q, options),
+
+  chat: (question: string) => fetchChat(question),
+
+  attention: {
+    day: (date?: string) => fetchDayAttention(date),
+    week: (start?: string) => fetchWeekAttention(start),
+    trends: (start?: string, end?: string) => fetchAttentionTrends(start, end),
+  },
 };

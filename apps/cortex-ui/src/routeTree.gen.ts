@@ -16,6 +16,9 @@ import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as OpenLoopsRouteImport } from './routes/open-loops'
 import { Route as IdeasRouteImport } from './routes/ideas'
+import { Route as AttentionRouteImport } from './routes/attention'
+import { Route as AskRouteImport } from './routes/ask'
+import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
@@ -59,6 +62,21 @@ const IdeasRoute = IdeasRouteImport.update({
   path: '/ideas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AttentionRoute = AttentionRouteImport.update({
+  id: '/attention',
+  path: '/attention',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AskRoute = AskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActionsRoute = ActionsRouteImport.update({
   id: '/actions',
   path: '/actions',
@@ -98,6 +116,9 @@ const ActionsIdRoute = ActionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRouteWithChildren
+  '/activity': typeof ActivityRoute
+  '/ask': typeof AskRoute
+  '/attention': typeof AttentionRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
@@ -114,6 +135,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRouteWithChildren
+  '/activity': typeof ActivityRoute
+  '/ask': typeof AskRoute
+  '/attention': typeof AttentionRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
@@ -131,6 +155,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRouteWithChildren
+  '/activity': typeof ActivityRoute
+  '/ask': typeof AskRoute
+  '/attention': typeof AttentionRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
@@ -149,6 +176,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/actions'
+    | '/activity'
+    | '/ask'
+    | '/attention'
     | '/ideas'
     | '/open-loops'
     | '/overview'
@@ -165,6 +195,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/actions'
+    | '/activity'
+    | '/ask'
+    | '/attention'
     | '/ideas'
     | '/open-loops'
     | '/overview'
@@ -181,6 +214,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/actions'
+    | '/activity'
+    | '/ask'
+    | '/attention'
     | '/ideas'
     | '/open-loops'
     | '/overview'
@@ -198,6 +234,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRouteWithChildren
+  ActivityRoute: typeof ActivityRoute
+  AskRoute: typeof AskRoute
+  AttentionRoute: typeof AttentionRoute
   IdeasRoute: typeof IdeasRouteWithChildren
   OpenLoopsRoute: typeof OpenLoopsRouteWithChildren
   OverviewRoute: typeof OverviewRoute
@@ -257,6 +296,27 @@ declare module '@tanstack/react-router' {
       path: '/ideas'
       fullPath: '/ideas'
       preLoaderRoute: typeof IdeasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attention': {
+      id: '/attention'
+      path: '/attention'
+      fullPath: '/attention'
+      preLoaderRoute: typeof AttentionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/actions': {
@@ -359,6 +419,9 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRouteWithChildren,
+  ActivityRoute: ActivityRoute,
+  AskRoute: AskRoute,
+  AttentionRoute: AttentionRoute,
   IdeasRoute: IdeasRouteWithChildren,
   OpenLoopsRoute: OpenLoopsRouteWithChildren,
   OverviewRoute: OverviewRoute,

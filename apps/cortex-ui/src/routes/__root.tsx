@@ -19,6 +19,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MemorySearchDialog } from "@/components/memory-search-dialog";
+import { SyncControl } from "@/components/sync/sync-control";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +138,7 @@ function Topbar({ onOpenSearch }: { onOpenSearch: () => void }) {
         <span className="text-foreground">Cortex</span>
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <SyncControl />
         <button
           type="button"
           onClick={onOpenSearch}
@@ -184,6 +187,7 @@ function RootComponent() {
           </div>
         </div>
         <MemorySearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+        <Toaster position="bottom-right" richColors closeButton />
       </SidebarProvider>
     </QueryClientProvider>
   );

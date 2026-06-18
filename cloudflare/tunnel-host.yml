@@ -1,0 +1,10 @@
+# Host-side tunnel config (cloudflared runs on Mac, not in Docker).
+# nginx is published at localhost:8080 — see docker-compose.yml.
+
+tunnel: 8dcc0f18-dd8a-418b-a8de-71c3dc46136b
+credentials-file: /Users/atishaykasliwal/.cloudflared/8dcc0f18-dd8a-418b-a8de-71c3dc46136b.json
+
+ingress:
+  - hostname: cortex.atriveo.com
+    service: http://127.0.0.1:8080
+  - service: http_status:404

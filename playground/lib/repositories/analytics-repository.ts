@@ -54,6 +54,9 @@ export class AnalyticsRepository {
     await runUnsafe(`DELETE FROM website_usage WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM activity_state_segments WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM daily_activity_summary WHERE date = $1`, [date]);
+    await runUnsafe(`DELETE FROM attention_segments WHERE date = $1`, [date]);
+    await runUnsafe(`DELETE FROM deep_work_sessions WHERE date = $1`, [date]);
+    await runUnsafe(`DELETE FROM daily_attention_score WHERE date = $1`, [date]);
   }
 
   async saveSessions(date: string, sessions: DetectedSession[]): Promise<void> {

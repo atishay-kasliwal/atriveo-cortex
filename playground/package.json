@@ -30,7 +30,11 @@
     "backfill:weekly-reviews": "tsx scripts/backfill-weekly-reviews.ts",
     "migrate:memory-search": "tsx scripts/migrate-memory-search.ts",
     "backfill:memory-search": "tsx scripts/backfill-memory-search.ts",
+    "migrate:chat-analytics": "tsx scripts/migrate-chat-analytics.ts",
+    "migrate:attention-engine": "tsx scripts/migrate-attention-engine.ts",
+    "backfill:attention": "tsx scripts/backfill-attention.ts",
     "audit:attribution": "tsx scripts/audit-project-attribution.ts",
+    "audit:chat": "tsx scripts/audit-conversational-cortex.ts",
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {

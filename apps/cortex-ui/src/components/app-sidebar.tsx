@@ -9,11 +9,13 @@ import {
   CheckSquare,
   Lightbulb,
   CircleDashed,
-  Repeat,
   Search,
-  Activity,
+  Home,
   BookOpen,
   CalendarRange,
+  MessageSquare,
+  Brain,
+  Activity,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -31,8 +33,8 @@ import {
 
 const nav = [
   {
-    group: "Activity",
-    items: [{ title: "Today", url: "/", icon: Activity }],
+    group: "Home",
+    items: [{ title: "Home", url: "/", icon: Home }],
   },
   {
     group: "Work",
@@ -42,18 +44,28 @@ const nav = [
     group: "Memory",
     items: [
       { title: "Overview", url: "/overview", icon: LayoutDashboard },
+      { title: "Actions", url: "/actions", icon: CheckSquare },
+      { title: "Ideas", url: "/ideas", icon: Lightbulb },
+      { title: "Ask Cortex", url: "/ask", icon: MessageSquare },
+    ],
+  },
+  {
+    group: "Reviews",
+    items: [
       { title: "Daily Review", url: "/review", icon: BookOpen },
       { title: "Weekly Review", url: "/weekly-review", icon: CalendarRange },
     ],
   },
   {
-    group: "Extracted",
+    group: "Focus",
     items: [
-      { title: "Actions", url: "/actions", icon: CheckSquare },
-      { title: "Ideas", url: "/ideas", icon: Lightbulb },
       { title: "Open Loops", url: "/open-loops", icon: CircleDashed },
-      { title: "Recurrence", url: "/recurrence", icon: Repeat },
+      { title: "Attention", url: "/attention", icon: Brain },
     ],
+  },
+  {
+    group: "Debug",
+    items: [{ title: "Activity Log", url: "/activity", icon: Activity }],
   },
 ];
 
@@ -115,7 +127,7 @@ export function AppSidebar({ onOpenSearch }: { onOpenSearch?: () => void }) {
           </div>
           <div className="flex flex-1 flex-col leading-tight">
             <span className="text-xs font-medium">Workspace</span>
-            <span className="text-[10px] text-muted-foreground">Connected · live</span>
+            <span className="text-[10px] text-muted-foreground">Memory-first</span>
           </div>
           <button
             type="button"

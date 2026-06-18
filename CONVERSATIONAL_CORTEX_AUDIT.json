@@ -1,0 +1,794 @@
+{
+  "summary": {
+    "auditedAt": "2026-06-18T03:06:09.940Z",
+    "today": "2026-06-17",
+    "questionCount": 15,
+    "avgConfidence": 0.95,
+    "avgUsefulness": 0.56,
+    "citationCoverage": 0.93,
+    "unansweredRate": 0.07,
+    "passRateUsefulnessGte70": 0.47,
+    "targetMet": false
+  },
+  "results": [
+    {
+      "group": "History",
+      "question": "What did I do yesterday?",
+      "expectedIntent": "history_yesterday",
+      "actualIntent": "history_yesterday",
+      "expectedAnswer": "Daily review: Cortex — 1 Verified Win — Finished: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact c | 17 sessions; projects: Atriveo Cortex, Gemma-based AI Development",
+      "actualAnswer": "Cortex — 1 Verified Win Finished: Implement a manual approval workflow for automated changes: 'Do not make changes au… You logged 3.4 hours across 10 work sessions on Cortex.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 655,
+      "scores": {
+        "usefulness": 0.7,
+        "accuracy": 0.75,
+        "completeness": 0.75,
+        "citationQuality": 0.85,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "History",
+      "question": "What did I work on this week?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "46 sessions this week across: Atriveo Cortex, Gemma-based AI Development, New Agent / Automations",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Configure and run the system (including Ollama) on an external hard drive.; Maintain and monitor screenpipe background processes; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "New Agent / Automations Research",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        }
+      ],
+      "latencyMs": 498,
+      "scores": {
+        "usefulness": 0.7,
+        "accuracy": 0.75,
+        "completeness": 0.75,
+        "citationQuality": 0.85,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "History",
+      "question": "What changed since Monday?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "5 search hits: Communication; Communication; Communication; Communication; Communication",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 492,
+      "scores": {
+        "usefulness": 0.44999999999999996,
+        "accuracy": 0.75,
+        "completeness": 0.35,
+        "citationQuality": 0.85,
+        "missingContext": "No delta/changelog intent — falls back to generic search"
+      },
+      "gaps": "No delta/changelog intent — falls back to generic search",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Projects",
+      "question": "What is happening with Cortex?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "10 search hits: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Cortex — 1 Verified Win",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Atriveo Cortex Development; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-16",
+          "project": "Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 516,
+      "scores": {
+        "usefulness": 0.55,
+        "accuracy": 0.75,
+        "completeness": 0.5,
+        "citationQuality": 0.85,
+        "missingContext": "Project status question not routed to project_progress"
+      },
+      "gaps": "Project status question not routed to project_progress",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Projects",
+      "question": "What projects are active?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "5 search hits: Communication; Communication; Communication; Communication; Communication",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development; Maintain and monitor screenpipe background processes.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 508,
+      "scores": {
+        "usefulness": 0.5,
+        "accuracy": 0.75,
+        "completeness": 0.44999999999999996,
+        "citationQuality": 0.85,
+        "missingContext": "No active-projects intent"
+      },
+      "gaps": "No active-projects intent",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Projects",
+      "question": "What has stalled?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "5 search hits: Communication; Communication; Communication; Communication; Communication",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 507,
+      "scores": {
+        "usefulness": 0.4,
+        "accuracy": 0.75,
+        "completeness": 0.30000000000000004,
+        "citationQuality": 0.85,
+        "missingContext": "No stalled-project detection"
+      },
+      "gaps": "No stalled-project detection",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Open Loops",
+      "question": "What remains unfinished?",
+      "expectedIntent": "open_loops_unfinished",
+      "actualIntent": "open_loops_unfinished",
+      "expectedAnswer": "3 open loops: Configure and run the system (including Ollama) on an external hard drive.; Maintain and monitor screenpipe background processes; Atriveo Cortex Development",
+      "actualAnswer": "10 open items still in progress: • Maintain and monitor screenpipe background processes (Gemma-based AI Development) — Status: ACTIVE · 3 mentions • Configure and run the system (including Ollama) on an external hard drive. (New Agent / Automations) — Status: ACTIVE · 2 mentions • Atriveo Cortex Development (Cortex) — Status: ACTIVE · 2 mentions • Configure and run the system (including Ollama) on an external hard drive. (New Agent / Automations) — Still in progress · open_loop • Maintain and monitor screenpipe background processes (Gemma-based AI Development) — Still in progress · open_loop • Atriveo Cortex Development (Cortex) — Still in progress · open_loop",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        }
+      ],
+      "latencyMs": 507,
+      "scores": {
+        "usefulness": 0.7,
+        "accuracy": 0.75,
+        "completeness": 0.75,
+        "citationQuality": 0.85,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Open Loops",
+      "question": "What keeps resurfacing?",
+      "expectedIntent": "open_loops_resurfacing",
+      "actualIntent": "open_loops_resurfacing",
+      "expectedAnswer": "No resurfacing loops (resurface_count >= 2).",
+      "actualAnswer": "Insufficient evidence. No repeatedly resurfacing open loops were found.",
+      "confidence": "LOW",
+      "citationCount": 0,
+      "citations": [],
+      "latencyMs": 522,
+      "scores": {
+        "usefulness": 0.25,
+        "accuracy": 0.3,
+        "completeness": 0.2,
+        "citationQuality": 0.15,
+        "missingContext": "No grounded answer produced"
+      },
+      "gaps": "No grounded answer produced",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Open Loops",
+      "question": "What should I finish next?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "10 search hits: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Cortex — 1 Verified Win",
+      "actualAnswer": "Found 3 verified accomplishments: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive..",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-15",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-11",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        }
+      ],
+      "latencyMs": 531,
+      "scores": {
+        "usefulness": 0.44999999999999996,
+        "accuracy": 0.75,
+        "completeness": 0.35,
+        "citationQuality": 0.85,
+        "missingContext": "No prioritization / next-action intent"
+      },
+      "gaps": "No prioritization / next-action intent",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Reviews",
+      "question": "What did I accomplish this week?",
+      "expectedIntent": "accomplishments_week",
+      "actualIntent": "accomplishments_week",
+      "expectedAnswer": "46 sessions this week across: Atriveo Cortex, Gemma-based AI Development, New Agent / Automations",
+      "actualAnswer": "You have 1 verified accomplishment this week: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' (Application Platform / Atriveo Cortex)",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-15",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 576,
+      "scores": {
+        "usefulness": 0.7,
+        "accuracy": 0.75,
+        "completeness": 0.75,
+        "citationQuality": 0.85,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Reviews",
+      "question": "What progress did I make?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "9 search hits: Cortex — 1 Verified Win; New Agent / Automations Work Day; Implement a manual approval workflow for automated c; Implement a manual approval workflow for automated c; Communication",
+      "actualAnswer": "Found 3 verified accomplishments: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'; Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive..",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-15",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-11",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        }
+      ],
+      "latencyMs": 543,
+      "scores": {
+        "usefulness": 0.55,
+        "accuracy": 0.75,
+        "completeness": 0.5,
+        "citationQuality": 0.85,
+        "missingContext": "Generic progress question not scoped to project or week"
+      },
+      "gaps": "Generic progress question not scoped to project or week",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Reviews",
+      "question": "What am I avoiding?",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "10 search hits: Configure and run the system (including Ollama) on an external hard drive.; Cortex — 1 Verified Win; Agent Orchestration and Automation Framework; Configure and run the system (including Ollama) on an external hard drive.; Resolve brand naming inconsistency between 'working-memory' and 'atriveo-cortex'.",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 513,
+      "scores": {
+        "usefulness": 0.35,
+        "accuracy": 0.75,
+        "completeness": 0.25,
+        "citationQuality": 0.85,
+        "missingContext": "No avoidance / procrastination analytics"
+      },
+      "gaps": "No avoidance / procrastination analytics",
+      "userWouldNeedManualInspection": true
+    },
+    {
+      "group": "Search",
+      "question": "Find everything related to ScreenPipe.",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "6 search hits: ScreenPipe Infrastructure Management; ScreenPipe Setup and Integration; Screenpipe System Integration; Maintain and monitor screenpipe background processes; Maintain And Monitor Screenpipe Background",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 510,
+      "scores": {
+        "usefulness": 0.7,
+        "accuracy": 0.75,
+        "completeness": 0.75,
+        "citationQuality": 0.85,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Search",
+      "question": "Find everything related to Attribution.",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "No memory search hits for \"Attribution\".",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 515,
+      "scores": {
+        "usefulness": 0.7,
+        "accuracy": 0.75,
+        "completeness": 0.75,
+        "citationQuality": 0.85,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    },
+    {
+      "group": "Search",
+      "question": "Find everything related to Reviews.",
+      "expectedIntent": "search",
+      "actualIntent": "search",
+      "expectedAnswer": "No memory search hits for \"Reviews\".",
+      "actualAnswer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "confidence": "HIGH",
+      "citationCount": 8,
+      "citations": [
+        {
+          "type": "accomplishment",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-16",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Maintain and monitor screenpipe background processes",
+          "date": "2026-06-17",
+          "project": "Gemma-based AI Development"
+        },
+        {
+          "type": "open_loop",
+          "title": "Configure and run the system (including Ollama) on an external hard drive.",
+          "date": "2026-06-17",
+          "project": "New Agent / Automations"
+        },
+        {
+          "type": "open_loop",
+          "title": "Atriveo Cortex Development",
+          "date": "2026-06-17",
+          "project": "Atriveo Cortex"
+        },
+        {
+          "type": "open_loop",
+          "title": "Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.'",
+          "date": "2026-06-17",
+          "project": "Atriveo Application Platform / Atriveo Cortex"
+        }
+      ],
+      "latencyMs": 506,
+      "scores": {
+        "usefulness": 0.7,
+        "accuracy": 0.75,
+        "completeness": 0.75,
+        "citationQuality": 0.85,
+        "missingContext": "None significant"
+      },
+      "gaps": "None significant",
+      "userWouldNeedManualInspection": false
+    }
+  ],
+  "unanswerable": [
+    {
+      "question": "What distracted me today?",
+      "intent": "search",
+      "answer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "citations": 8,
+      "canAnswerUsefully": true
+    },
+    {
+      "question": "What project got the most attention?",
+      "intent": "attention_top_project",
+      "answer": "Insufficient evidence. No project attention data found.",
+      "citations": 0,
+      "canAnswerUsefully": false
+    },
+    {
+      "question": "What did I finish?",
+      "intent": "search",
+      "answer": "Found 1 verified accomplishment: • Implement a manual approval workflow for automated changes: 'Do not make changes automatically. First show: - files to be committed - files to be ignored - any risks Then provide the exact commands I should execute.' Open loops: Maintain and monitor screenpipe background processes; Configure and run the system (including Ollama) on an external hard drive.; Atriveo Cortex Development.",
+      "citations": 8,
+      "canAnswerUsefully": true
+    },
+    {
+      "question": "What should I work on next?",
+      "intent": "search",
+      "answer": "No verified completions today. 4 items still in progress. Most work centered on New Agent / Automations. Next: New Agent / Automations Research.",
+      "citations": 2,
+      "canAnswerUsefully": true
+    }
+  ]
+}
