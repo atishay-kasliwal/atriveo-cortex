@@ -20,6 +20,8 @@ import {
   sumSummaries,
 } from "@/lib/analytics/analytics-service";
 import { ensureDaySynced } from "@/lib/analytics/analytics-sync";
+import { buildPresenceSummary } from "@/lib/analytics/presence-api";
+import { listStateSegments } from "@/lib/analytics/analytics-db";
 
 async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
   const summary = await getDailySummary(date);
@@ -28,6 +30,8 @@ async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
   const websites = aggregateWebsiteUsage(await listWebsiteUsage(date, date));
   const websiteCategories = aggregateWebsiteCategories(websites);
   const projects = toProjectTimeDTO(aggregateProjectUsage(sessions));
+  const stateRows = await listStateSegments(date);
+  const presence = buildPresenceSummary(stateRows);
 
   const totals = summary
     ? {
@@ -54,6 +58,7 @@ async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
     projects,
     emergingIdeas: await getEmergingIdeas(),
     openLoops: await getOpenLoopBriefs(),
+    ...presence,
   };
 }
 

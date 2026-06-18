@@ -66,13 +66,25 @@ export function TodayView({
     <div className="space-y-6">
       <TodayHero data={data} heading={heading} />
       <ActivityBreakdown
+        focusedStateSec={data.focusedStateSec}
+        activeStateSec={data.activeStateSec}
+        backgroundStateSec={data.backgroundStateSec}
+        idleStateSec={data.idleStateSec}
+        sleepingStateSec={data.sleepingStateSec}
         activeSec={data.activeSec}
         backgroundSec={data.backgroundSec ?? data.passiveSec}
         idleSec={data.idleSec}
         sleepingSec={data.sleepingSec}
+        totalIdleSec={data.totalIdleSec}
+        largestIdleBlockSec={data.largestIdleBlockSec}
+        presenceScore={data.presenceScore}
       />
       <ActivityCard title="Temporal distribution" subtitle={temporalSubtitle}>
-        <TemporalRibbon blocks={data.timeline} viewDate={viewDate ?? data.date} />
+        <TemporalRibbon
+          blocks={data.timeline}
+          stateTimeline={data.stateTimeline}
+          viewDate={viewDate ?? data.date}
+        />
       </ActivityCard>
       <ActivityCard
         title="Timeline of Work"

@@ -16,6 +16,8 @@ import type {
   DailyAttentionReport,
   WeeklyAttentionReport,
 } from "./attention-types";
+import { buildPresenceRollups, computePresenceMetrics, mapStateRows } from "@/lib/analytics/presence-api";
+import { listStateSegments } from "@/lib/analytics/analytics-db";
 import { attentionRepository } from "@/lib/repositories/attention-repository";
 import { analyticsRepository } from "@/lib/repositories/analytics-repository";
 
@@ -83,7 +85,12 @@ export type DayAttentionDTO = {
   }>;
   visibleTime: CategoryTimeDTO[];
   attentionTime: CategoryTimeDTO[];
+  idleTime: CategoryTimeDTO[];
+  presenceTime: CategoryTimeDTO[];
   attentionConfidence: "high" | "medium" | "low";
+  totalIdleSec: number;
+  largestIdleBlockSec: number;
+  presenceScore: number;
 };
 
 export type WeekAttentionDTO = {
@@ -113,7 +120,11 @@ export type ProjectAttentionDetailDTO = {
 
 export type AttentionTrendsDTO = AttentionTrends;
 
-function toDayDTO(report: DailyAttentionReport): DayAttentionDTO {
+function toDayDTO(report: DailyAttentionReport, stateRows: Awaited<ReturnType<typeof listStateSegments>>): DayAttentionDTO {
+  const segments = mapStateRows(stateRows);
+  const presenceMetrics = computePresenceMetrics(segments);
+  const rollups = buildPresenceRollups(segments);
+
   return {
     date: report.date,
     generatedAt: report.generatedAt,
@@ -149,6 +160,11 @@ function toDayDTO(report: DailyAttentionReport): DayAttentionDTO {
     visibleTime: report.visibleTime,
     attentionTime: report.attentionTime,
     attentionConfidence: report.attentionConfidence,
+    idleTime: rollups.idleTime,
+    presenceTime: rollups.presenceTime,
+    totalIdleSec: presenceMetrics.totalIdleSec,
+    largestIdleBlockSec: presenceMetrics.largestIdleBlockSec,
+    presenceScore: presenceMetrics.presenceScore,
   };
 }
 
@@ -215,10 +231,11 @@ async function loadOrComputeDay(date: string): Promise<DailyAttentionReport> {
 export async function buildDayAttention(date?: string | null): Promise<DayAttentionDTO | null> {
   const d = date?.trim() || localDateString();
   const report = await loadOrComputeDay(d);
+  const stateRows = await listStateSegments(d);
   if (report.allocation.totalAttentionSec === 0 && report.segments.length === 0) {
     return null;
   }
-  return toDayDTO(report);
+  return toDayDTO(report, stateRows);
 }
 
 export async function buildWeekAttention(

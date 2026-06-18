@@ -28,7 +28,7 @@ export function stateAttentionWeight(
   state: ActivityState,
   backgroundWeight = BACKGROUND_ATTENTION_WEIGHT,
 ): number {
-  if (state === "ACTIVE") return 1;
+  if (state === "FOCUSED" || state === "ACTIVE") return 1;
   if (state === "BACKGROUND") return backgroundWeight;
   return 0;
 }
@@ -155,7 +155,7 @@ export function computeContextSwitching(
   }
 
   const activeSegments = stateSegments
-    .filter((s) => s.state === "ACTIVE")
+    .filter((s) => s.state === "ACTIVE" || s.state === "FOCUSED")
     .sort((a, b) => Date.parse(a.start_time) - Date.parse(b.start_time));
 
   let longestFocusBlockSec = 0;
@@ -205,7 +205,7 @@ export function detectDeepWorkSessions(
 ): DeepWorkSession[] {
   const minSec = (options.deepWorkMinMinutes ?? DEFAULT_DEEP_WORK_MINUTES) * 60;
   const active = [...stateSegments]
-    .filter((s) => s.state === "ACTIVE")
+    .filter((s) => s.state === "ACTIVE" || s.state === "FOCUSED")
     .sort((a, b) => Date.parse(a.start_time) - Date.parse(b.start_time));
 
   const blocks: Array<{ start: string; end: string }> = [];
@@ -316,7 +316,7 @@ export function computeAttentionScore(
 ): AttentionScoreBreakdown {
   const totalAttentionSec = segments.reduce((n, s) => n + s.attentionScore, 0);
   const activeSec = stateSegments
-    .filter((s) => s.state === "ACTIVE")
+    .filter((s) => s.state === "ACTIVE" || s.state === "FOCUSED")
     .reduce((n, s) => n + segmentDurationSec(s.start_time, s.end_time), 0);
   const backgroundSec = stateSegments
     .filter((s) => s.state === "BACKGROUND")
@@ -384,7 +384,7 @@ export function computeProjectAttention(
     if (row.percent > prior + 5) momentum = "increasing";
     else if (row.percent < prior - 5) momentum = "declining";
     const activeSec = segments
-      .filter((s) => s.project === row.project && s.state === "ACTIVE")
+      .filter((s) => s.project === row.project && (s.state === "ACTIVE" || s.state === "FOCUSED"))
       .reduce((n, s) => n + segmentDurationSec(s.startTime, s.endTime), 0);
     return {
       project: row.project,

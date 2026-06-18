@@ -22,11 +22,15 @@ export function buildDailySummary(
   if (stateTotals) {
     return {
       date,
-      active_minutes: roundMinutes(stateTotals.activeSeconds / 60),
+      active_minutes: roundMinutes(
+        (stateTotals.focusedSeconds +
+          stateTotals.activeSeconds) /
+          60,
+      ),
       background_minutes: roundMinutes(stateTotals.backgroundSeconds / 60),
       idle_minutes: roundMinutes(stateTotals.idleSeconds / 60),
       sleeping_minutes: roundMinutes(stateTotals.sleepingSeconds / 60),
-      focused_minutes: roundMinutes(focusedMinutes),
+      focused_minutes: roundMinutes(focusedMinutes + stateTotals.focusedSeconds / 60),
       meeting_minutes: roundMinutes(meetingMinutes),
       project_count: projectCount,
       open_loop_count: openLoopCount,

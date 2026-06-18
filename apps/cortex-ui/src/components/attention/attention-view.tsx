@@ -114,6 +114,39 @@ function DayAttentionSections({ data }: { data: DayAttention }) {
         </ActivityCard>
       </div>
 
+      {data.idleTime && data.idleTime.length > 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ActivityCard
+            title="Idle time"
+            subtitle="Away from keyboard — not counted as work"
+          >
+            <CategoryTimeList title="idle" items={data.idleTime} />
+          </ActivityCard>
+          {data.presenceTime && data.presenceTime.length > 0 ? (
+            <ActivityCard
+              title="Presence time"
+              subtitle="Likely at desk but low interaction"
+            >
+              <CategoryTimeList title="presence" items={data.presenceTime} />
+            </ActivityCard>
+          ) : null}
+        </div>
+      ) : null}
+
+      {data.presenceScore != null || data.totalIdleSec != null ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {data.presenceScore != null ? (
+            <Stat label="Presence score" value={`${Math.round(data.presenceScore)}%`} />
+          ) : null}
+          {data.totalIdleSec != null ? (
+            <Stat label="Total idle" value={fmtDuration(data.totalIdleSec)} />
+          ) : null}
+          {data.largestIdleBlockSec != null ? (
+            <Stat label="Largest idle block" value={fmtDuration(data.largestIdleBlockSec)} />
+          ) : null}
+        </div>
+      ) : null}
+
       <ActivityCard title="Attention confidence" subtitle="How reliably we inferred attention vs visibility">
         <div className="flex items-center gap-3 px-5 py-4">
           <Badge

@@ -66,6 +66,22 @@ export type OpenLoopBriefDTO = {
   lastSeenAt: string;
 };
 
+export type StateTimelineBlockDTO = {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  durationSec: number;
+  state: string;
+  label: string;
+  idleTier?: string;
+};
+
+export type PresenceTimeDTO = {
+  category: string;
+  label: string;
+  durationSec: number;
+};
+
 export type TodayActivityDTO = {
   date: string;
   generatedAt: string;
@@ -78,6 +94,18 @@ export type TodayActivityDTO = {
   meetingSec: number;
   projectsTouched: number;
   openLoopsCount: number;
+  focusedStateSec?: number;
+  activeStateSec?: number;
+  backgroundStateSec?: number;
+  idleStateSec?: number;
+  sleepingStateSec?: number;
+  totalIdleSec?: number;
+  largestIdleBlockSec?: number;
+  presenceScore?: number;
+  idleByTier?: Array<{ tier: string; label: string; durationSec: number }>;
+  idleTime?: PresenceTimeDTO[];
+  presenceTime?: PresenceTimeDTO[];
+  stateTimeline?: StateTimelineBlockDTO[];
   timeline: TimelineBlockDTO[];
   apps: AppUsageDTO[];
   websites: WebsiteUsageDTO[];

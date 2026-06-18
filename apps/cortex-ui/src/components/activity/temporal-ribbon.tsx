@@ -11,7 +11,44 @@ import {
 } from "@/components/dashboard/time";
 import type { ActivityCategory, TimelineBlock } from "@/lib/api/types";
 
+export type StateTimelineBlock = {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  durationSec: number;
+  state: string;
+  label: string;
+  idleTier?: string;
+};
+
 const DAY_MIN = 24 * 60;
+
+function stateBlockToSegment(block: StateTimelineBlock, dayStart: Date): RibbonSegment & { state: string } {
+  const startMs = new Date(block.startedAt).getTime() - dayStart.getTime();
+  const startMin = Math.max(0, startMs / 60_000);
+  const durationMin = block.durationSec / 60;
+  return {
+    block: {
+      id: block.id,
+      startedAt: block.startedAt,
+      endedAt: block.endedAt,
+      durationSec: block.durationSec,
+      category: "other",
+      title: block.label,
+    },
+    startMin,
+    durationMin,
+    state: block.state,
+  };
+}
+
+const stateBarClass: Record<string, string> = {
+  focused: "bg-[oklch(0.72_0.16_280)]",
+  active: "bg-signal",
+  background: "bg-[oklch(0.72_0.12_200)]",
+  idle: "bg-[oklch(0.78_0.15_80)]",
+  sleeping: "bg-muted-foreground/50",
+};
 
 type RibbonSegment = {
   block: TimelineBlock;
@@ -43,9 +80,11 @@ function fmtAxisClock(totalMin: number): string {
 
 export function TemporalRibbon({
   blocks,
+  stateTimeline = [],
   viewDate,
 }: {
   blocks: TimelineBlock[];
+  stateTimeline?: StateTimelineBlock[];
   viewDate?: string;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
@@ -86,7 +125,16 @@ export function TemporalRibbon({
     return [...cats];
   }, [segments]);
 
-  if (segments.length === 0) {
+  const stateSegments = useMemo(
+    () =>
+      [...stateTimeline]
+        .map((b) => stateBlockToSegment(b, dayStart))
+        .filter((s) => s.durationMin > 0 && s.startMin < DAY_MIN)
+        .sort((a, b) => a.startMin - b.startMin),
+    [stateTimeline, dayStart],
+  );
+
+  if (segments.length === 0 && stateSegments.length === 0) {
     return (
       <p className="px-5 py-8 text-center text-[13px] text-muted-foreground">
         No timed sessions to plot on today&apos;s ribbon.
@@ -202,6 +250,34 @@ export function TemporalRibbon({
           )}
         </div>
       </section>
+
+      {stateSegments.length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Presence / idle blocks
+            </h3>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              Idle and sleeping time is shown explicitly — not counted as work
+            </p>
+          </div>
+          <div className="relative h-8 w-full overflow-hidden rounded-lg bg-surface-2/40 ring-1 ring-border/60">
+            {stateSegments.map((s) => {
+              const stateKey = s.state.toLowerCase();
+              const left = (s.startMin / DAY_MIN) * 100;
+              const width = Math.max(0.15, (s.durationMin / DAY_MIN) * 100);
+              return (
+                <div
+                  key={s.block.id}
+                  className={"absolute top-0 bottom-0 " + (stateBarClass[stateKey] ?? stateBarClass.background)}
+                  style={{ left: `${left}%`, width: `${width}%` }}
+                  title={`${s.block.title}: ${fmtDuration(s.block.durationSec)}`}
+                />
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <section className="space-y-4">
         <div className="col-span-full">

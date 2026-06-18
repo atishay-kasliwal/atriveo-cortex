@@ -53,6 +53,7 @@ export class AnalyticsRepository {
     await runUnsafe(`DELETE FROM application_usage WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM website_usage WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM activity_state_segments WHERE date = $1`, [date]);
+    await runUnsafe(`DELETE FROM idle_segments WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM daily_activity_summary WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM attention_segments WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM deep_work_sessions WHERE date = $1`, [date]);
@@ -165,6 +166,38 @@ export class AnalyticsRepository {
         [date, s.start_time, s.end_time, s.state, s.duration_minutes, s.confidence],
       );
     }
+  }
+
+  async saveIdleSegments(
+    date: string,
+    segments: Array<{
+      start_time: string;
+      end_time: string;
+      duration_minutes: number;
+      tier: string;
+      confidence: number;
+    }>,
+  ): Promise<void> {
+    for (const s of segments) {
+      await runUnsafe(
+        `INSERT INTO idle_segments
+         (date, start_time, end_time, duration_minutes, tier, confidence)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [date, s.start_time, s.end_time, s.duration_minutes, s.tier, s.confidence],
+      );
+    }
+  }
+
+  async listStateSegments(date: string): Promise<
+    import("@/lib/analytics/types").ActivityStateSegmentRow[]
+  > {
+    return runUnsafe(
+      `SELECT date, start_time, end_time, state, duration_minutes, confidence
+       FROM activity_state_segments
+       WHERE date = $1
+       ORDER BY start_time ASC`,
+      [date],
+    );
   }
 
   async getDailySummary(date: string): Promise<DailySummaryRow | null> {

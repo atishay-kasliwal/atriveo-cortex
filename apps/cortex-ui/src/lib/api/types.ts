@@ -411,6 +411,11 @@ export type DayAttention = {
   }>;
   visibleTime: Array<{ category: string; label: string; durationSec: number }>;
   attentionTime: Array<{ category: string; label: string; durationSec: number }>;
+  idleTime?: Array<{ category: string; label: string; durationSec: number }>;
+  presenceTime?: Array<{ category: string; label: string; durationSec: number }>;
+  totalIdleSec?: number;
+  largestIdleBlockSec?: number;
+  presenceScore?: number;
   attentionConfidence: "high" | "medium" | "low";
 };
 
@@ -585,6 +590,7 @@ export type TodayActivity = {
   activeSec: number;
   passiveSec?: number;
   backgroundSec?: number;
+  focusedStateSec?: number;
   focusSec: number;
   idleSec: number;
   sleepingSec?: number;
@@ -592,6 +598,22 @@ export type TodayActivity = {
   projectsTouched: number;
   openLoopsCount: number;
   timeline: TimelineBlock[];
+  stateTimeline?: {
+    id: string;
+    startedAt: string;
+    endedAt: string;
+    durationSec: number;
+    state: string;
+    label: string;
+    idleTier?: string;
+  }[];
+  presenceScore?: number;
+  largestIdleBlockSec?: number;
+  totalIdleSec?: number;
+  visibleTime?: number;
+  attentionTime?: number;
+  presenceTime?: number;
+  idleTime?: number;
   apps: AppUsage[];
   websites: WebsiteUsage[];
   websiteCategories: WebsiteCategoryUsage[];

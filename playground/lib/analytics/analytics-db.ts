@@ -76,6 +76,19 @@ export async function saveStateSegments(
   );
 }
 
+export async function saveIdleSegments(
+  date: string,
+  segments: import("./idle-presence").IdleSegmentRow[],
+): Promise<void> {
+  await analyticsRepository.saveIdleSegments(date, segments);
+}
+
+export async function listStateSegments(
+  date: string,
+): Promise<import("./types").ActivityStateSegmentRow[]> {
+  return analyticsRepository.listStateSegments(date);
+}
+
 export async function getDailySummary(date: string): Promise<DailySummaryRow | null> {
   return analyticsRepository.getDailySummary(date);
 }

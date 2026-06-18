@@ -18,12 +18,14 @@ import {
   completeAnalyticsRun,
   saveApplicationUsage,
   saveDailySummary,
+  saveIdleSegments,
   saveSessions,
   saveStateSegments,
   saveWebsiteUsage,
   startAnalyticsRun,
 } from "./analytics-db";
 import { detectActivityStates } from "./idle-detector";
+import { extractIdleSegments } from "./idle-presence";
 import { buildProjectSignalIndex } from "./project-signals";
 import { loadExtendedSessionEvidence } from "./session-evidence";
 import { enrichSessions } from "./session-intelligence";
@@ -56,6 +58,7 @@ export async function syncDay(date: string): Promise<SyncResult> {
     await saveApplicationUsage(date, attribution.appSeconds);
     await saveWebsiteUsage(date, attribution.domainSeconds, attribution.domainVisits);
     await saveStateSegments(date, stateResult.segments);
+    await saveIdleSegments(date, extractIdleSegments(date, stateResult.segments));
 
     const openLoopCount = (await getOpenLoopsReport()).summary.total;
     const summary = buildDailySummary(

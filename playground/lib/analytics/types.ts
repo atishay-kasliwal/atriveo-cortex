@@ -82,7 +82,7 @@ export type ActivityStateSegmentRow = {
   date: string;
   start_time: string;
   end_time: string;
-  state: "ACTIVE" | "BACKGROUND" | "IDLE" | "SLEEPING";
+  state: "FOCUSED" | "ACTIVE" | "BACKGROUND" | "IDLE" | "SLEEPING";
   duration_minutes: number;
   confidence: number;
 };

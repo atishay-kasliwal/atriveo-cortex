@@ -362,6 +362,23 @@ export const activityStateSegments = pgTable(
   ],
 );
 
+export const idleSegments = pgTable(
+  "idle_segments",
+  {
+    id: serial("id").primaryKey(),
+    date: text("date").notNull(),
+    startTime: text("start_time").notNull(),
+    endTime: text("end_time").notNull(),
+    durationMinutes: real("duration_minutes").notNull().default(0),
+    tier: text("tier").notNull(),
+    confidence: real("confidence").notNull().default(0),
+  },
+  (t) => [
+    index("idx_idle_segments_date").on(t.date),
+    index("idx_idle_segments_start").on(t.startTime),
+  ],
+);
+
 export const screenpipeReliability = pgTable("screenpipe_reliability", {
   id: integer("id").primaryKey(),
   lastRestartAt: text("last_restart_at"),

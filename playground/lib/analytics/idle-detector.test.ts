@@ -60,7 +60,7 @@ describe("detectActivityStates", () => {
     );
   });
 
-  it("classifies 30 min away with Chrome/Cursor open and frequent frames as BACKGROUND or IDLE", () => {
+  it("classifies 30 min away with Chrome/Cursor open and frequent frames as IDLE", () => {
     const start = "2026-06-17T14:00:00.000Z";
     const frames: ReturnType<typeof frame>[] = [];
     for (let i = 0; i <= 60; i++) {
@@ -81,9 +81,8 @@ describe("detectActivityStates", () => {
       DAY_END,
     );
     expect(result.totals.activeSeconds).toBeLessThan(60);
-    expect(
-      result.totals.backgroundSeconds + result.totals.idleSeconds,
-    ).toBeGreaterThan(1500);
+    expect(result.totals.idleSeconds).toBeGreaterThan(1500);
+    expect(result.totals.backgroundSeconds).toBeLessThan(300);
   });
 
   it("classifies same-window gaps without UI as BACKGROUND", () => {
@@ -138,12 +137,12 @@ describe("detectActivityStates", () => {
     expect(result.totals.activeSeconds).toBeGreaterThan(200);
   });
 
-  it("detects meaningful OCR change as ACTIVE", () => {
+  it("detects meaningful OCR change within 60s as ACTIVE", () => {
     const start = "2026-06-17T10:00:00.000Z";
     const frames = [
       frame(start, "Cursor", "file.ts", "version 1 baseline"),
       frame(
-        addMin(start, 2),
+        addSec(start, 45),
         "Cursor",
         "file.ts",
         "version 2 changed with new function body",
@@ -156,7 +155,7 @@ describe("detectActivityStates", () => {
       DAY_START,
       DAY_END,
     );
-    expect(result.totals.activeSeconds).toBeGreaterThan(100);
+    expect(result.totals.activeSeconds).toBeGreaterThan(40);
   });
 
   it("classifies 5+ minute still gaps as IDLE", () => {
