@@ -21,6 +21,10 @@ import {
   computeAndPersistDayScreens,
   loadDayScreensPayload,
 } from "./screens-db";
+import {
+  buildScreensDecisionView,
+  type ScreensDecisionView,
+} from "./screens-decision";
 import { screensRepository } from "@/lib/repositories/screens-repository";
 import { fetchFramesForWindow } from "@/lib/screenpipe-db";
 
@@ -50,7 +54,10 @@ export type DayScreensDTO = {
   dailySummary: MonitorSummaryDTO[];
   heatmap: MonitorHeatmapRow[];
   insights: MonitorInsights;
+  decision: ScreensDecisionView;
 };
+
+export type { ScreensDecisionView };
 
 export type WeekScreensDTO = {
   weekStart: string;
@@ -130,14 +137,25 @@ async function loadOrComputeDay(date: string): Promise<DayScreensDTO | null> {
 
   if (!payload || payload.monitors.length === 0) return null;
 
-  return {
+  const timelines = rowsToTimelines(rows);
+  const base = {
     date,
     generatedAt: new Date().toISOString(),
     monitors: payload.monitors,
-    timelines: rowsToTimelines(rows),
+    timelines,
     dailySummary: payload.dailySummary,
     heatmap: payload.heatmap,
     insights: payload.insights,
+  };
+
+  return {
+    ...base,
+    decision: buildScreensDecisionView({
+      date,
+      monitors: base.monitors,
+      timelines: base.timelines,
+      dailySummary: base.dailySummary,
+    }),
   };
 }
 

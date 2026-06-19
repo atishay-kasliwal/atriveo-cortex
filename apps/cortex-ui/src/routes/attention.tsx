@@ -12,7 +12,7 @@ export const Route = createFileRoute("/attention")({
       { title: "Attention · Atriveo Cortex" },
       {
         name: "description",
-        content: "Where your attention went — deep work, interruptions, and project engagement.",
+        content: "Memory visualizations — attention flow, focus depth, and monitor heat.",
       },
     ],
   }),
@@ -23,9 +23,9 @@ function AttentionPage() {
   return (
     <PageBody>
       <PageHeader
-        eyebrow="Attention Engine"
-        title="Attention"
-        description="Engagement-weighted view of where focus went, what interrupted it, and which projects received meaningful attention."
+        eyebrow="Attention"
+        title="Where did my attention live?"
+        description="Memory visualizations — flow, focus depth, and monitor heat — not another metrics dashboard."
       />
       <AttentionView />
     </PageBody>

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/screens")({
       { title: "Screens · Atriveo Cortex" },
       {
         name: "description",
-        content: "Per-monitor timelines — what was on each display throughout the day.",
+        content: "What was on each monitor — roles, snapshots, and category comparison across displays.",
       },
     ],
   }),
@@ -23,9 +23,9 @@ function ScreensPage() {
   return (
     <PageBody>
       <PageHeader
-        eyebrow="Multi-Monitor Intelligence"
-        title="Screens"
-        description="Monitor-aware memory. Reconstruct what was displayed on each screen without merging into a single activity stream."
+        eyebrow="Screens"
+        title="What was on each monitor?"
+        description="Memory view — roles, snapshots, and category comparison. Segment-level detail stays in the drawer."
       />
       <ScreensView />
     </PageBody>

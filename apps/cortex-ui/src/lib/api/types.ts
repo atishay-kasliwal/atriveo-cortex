@@ -417,6 +417,57 @@ export type DayAttention = {
   largestIdleBlockSec?: number;
   presenceScore?: number;
   attentionConfidence: "high" | "medium" | "low";
+  decision: AttentionDecisionView;
+  visualizations: AttentionVisualizations;
+};
+
+export type AttentionQualityLabel = "Strong" | "Good" | "Fair" | "Weak";
+
+export type AttentionDecisionView = {
+  hero: {
+    score: number;
+    qualityLabel: AttentionQualityLabel;
+    topProject: { name: string; percent: number } | null;
+    biggestLeak: { label: string; durationSec: number; detail?: string } | null;
+    largestFocusBlockSec: number;
+    headlineRecommendation: string;
+  };
+  story: string[];
+  allocation: Array<{ project: string; percent: number; attentionSec: number }>;
+  leaks: Array<{
+    label: string;
+    kind: "idle" | "switches" | "category";
+    durationSec?: number;
+    count?: number;
+    detail?: string;
+    impactScore: number;
+  }>;
+  recommendations: string[];
+};
+
+export type AttentionVisualizations = {
+  headline: string;
+  sankey: {
+    nodes: Array<{ id: string; label: string; category: string; value: number }>;
+    links: Array<{ source: string; target: string; value: number }>;
+  };
+  focusMountain: {
+    points: Array<{ minuteOfDay: number; intensity: number }>;
+    peaks: Array<{
+      startMinute: number;
+      endMinute: number;
+      label: string;
+      durationSec: number;
+    }>;
+  };
+  monitorHeatmap: {
+    hourLabels: string[];
+    monitors: Array<{
+      monitorId: string;
+      displayName: string;
+      cells: Array<{ hour: number; intensity: number; category: string }>;
+    }>;
+  } | null;
 };
 
 export type WeekAttention = {
@@ -484,6 +535,58 @@ export type DayScreens = {
   dailySummary: MonitorDailySummary[];
   heatmap: MonitorHeatmapRow[];
   insights: MonitorInsights;
+  decision: ScreensDecisionView;
+};
+
+export type MonitorRoleLabel =
+  | "Build Monitor"
+  | "Research Monitor"
+  | "Communication Monitor"
+  | "Entertainment Monitor"
+  | "Mixed Use";
+
+export type ScreensDecisionView = {
+  monitorCount: number;
+  categoryComparison: Array<{
+    category: string;
+    label: string;
+    shortLabel: string;
+    durationSec: number;
+    monitors: Array<{
+      monitorId: string;
+      displayName: string;
+      durationSec: number;
+      percent: number;
+    }>;
+  }>;
+  monitorCards: Array<{
+    monitorId: string;
+    displayName: string;
+    role: MonitorRoleLabel;
+    primaryCategory: string;
+    totalSec: number;
+    topApps: Array<{ app: string; durationSec: number }>;
+    topWebsites: Array<{ domain: string; durationSec: number }>;
+    categories: Array<{ category: string; label: string; percent: number; durationSec: number }>;
+    ribbon: Array<{ category: string; startPercent: number; widthPercent: number }>;
+    segmentCount: number;
+  }>;
+  snapshotSlots: string[];
+  snapshots: Record<
+    string,
+    {
+      timeKey: string;
+      timeLabel: string;
+      isoTime: string;
+      monitors: Array<{
+        monitorId: string;
+        displayName: string;
+        primaryApp: string;
+        detail: string;
+        category: string;
+      } | null>;
+    }
+  >;
 };
 
 export type WeekScreens = {

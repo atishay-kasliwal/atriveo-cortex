@@ -9,6 +9,8 @@ import {
   shiftDate,
   weekRange,
 } from "./aggregator";
+import { buildAttentionDecisionView, type AttentionDecisionView } from "./attention-decision";
+import { buildAttentionVisualizations, type AttentionVisualizations } from "./attention-visualizations";
 import { buildDailyAttentionReport } from "./attention-engine";
 import { computeAndPersistDayAttention } from "./attention-db";
 import type {
@@ -19,6 +21,7 @@ import type {
 import { buildPresenceRollups, computePresenceMetrics } from "@/lib/analytics/idle-presence";
 import { mapStateRows } from "@/lib/analytics/presence-api";
 import { listStateSegments } from "@/lib/analytics/analytics-db";
+import { buildDayScreens } from "./screens-api";
 import { attentionRepository } from "@/lib/repositories/attention-repository";
 import { analyticsRepository } from "@/lib/repositories/analytics-repository";
 
@@ -92,7 +95,11 @@ export type DayAttentionDTO = {
   totalIdleSec: number;
   largestIdleBlockSec: number;
   presenceScore: number;
+  decision: AttentionDecisionView;
+  visualizations: AttentionVisualizations;
 };
+
+export type { AttentionDecisionView, AttentionVisualizations };
 
 export type WeekAttentionDTO = {
   weekStart: string;
@@ -125,6 +132,14 @@ function toDayDTO(report: DailyAttentionReport, stateRows: Awaited<ReturnType<ty
   const segments = mapStateRows(stateRows);
   const presenceMetrics = computePresenceMetrics(segments);
   const rollups = buildPresenceRollups(segments);
+
+  const idleTime = rollups.idleTime;
+  const totalIdleSec = presenceMetrics.totalIdleSec;
+  const decision = buildAttentionDecisionView({
+    ...report,
+    idleTime,
+    totalIdleSec,
+  });
 
   return {
     date: report.date,
@@ -161,11 +176,12 @@ function toDayDTO(report: DailyAttentionReport, stateRows: Awaited<ReturnType<ty
     visibleTime: report.visibleTime,
     attentionTime: report.attentionTime,
     attentionConfidence: report.attentionConfidence,
-    idleTime: rollups.idleTime,
+    idleTime,
     presenceTime: rollups.presenceTime,
-    totalIdleSec: presenceMetrics.totalIdleSec,
+    totalIdleSec,
     largestIdleBlockSec: presenceMetrics.largestIdleBlockSec,
     presenceScore: presenceMetrics.presenceScore,
+    decision,
   };
 }
 
@@ -236,7 +252,12 @@ export async function buildDayAttention(date?: string | null): Promise<DayAttent
   if (report.allocation.totalAttentionSec === 0 && report.segments.length === 0) {
     return null;
   }
-  return toDayDTO(report, stateRows);
+  const dto = toDayDTO(report, stateRows);
+  const screens = await buildDayScreens(d).catch(() => null);
+  return {
+    ...dto,
+    visualizations: buildAttentionVisualizations(report, screens),
+  };
 }
 
 export async function buildWeekAttention(
