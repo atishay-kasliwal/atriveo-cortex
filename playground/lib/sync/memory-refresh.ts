@@ -171,15 +171,18 @@ function buildUserMessage(opts: {
   };
 }
 
-export async function runMemoryRefresh(options?: {
-  forceReviews?: boolean;
-}): Promise<MemoryRefreshResult> {
+export async function runMemoryRefresh(
+  options?: { forceReviews?: boolean },
+  hooks?: {
+    onStage?: (stages: string[], framesProcessed: number) => void | Promise<void>;
+  },
+): Promise<MemoryRefreshResult> {
   const started = Date.now();
   const beforeStatus = await getSyncStatus();
   const syncWindowDates = [localDateString(), shiftDate(localDateString(), -1)];
   const beforeSessions = await sessionCountForDates(syncWindowDates);
 
-  const stagesCompleted: string[] = ["assess"];
+  const stagesCompleted: string[] = [];
   let retryCount = 0;
   let recordsImported = 0;
   let syncedDates: string[] = [];
@@ -189,10 +192,17 @@ export async function runMemoryRefresh(options?: {
   let relayAttempted = false;
   let relaySucceeded = false;
 
+  const reportStage = async (stage: string) => {
+    stagesCompleted.push(stage);
+    await hooks?.onStage?.(stagesCompleted, recordsImported);
+  };
+
+  await reportStage("assess");
+
   const canLocal = screenpipeDbExists();
   const canRelay = Boolean(process.env.MAC_SYNC_RELAY_URL?.trim());
   const cloudMemory = await hasCloudMemory();
-  stagesCompleted.push(cloudMemory ? "cloud_memory" : "no_cloud_memory");
+  await reportStage(cloudMemory ? "cloud_memory" : "no_cloud_memory");
 
   if (canLocal) {
     captureAttempted = true;

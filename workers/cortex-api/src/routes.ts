@@ -88,8 +88,8 @@ import {
   buildClassificationAccuracyReport,
 } from "@/lib/analytics/accuracy-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
-import { fetchSyncStatus, triggerManualSync } from "@/lib/sync/sync-api";
-import { apiError, apiSuccess } from "./env";
+import { fetchSyncStatus, fetchMemoryJob, processMemoryJob, triggerMemoryJobEnqueue } from "@/lib/sync/sync-api";
+import { apiError, apiErrorFromException, apiSuccess } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
   const raw = c.req.query(name);
@@ -775,9 +775,35 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
 
   app.post("/api/sync", async (c) => {
     try {
-      return apiSuccess(c, await triggerManualSync());
+      const enqueued = await triggerMemoryJobEnqueue();
+      const ctx = c.executionCtx;
+      if (ctx) {
+        ctx.waitUntil(
+          processMemoryJob(enqueued.jobId).catch((err) => {
+            console.error("[memory-job] background processing failed:", err);
+          }),
+        );
+      } else {
+        void processMemoryJob(enqueued.jobId);
+      }
+      return apiSuccess(c, enqueued, 202);
     } catch (e) {
-      return apiError(c, e instanceof Error ? e.message : "Couldn't refresh memory right now", 500);
+      return apiErrorFromException(
+        c,
+        e,
+        "Couldn't refresh memory right now",
+        500,
+      );
+    }
+  });
+
+  app.get("/api/sync/jobs/:id", async (c) => {
+    try {
+      const job = await fetchMemoryJob(c.req.param("id"));
+      if (!job) return apiError(c, "Job not found", 404);
+      return apiSuccess(c, job);
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to load memory job", 500);
     }
   });
 }

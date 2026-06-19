@@ -12,6 +12,7 @@ import {
   fetchSyncStatus,
   formatDurationMs,
   formatLastSyncAt,
+  healthSignalStyle,
   memoryFreshnessStyle,
   readCachedSyncStatus,
   syncPipelineLabels,
@@ -126,12 +127,14 @@ export function SyncControl() {
   }, [uiState]);
 
   const status = statusQuery.data;
+  const agentHealth = status?.agentHealth;
   const freshness = status?.memoryFreshness;
   const score = freshness?.score ?? null;
   const statusLoading = statusQuery.isLoading && !status;
   const statusUnavailable = statusQuery.isError && !status;
+  const activeJob = agentHealth?.activeJob;
   const pipelineStatus =
-    uiState === "refreshing"
+    uiState === "refreshing" || activeJob
       ? "syncing"
       : statusLoading
         ? "syncing"
@@ -139,22 +142,16 @@ export function SyncControl() {
           (statusUnavailable ? readCachedSyncStatus()?.pipelineStatus : undefined) ??
           (statusUnavailable ? "stale" : "offline"));
   const pipelineStyle = syncPipelineStyles[pipelineStatus];
-  const isRefreshing = uiState === "refreshing" || refreshMutation.isPending;
-  const canRefresh = status?.canRefreshMemory !== false;
+  const isRefreshing =
+    uiState === "refreshing" || refreshMutation.isPending || Boolean(activeJob);
+  const canRefresh = status?.canRefreshMemory !== false && !activeJob;
 
-  const lastCaptureIso =
-    freshness?.lastCaptureAt ??
-    status?.lastFrameAt ??
-    status?.lastUpdatedAt ??
-    readCachedSyncStatus()?.memoryFreshness?.lastCaptureAt ??
-    null;
-  const lastCaptureText = statusLoading
-    ? "Loading…"
-    : lastCaptureIso
-      ? formatLastSyncAt(lastCaptureIso)
-      : statusUnavailable
-        ? "Temporarily unavailable"
-        : "Never";
+  const captureLabel =
+    agentHealth?.capture.label ??
+    (status?.lastFrameAt ? `Last capture ${formatLastSyncAt(status.lastFrameAt)}` : "Capture unknown");
+  const syncLabel = agentHealth?.sync.label ?? "Sync unknown";
+  const activityLabel =
+    agentHealth?.data.latestActivityLabel ?? "Latest activity unknown";
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
@@ -165,24 +162,24 @@ export function SyncControl() {
             aria-hidden
           />
           <span className={`text-[11px] font-medium ${pipelineStyle.text}`}>
-            {statusLoading ? "Syncing" : syncPipelineLabels[pipelineStatus]}
+            {isRefreshing ? "Refreshing" : statusLoading ? "Loading" : syncPipelineLabels[pipelineStatus]}
           </span>
           {score != null ? (
             <span className={`text-[11px] font-medium ${memoryFreshnessStyle(score)}`}>
               · Memory {score}%
             </span>
           ) : null}
-          {uiState === "success" || uiState === "partial" ? (
-            <span className="text-[11px] text-[oklch(0.78_0.14_155)]">· Updated</span>
-          ) : null}
-          {uiState === "failed" ? (
-            <span className="text-[11px] text-muted-foreground">· Unavailable</span>
-          ) : null}
         </div>
-        <p className="text-[10px] text-muted-foreground">
-          Last capture {lastCaptureText}
-          {status?.freshnessLabel && !statusLoading ? ` · ${status.freshnessLabel}` : ""}
+        <p className={`text-[10px] ${healthSignalStyle[agentHealth?.capture.status ?? "unknown"]}`}>
+          Capture · {captureLabel}
         </p>
+        <p className={`text-[10px] ${healthSignalStyle[agentHealth?.sync.status ?? "unknown"]}`}>
+          Sync · {syncLabel}
+        </p>
+        <p className="text-[10px] text-muted-foreground">{activityLabel}</p>
+        {agentHealth?.data.emptyTodayMessage ? (
+          <p className="text-[10px] text-muted-foreground">{agentHealth.data.emptyTodayMessage}</p>
+        ) : null}
       </div>
       <Button
         type="button"
@@ -200,7 +197,7 @@ export function SyncControl() {
         ) : (
           <RefreshCw className="h-3.5 w-3.5" />
         )}
-        Refresh Memory
+        {isRefreshing ? "Refreshing…" : "Refresh Memory"}
       </Button>
     </div>
   );

@@ -9,6 +9,8 @@ export type SyncFreshness = "fresh" | "stale" | "unknown";
 
 export type MemoryRefreshMode = "full" | "memory_only" | "none";
 
+export type HealthSignal = "online" | "degraded" | "offline" | "unknown";
+
 export type MemoryFreshnessSummary = {
   score: number;
   label: string;
@@ -24,6 +26,33 @@ export type MemoryFreshnessSummary = {
   recommendedAction: string | null;
 };
 
+export type AgentHealthSummary = {
+  capture: {
+    status: HealthSignal;
+    label: string;
+    lastCaptureAt: string | null;
+    agentOnline: boolean;
+  };
+  sync: {
+    status: HealthSignal;
+    label: string;
+    lastSyncAt: string | null;
+  };
+  data: {
+    latestActivityAt: string | null;
+    latestActivityLabel: string;
+    hasDataForToday: boolean;
+    todayDate: string;
+    emptyTodayMessage: string | null;
+  };
+  activeJob: {
+    id: string;
+    status: string;
+    estimatedWorkUnits: number;
+    stagesCompleted: string[];
+  } | null;
+};
+
 export type SyncStatus = {
   pipelineStatus: PipelineStatus;
   lastSyncAt: string | null;
@@ -34,6 +63,33 @@ export type SyncStatus = {
   canRefreshMemory: boolean;
   lastUpdatedAt: string | null;
   memoryFreshness: MemoryFreshnessSummary;
+  agentHealth: AgentHealthSummary;
+};
+
+export type MemoryJobEnqueue = {
+  accepted: true;
+  jobId: string;
+  status: "queued";
+  estimatedWorkUnits: number;
+  message: string;
+};
+
+export type MemoryJobStatus = {
+  id: string;
+  status: string;
+  mode: string | null;
+  estimatedWorkUnits: number;
+  framesProcessed: number;
+  recordsImported: number;
+  reviewsUpdated: number;
+  durationMs: number | null;
+  stagesCompleted: string[];
+  userMessage: string | null;
+  recommendedAction: string | null;
+  error: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
 };
 
 export type ManualSyncResult = {
@@ -59,7 +115,9 @@ export type ManualSyncResult = {
 
 export type SyncUiState = "idle" | "refreshing" | "success" | "partial" | "failed";
 
-const SYNC_STATUS_CACHE_KEY = "cortex-sync-status-v1";
+const SYNC_STATUS_CACHE_KEY = "cortex-sync-status-v2";
+const JOB_POLL_MS = 2_000;
+const JOB_POLL_TIMEOUT_MS = 120_000;
 
 export function readCachedSyncStatus(): SyncStatus | undefined {
   if (typeof sessionStorage === "undefined") return undefined;
@@ -85,8 +143,81 @@ export function fetchSyncStatus(): Promise<SyncStatus> {
   return cortexFetch<SyncStatus>("/api/sync");
 }
 
-export function triggerMemoryRefresh(): Promise<ManualSyncResult> {
-  return cortexFetch<ManualSyncResult>("/api/sync", { method: "POST" });
+export function fetchMemoryJob(jobId: string): Promise<MemoryJobStatus> {
+  return cortexFetch<MemoryJobStatus>(`/api/sync/jobs/${jobId}`);
+}
+
+function jobToManualResult(
+  job: MemoryJobStatus,
+  status?: SyncStatus,
+): ManualSyncResult {
+  const failed = job.status === "failed";
+  return {
+    status: failed ? "failed" : "success",
+    refreshMode:
+      job.mode === "full" || job.mode === "memory_only" || job.mode === "none"
+        ? job.mode
+        : failed
+          ? "none"
+          : "memory_only",
+    recordsImported: job.recordsImported,
+    sessionsCreated: 0,
+    reviewsUpdated: job.reviewsUpdated,
+    durationMs: job.durationMs ?? 0,
+    syncedDates: [],
+    skipped: false,
+    memoryRefreshed: !failed,
+    captureSucceeded: job.mode === "full",
+    lastSyncAt: status?.lastSyncAt ?? null,
+    lastUpdatedAt: status?.lastUpdatedAt ?? null,
+    pipelineStatus: status?.pipelineStatus ?? "syncing",
+    freshness: status?.freshness ?? "unknown",
+    memoryFreshnessScore: status?.memoryFreshness.score ?? 0,
+    userMessage: job.userMessage ?? "Memory refresh finished.",
+    recommendedAction: job.recommendedAction,
+    retryCount: 0,
+  };
+}
+
+async function pollMemoryJob(jobId: string): Promise<ManualSyncResult> {
+  const started = Date.now();
+  while (Date.now() - started < JOB_POLL_TIMEOUT_MS) {
+    const [job, status] = await Promise.all([
+      fetchMemoryJob(jobId),
+      fetchSyncStatus().catch(() => undefined),
+    ]);
+    if (job.status === "success" || job.status === "partial" || job.status === "failed") {
+      if (status) writeCachedSyncStatus(status);
+      return jobToManualResult(job, status);
+    }
+    await new Promise((resolve) => setTimeout(resolve, JOB_POLL_MS));
+  }
+  const status = await fetchSyncStatus().catch(() => undefined);
+  return {
+    status: "failed",
+    refreshMode: "none",
+    recordsImported: 0,
+    sessionsCreated: 0,
+    reviewsUpdated: 0,
+    durationMs: Date.now() - started,
+    syncedDates: [],
+    skipped: false,
+    memoryRefreshed: false,
+    captureSucceeded: false,
+    lastSyncAt: status?.lastSyncAt ?? null,
+    lastUpdatedAt: status?.lastUpdatedAt ?? null,
+    pipelineStatus: status?.pipelineStatus ?? "syncing",
+    freshness: status?.freshness ?? "unknown",
+    memoryFreshnessScore: status?.memoryFreshness.score ?? 0,
+    userMessage: "Memory refresh is still running. It will finish in the background.",
+    recommendedAction: "Check back in a minute — your existing memory remains available.",
+    retryCount: 0,
+  };
+}
+
+export async function triggerMemoryRefresh(): Promise<ManualSyncResult> {
+  const enqueued = await cortexFetch<MemoryJobEnqueue>("/api/sync", { method: "POST" });
+  return pollMemoryJob(enqueued.jobId);
 }
 
 /** @deprecated use triggerMemoryRefresh */
@@ -97,6 +228,13 @@ export const syncPipelineLabels: Record<PipelineStatus, string> = {
   syncing: "Syncing",
   stale: "Stale",
   offline: "Offline",
+};
+
+export const healthSignalStyle: Record<HealthSignal, string> = {
+  online: "text-[oklch(0.78_0.14_155)]",
+  degraded: "text-[oklch(0.82_0.13_80)]",
+  offline: "text-muted-foreground",
+  unknown: "text-muted-foreground",
 };
 
 export const memoryFreshnessStyle = (score: number): string => {

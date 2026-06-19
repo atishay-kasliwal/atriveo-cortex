@@ -64,6 +64,14 @@ export function MemoryStatusRibbon({
         ) : null}
         <span className="hidden text-border md:inline">·</span>
         <span className="hidden text-muted-foreground md:inline">{dateLabel}</span>
+        {syncStatus?.agentHealth?.data.emptyTodayMessage ? (
+          <>
+            <span className="text-border">·</span>
+            <span className="text-muted-foreground">
+              {syncStatus.agentHealth.data.emptyTodayMessage}
+            </span>
+          </>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/30 pt-2 sm:border-t-0 sm:pt-0">

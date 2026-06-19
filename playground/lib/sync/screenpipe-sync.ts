@@ -10,6 +10,10 @@ import {
   getLocalDatesWithFrames,
 } from "@/lib/screenpipe-db";
 import { systemRepository } from "@/lib/repositories";
+import {
+  agentHeartbeatRepository,
+  MAC_CAPTURE_AGENT_ID,
+} from "@/lib/repositories/agent-heartbeat-repository";
 import { probeScreenpipe } from "@/lib/system/screenpipe-probe";
 import { publishObservedCaptureWatermark } from "./capture-watermark";
 import { SYNC_KEYS } from "./sync-keys";
@@ -51,6 +55,14 @@ async function recordPipelineHeartbeat(opts: {
   if (opts.recordsProcessed > 0 || opts.lastFrame) {
     await systemRepository.setSyncState(SYNC_KEYS.lastSyncCompleted, now);
   }
+  await agentHeartbeatRepository.upsert({
+    agentId: MAC_CAPTURE_AGENT_ID,
+    lastSeenAt: now,
+    latestCaptureTime: opts.lastFrame,
+    latestSyncTime: opts.recordsProcessed > 0 || opts.lastFrame ? now : undefined,
+    capturePortOpen: opts.portOpen,
+    captureApiReachable: opts.apiReachable,
+  }).catch(() => {});
 }
 
 /**
