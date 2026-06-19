@@ -65,9 +65,107 @@ export class HealthEventsRepository {
       metadata?: Record<string, unknown> | null;
     }>,
   ): Promise<void> {
-    for (const event of events) {
-      await this.record(event);
+    if (events.length === 0) return;
+    await ensureTables();
+    await Promise.all(events.map((event) => this.record(event)));
+  }
+
+  /** Batch-load sparkline/timeline metrics for all services in a few queries. */
+  async loadFleetMetrics(
+    serviceIds: string[],
+    nowMs = Date.now(),
+  ): Promise<
+    Map<
+      string,
+      {
+        firstSeen: string | null;
+        heartbeatCount24h: number;
+        avgLatencyMs: number | null;
+        sparkline: number[];
+        events6h: HealthEventRow[];
+      }
+    >
+  > {
+    const empty = () => ({
+      firstSeen: null,
+      heartbeatCount24h: 0,
+      avgLatencyMs: null,
+      sparkline: Array.from({ length: 24 }, () => 0),
+      events6h: [] as HealthEventRow[],
+    });
+
+    const result = new Map(
+      serviceIds.map((id) => [id, empty()] as const),
+    );
+    if (serviceIds.length === 0) return result;
+
+    await ensureTables();
+    const since24h = new Date(nowMs - 24 * 3_600_000).toISOString();
+    const since6h = new Date(nowMs - 6 * 3_600_000).toISOString();
+
+    const [firstRows, countRows, avgRows, recentEvents] = await Promise.all([
+      runUnsafe<{ service: string; first_at: string }>(
+        `SELECT service, MIN(created_at) AS first_at
+         FROM health_events
+         WHERE service = ANY($1::text[])
+         GROUP BY service`,
+        [serviceIds],
+      ),
+      runUnsafe<{ service: string; count: string }>(
+        `SELECT service, COUNT(*)::text AS count
+         FROM health_events
+         WHERE service = ANY($1::text[]) AND created_at >= $2
+         GROUP BY service`,
+        [serviceIds, since24h],
+      ),
+      runUnsafe<{ service: string; avg: string | null }>(
+        `SELECT service, AVG(latency_ms)::text AS avg
+         FROM health_events
+         WHERE service = ANY($1::text[]) AND created_at >= $2 AND latency_ms IS NOT NULL
+         GROUP BY service`,
+        [serviceIds, since24h],
+      ),
+      runUnsafe<HealthEventRow>(
+        `SELECT id, service, status, latency_ms, created_at, metadata
+         FROM health_events
+         WHERE service = ANY($1::text[]) AND created_at >= $2
+         ORDER BY created_at ASC
+         LIMIT 5000`,
+        [serviceIds, since6h],
+      ),
+    ]);
+
+    for (const row of firstRows) {
+      const entry = result.get(row.service);
+      if (entry) entry.firstSeen = row.first_at;
     }
+    for (const row of countRows) {
+      const entry = result.get(row.service);
+      if (entry) entry.heartbeatCount24h = Number(row.count ?? 0);
+    }
+    for (const row of avgRows) {
+      const entry = result.get(row.service);
+      if (entry && row.avg) {
+        const n = Number(row.avg);
+        entry.avgLatencyMs = Number.isFinite(n) ? Math.round(n) : null;
+      }
+    }
+
+    const events24hCutoff = Date.parse(since24h);
+    for (const event of recentEvents) {
+      const entry = result.get(event.service);
+      if (!entry) continue;
+      entry.events6h.push(event);
+      const eventMs = Date.parse(event.created_at);
+      if (eventMs >= events24hCutoff) {
+        const ageH = Math.floor((nowMs - eventMs) / 3_600_000);
+        if (ageH >= 0 && ageH < 24) {
+          entry.sparkline[23 - ageH] += 1;
+        }
+      }
+    }
+
+    return result;
   }
 
   async pruneOlderThan(cutoffIso: string): Promise<void> {

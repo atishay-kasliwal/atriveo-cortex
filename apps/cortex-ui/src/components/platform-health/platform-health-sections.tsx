@@ -12,7 +12,7 @@ import {
   silenceSeconds,
   silenceTone,
   sparkBarClass,
-  statusDotClass,
+  serviceStatusIso,
 } from "./platform-health-utils";
 
 function Section({
@@ -141,9 +141,9 @@ export function HeartbeatTrailSection({
               <Dot status={s.status} />
               <span className="truncate font-mono text-xs">{s.name}</span>
             </div>
-            <HeartbeatTrail service={s} />
+            <HeartbeatTrail service={s} nowMs={nowMs} />
             <div className="font-mono text-right text-[11px] tabular-nums text-muted-foreground">
-              last {relativeTime(s.lastHeartbeat, nowMs)}
+              status {relativeTime(serviceStatusIso(s), nowMs)}
             </div>
           </div>
         ))}
@@ -152,12 +152,17 @@ export function HeartbeatTrailSection({
   );
 }
 
-function HeartbeatTrail({ service }: { service: PlatformServiceHealth }) {
+function HeartbeatTrail({
+  service,
+  nowMs,
+}: {
+  service: PlatformServiceHealth;
+  nowMs: number;
+}) {
   const slots = 48;
   const events = service.heartbeats;
   const windowMs = 6 * 3_600_000;
-  const now = Date.now();
-  const start = now - windowMs;
+  const start = nowMs - windowMs;
 
   return (
     <div className="flex h-8 items-end gap-[2px]">
@@ -213,7 +218,7 @@ export function LifespanBarSection({
 
 function LifespanBar({ service, nowMs }: { service: PlatformServiceHealth; nowMs: number }) {
   const first = service.firstSeen;
-  const last = service.lastHeartbeat;
+  const last = serviceStatusIso(service);
   const lifetimeMs = first ? nowMs - Date.parse(first) : 0;
   const sinceLast = last ? nowMs - Date.parse(last) : lifetimeMs;
   const lastPct =
@@ -242,7 +247,7 @@ function LifespanBar({ service, nowMs }: { service: PlatformServiceHealth; nowMs
       </div>
       <div className="mt-2 flex justify-between font-mono text-[10px] tabular-nums text-muted-foreground">
         <span>first seen</span>
-        <span>last signal · {relativeTime(last, nowMs)}</span>
+        <span>last status signal · {relativeTime(last, nowMs)}</span>
       </div>
     </div>
   );
@@ -270,7 +275,7 @@ export function SparklineStampSection({
                 <span className="font-mono text-xs">{s.name}</span>
               </div>
               <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                {relativeTime(s.lastHeartbeat, nowMs)}
+                {relativeTime(serviceStatusIso(s), nowMs)}
                 {s.avgLatencyMs != null ? ` · ${s.avgLatencyMs}ms` : ""}
               </span>
             </div>
@@ -338,7 +343,7 @@ function SilenceTimer({
   service: PlatformServiceHealth;
   nowMs: number;
 }) {
-  const sec = silenceSeconds(service.lastHeartbeat, nowMs);
+  const sec = silenceSeconds(serviceStatusIso(service), nowMs);
   return (
     <div className="rounded-md border border-border/50 bg-surface/40 px-4 py-4">
       <div className="flex items-center justify-between">
@@ -348,15 +353,20 @@ function SilenceTimer({
       <div className={`mt-2 font-mono text-3xl tabular-nums tracking-tight ${silenceTone(sec)}`}>
         {formatCountdown(sec)}
       </div>
-      <div className="mt-1 font-mono text-[10px] text-muted-foreground">since last heartbeat</div>
+      <div className="mt-1 font-mono text-[10px] text-muted-foreground">since status signal</div>
     </div>
   );
 }
 
-export function TimelineLaneSection({ services }: { services: PlatformServiceHealth[] }) {
+export function TimelineLaneSection({
+  services,
+  nowMs,
+}: {
+  services: PlatformServiceHealth[];
+  nowMs: number;
+}) {
   const windowMs = 6 * 3_600_000;
-  const now = Date.now();
-  const start = now - windowMs;
+  const start = nowMs - windowMs;
   const ticks = [0, 1, 2, 3, 4, 5, 6];
 
   return (

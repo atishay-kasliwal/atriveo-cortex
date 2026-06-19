@@ -89,7 +89,7 @@ export function resolveServiceStatus(opts: {
   }
 
   if (opts.serviceId === "cortex-sync") {
-    return { status: opts.data, statusReason: null };
+    return { status: opts.liveness, statusReason: null };
   }
 
   if (opts.serviceType === "continuous") {
@@ -113,4 +113,39 @@ export function resolveServiceStatus(opts: {
   }
 
   return { status, statusReason };
+}
+
+export function resolveStatusLastAt(opts: {
+  serviceId: string;
+  serviceType: PlatformServiceType;
+  livenessAt: string | null;
+  dataAt: string | null;
+  livenessStatus: PlatformHealthStatus;
+  dataStatus: PlatformHealthStatus;
+}): string | null {
+  if (opts.serviceType === "disabled") return null;
+
+  const pickOlder = (a: string | null, b: string | null): string | null => {
+    if (!a) return b;
+    if (!b) return a;
+    return Date.parse(a) <= Date.parse(b) ? a : b;
+  };
+
+  if (opts.serviceId === "screenpipe-capture" || opts.serviceId === "cortex-sync") {
+    return opts.livenessAt;
+  }
+
+  if (opts.serviceType === "continuous") {
+    if (
+      opts.livenessStatus === "critical" ||
+      opts.dataStatus === "critical" ||
+      opts.livenessStatus === "warning" ||
+      opts.dataStatus === "warning"
+    ) {
+      return pickOlder(opts.livenessAt, opts.dataAt);
+    }
+    return opts.livenessAt ?? opts.dataAt;
+  }
+
+  return opts.dataAt ?? opts.livenessAt;
 }

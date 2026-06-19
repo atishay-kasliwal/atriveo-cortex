@@ -19,6 +19,7 @@ export type PlatformServiceHealth = {
   serviceType: PlatformServiceType;
   status: PlatformServiceStatus;
   statusReason: string | null;
+  statusLastAt: string | null;
   firstSeen: string | null;
   lastHeartbeat: string | null;
   ageMinutes: number | null;

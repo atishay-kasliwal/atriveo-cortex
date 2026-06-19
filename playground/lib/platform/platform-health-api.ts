@@ -18,6 +18,7 @@ import {
   buildHealthSignal,
   classifyByServiceType,
   resolveServiceStatus,
+  resolveStatusLastAt,
   type PlatformHealthStatus,
   type PlatformServiceStatus,
   type PlatformServiceType,
@@ -36,8 +37,10 @@ export type PlatformServiceHealthDTO = {
   serviceType: PlatformServiceType;
   status: PlatformServiceStatus;
   statusReason: string | null;
+  /** ISO timestamp whose age drives the status badge and countdown UI */
+  statusLastAt: string | null;
   firstSeen: string | null;
-  /** Primary stamp for backward compatibility — liveness lastAt */
+  /** Backward compatibility — mirrors statusLastAt */
   lastHeartbeat: string | null;
   ageMinutes: number | null;
   liveness: HealthSignalDTO;
@@ -152,10 +155,10 @@ async function probeServices(nowIso: string): Promise<ServiceProbe[]> {
       id: "cortex-sync",
       name: "Cortex Sync",
       serviceType: "continuous",
-      livenessAt: agent?.lastSeenAt ?? sync.captureAgentHeartbeat,
-      dataAt: syncAt,
-      livenessLabel: "Agent last seen",
-      dataLabel: "Last sync completed",
+      livenessAt: syncAt,
+      dataAt: sync.lastFrameTimestamp ?? sync.lastObservedFrameTimestamp,
+      livenessLabel: "Last sync completed",
+      dataLabel: "Last frame synced to Neon",
       firstSeenFallback: syncAt,
     },
     {
@@ -275,11 +278,18 @@ function eventStatusForRecord(
   return status;
 }
 
-async function buildServiceDto(
+function buildServiceDto(
   probe: ServiceProbe,
   nowMs: number,
   upstreamSyncCritical: boolean,
-): Promise<PlatformServiceHealthDTO> {
+  metrics: {
+    firstSeen: string | null;
+    heartbeatCount24h: number;
+    avgLatencyMs: number | null;
+    sparkline: number[];
+    events6h: Array<{ created_at: string; status: string; latency_ms: number | null }>;
+  },
+): PlatformServiceHealthDTO {
   const type =
     probe.serviceType === "disabled" ? "scheduled" : probe.serviceType;
 
@@ -299,33 +309,29 @@ async function buildServiceDto(
         ? null
         : buildHealthSignal(probe.dataAt, type, probe.dataLabel, nowMs);
 
+  const dataStatus = dataFreshness?.status ?? liveness.status;
   const { status, statusReason } = resolveServiceStatus({
     serviceId: probe.id,
     serviceType: probe.serviceType,
     liveness: liveness.status,
-    data: dataFreshness?.status ?? liveness.status,
+    data: dataStatus,
     upstreamSyncCritical,
   });
 
-  const since24h = new Date(nowMs - 24 * 3_600_000).toISOString();
-  const since6h = new Date(nowMs - 6 * 3_600_000).toISOString();
-
-  const [firstSeen, heartbeatCount24h, avgLatencyMs, sparkline, events6h] =
-    await Promise.all([
-      healthEventsRepository.getFirstSeen(probe.id),
-      healthEventsRepository.countSince(probe.id, since24h),
-      healthEventsRepository.avgLatencySince(probe.id, since24h),
-      healthEventsRepository.hourlyBuckets24h(probe.id, nowMs),
-      healthEventsRepository.listSince(probe.id, since6h, 400),
-    ]);
+  const statusLastAt = resolveStatusLastAt({
+    serviceId: probe.id,
+    serviceType: probe.serviceType,
+    livenessAt: liveness.lastAt,
+    dataAt: dataFreshness?.lastAt ?? liveness.lastAt,
+    livenessStatus: liveness.status,
+    dataStatus,
+  });
 
   const resolvedFirstSeen =
-    firstSeen ?? probe.firstSeenFallback ?? probe.livenessAt ?? probe.dataAt;
+    metrics.firstSeen ?? probe.firstSeenFallback ?? statusLastAt;
 
   const ageMinutes =
-    status === "disabled"
-      ? null
-      : ageMinutesFromIso(probe.livenessAt ?? probe.dataAt, nowMs);
+    status === "disabled" ? null : ageMinutesFromIso(statusLastAt, nowMs);
 
   return {
     id: probe.id,
@@ -333,40 +339,31 @@ async function buildServiceDto(
     serviceType: probe.serviceType,
     status,
     statusReason,
+    statusLastAt,
     firstSeen: resolvedFirstSeen,
-    lastHeartbeat: liveness.lastAt,
+    lastHeartbeat: statusLastAt,
     ageMinutes,
     liveness,
     dataFreshness,
-    heartbeatCount24h,
-    uptimePercent24h: uptimeFromSparkline(sparkline),
-    avgLatencyMs: avgLatencyMs ?? probe.latencyMs ?? null,
-    timeline: events6h.map((e) => ({
+    heartbeatCount24h: metrics.heartbeatCount24h,
+    uptimePercent24h: uptimeFromSparkline(metrics.sparkline),
+    avgLatencyMs: metrics.avgLatencyMs ?? probe.latencyMs ?? null,
+    timeline: metrics.events6h.map((e) => ({
       timestamp: e.created_at,
       status: e.status,
     })),
-    sparkline,
-    heartbeats: events6h.slice(-80).map((e) => ({
+    sparkline: metrics.sparkline,
+    heartbeats: metrics.events6h.slice(-80).map((e) => ({
       timestamp: e.created_at,
       ...(e.latency_ms != null ? { latencyMs: e.latency_ms } : {}),
     })),
   };
 }
 
-export async function buildPlatformHealth(): Promise<PlatformHealthDTO> {
+export async function persistPlatformHealthEvents(
+  services: PlatformServiceHealthDTO[],
+): Promise<void> {
   const nowMs = Date.now();
-  const nowIso = new Date(nowMs).toISOString();
-  const probes = await probeServices(nowIso);
-
-  const syncProbe = probes.find((p) => p.id === "cortex-sync");
-  const syncDataAge = ageMinutesFromIso(syncProbe?.dataAt ?? null, nowMs);
-  const upstreamSyncCritical =
-    classifyByServiceType(syncDataAge, "continuous") === "critical";
-
-  const services = await Promise.all(
-    probes.map((probe) => buildServiceDto(probe, nowMs, upstreamSyncCritical)),
-  );
-
   await healthEventsRepository.recordBatch(
     services.map((service) => ({
       service: service.id,
@@ -377,12 +374,45 @@ export async function buildPlatformHealth(): Promise<PlatformHealthDTO> {
         statusReason: service.statusReason,
         livenessAt: service.liveness.lastAt,
         dataAt: service.dataFreshness?.lastAt ?? service.liveness.lastAt,
+        statusLastAt: service.statusLastAt,
       },
     })),
   );
 
   const pruneBefore = new Date(nowMs - 7 * 86_400_000).toISOString();
   await healthEventsRepository.pruneOlderThan(pruneBefore).catch(() => {});
+}
+
+export async function buildPlatformHealth(): Promise<PlatformHealthDTO> {
+  const nowMs = Date.now();
+  const nowIso = new Date(nowMs).toISOString();
+  const probes = await probeServices(nowIso);
+
+  const syncProbe = probes.find((p) => p.id === "cortex-sync");
+  const syncDataAge = ageMinutesFromIso(syncProbe?.livenessAt ?? null, nowMs);
+  const upstreamSyncCritical =
+    classifyByServiceType(syncDataAge, "continuous") === "critical";
+
+  const serviceIds = probes.map((p) => p.id);
+  const fleetMetrics = await healthEventsRepository.loadFleetMetrics(
+    serviceIds,
+    nowMs,
+  );
+
+  const services = probes.map((probe) =>
+    buildServiceDto(
+      probe,
+      nowMs,
+      upstreamSyncCritical,
+      fleetMetrics.get(probe.id) ?? {
+        firstSeen: null,
+        heartbeatCount24h: 0,
+        avgLatencyMs: null,
+        sparkline: Array.from({ length: 24 }, () => 0),
+        events6h: [],
+      },
+    ),
+  );
 
   const summary = {
     healthy: services.filter((s) => s.status === "healthy").length,

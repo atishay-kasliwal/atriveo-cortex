@@ -767,8 +767,22 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
 
   app.get("/api/platform/health", async (c) => {
     try {
-      const { buildPlatformHealth } = await import("@/lib/platform/platform-health-api");
-      return apiSuccess(c, await buildPlatformHealth());
+      const { buildPlatformHealth, persistPlatformHealthEvents } = await import(
+        "@/lib/platform/platform-health-api"
+      );
+      const payload = await buildPlatformHealth();
+      const ctx = c.executionCtx;
+      if (ctx) {
+        ctx.waitUntil(
+          persistPlatformHealthEvents(payload.services).catch((err) => {
+            console.error("[platform-health] event persistence failed:", err);
+          }),
+        );
+      } else {
+        void persistPlatformHealthEvents(payload.services);
+      }
+      c.header("Cache-Control", "no-store, max-age=0");
+      return apiSuccess(c, payload);
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load platform health", 500);
     }

@@ -63,6 +63,17 @@ describe("platform-health-rules", () => {
     expect(result.statusReason).toContain("Cortex Sync");
   });
 
+  it("uses cortex sync liveness for overall status", () => {
+    const result = resolveServiceStatus({
+      serviceId: "cortex-sync",
+      serviceType: "continuous",
+      liveness: "critical",
+      data: "healthy",
+      upstreamSyncCritical: false,
+    });
+    expect(result.status).toBe("critical");
+  });
+
   it("marks unconfigured relay as disabled", () => {
     const result = resolveServiceStatus({
       serviceId: "relay-worker",
