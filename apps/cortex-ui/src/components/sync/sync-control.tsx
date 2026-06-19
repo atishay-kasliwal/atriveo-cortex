@@ -4,12 +4,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
   fetchSyncStatus,
+  fetchMemoryJob,
   formatDurationMs,
   formatLastSyncAt,
   freshnessSlaStyle,
@@ -26,7 +27,7 @@ import {
 } from "@/lib/api/sync-adapter";
 import { CaptureDoctorLink } from "@/components/sync/capture-doctor-view";
 import { qk } from "@/lib/api/queries";
-import { isRetryableApiError } from "@/lib/api/cortex-fetch";
+import { isRetryableApiError, ApiError } from "@/lib/api/cortex-fetch";
 
 const SYNC_STATUS_KEY = ["sync", "status"] as const;
 
@@ -60,7 +61,15 @@ function showRefreshToast(result: ManualSyncResult) {
 
   if (result.refreshMode === "memory_only") {
     toast.success(result.userMessage, {
-      description: result.recommendedAction ?? `Updated in ${duration}`,
+      description: [
+        result.recommendedAction,
+        result.lastSyncAt
+          ? `Last successful update: ${formatLastSyncAt(result.lastSyncAt)}`
+          : null,
+        `Updated in ${duration}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
       duration: 6000,
     });
     return;
@@ -75,6 +84,7 @@ function showRefreshToast(result: ManualSyncResult) {
 export function SyncControl() {
   const queryClient = useQueryClient();
   const [uiState, setUiState] = useState<SyncUiState>("idle");
+  const watchedJobIdRef = useRef<string | null>(null);
 
   const statusQuery = useQuery({
     queryKey: SYNC_STATUS_KEY,
@@ -96,6 +106,7 @@ export function SyncControl() {
     mutationFn: triggerMemoryRefresh,
     onMutate: () => {
       setUiState("refreshing");
+      watchedJobIdRef.current = null;
     },
     onSuccess: (result) => {
       invalidateAfterRefresh(queryClient);
@@ -106,18 +117,32 @@ export function SyncControl() {
         return;
       }
 
+      if (result.userMessage.includes("running in the background")) {
+        void fetchSyncStatus()
+          .then((fresh) => {
+            watchedJobIdRef.current = fresh.agentHealth?.activeJob?.id ?? null;
+          })
+          .catch(() => {});
+        setUiState("refreshing");
+        return;
+      }
+
       setUiState(result.refreshMode === "memory_only" ? "partial" : "success");
     },
-    onError: () => {
+    onError: (error) => {
       setUiState("failed");
       const status = statusQuery.data;
+      const detail =
+        error instanceof ApiError && error.message
+          ? error.message
+          : "Couldn't reach the refresh service. Please try again.";
       toast.warning("Couldn't refresh memory right now.", {
         description: [
           status?.lastSyncAt
             ? `Last successful update: ${formatLastSyncAt(status.lastSyncAt)}`
             : null,
-          status?.memoryFreshness?.recommendedAction ??
-            "Your existing memory remains available.",
+          detail,
+          "Your existing memory remains available.",
         ]
           .filter(Boolean)
           .join(" · "),
@@ -136,13 +161,62 @@ export function SyncControl() {
   }, [uiState]);
 
   const status = statusQuery.data;
+  const activeJob = status?.agentHealth?.activeJob;
+  const activeJobLive = isLiveMemoryJob(activeJob);
+
+  useEffect(() => {
+    const watchedId = watchedJobIdRef.current;
+    if (!watchedId || activeJobLive) return;
+    watchedJobIdRef.current = null;
+
+    void (async () => {
+      try {
+        const job = await fetchMemoryJob(watchedId);
+        const freshStatus = await fetchSyncStatus();
+        writeCachedSyncStatus(freshStatus);
+        invalidateAfterRefresh(queryClient);
+        const result = {
+          status: job.status === "failed" ? ("failed" as const) : ("success" as const),
+          refreshMode:
+            job.mode === "full" || job.mode === "memory_only" || job.mode === "none"
+              ? job.mode
+              : ("memory_only" as const),
+          recordsImported: job.recordsImported,
+          sessionsCreated: 0,
+          reviewsUpdated: job.reviewsUpdated,
+          durationMs: job.durationMs ?? 0,
+          syncedDates: [] as string[],
+          skipped: false,
+          memoryRefreshed: job.status !== "failed",
+          captureSucceeded: job.mode === "full",
+          lastSyncAt: freshStatus.lastSyncAt,
+          lastUpdatedAt: freshStatus.lastUpdatedAt,
+          pipelineStatus: freshStatus.pipelineStatus,
+          freshness: freshStatus.freshness,
+          memoryFreshnessScore: freshStatus.memoryFreshness.score,
+          userMessage: job.userMessage ?? "Memory refresh finished.",
+          recommendedAction: job.recommendedAction,
+          retryCount: job.retryCount,
+        };
+        showRefreshToast(result);
+        setUiState(
+          result.status === "failed" || !result.memoryRefreshed
+            ? "failed"
+            : result.refreshMode === "memory_only"
+              ? "partial"
+              : "success",
+        );
+      } catch {
+        // status query will still reflect pipeline updates
+        setUiState("idle");
+      }
+    })();
+  }, [activeJobLive, queryClient, status]);
   const agentHealth = status?.agentHealth;
   const freshness = status?.memoryFreshness;
   const score = freshness?.score ?? null;
   const statusLoading = statusQuery.isLoading && !status;
-  const activeJob = agentHealth?.activeJob;
-  const activeJobLive = isLiveMemoryJob(activeJob);
-  const isRefreshing = refreshMutation.isPending || activeJobLive;
+  const isRefreshing = refreshMutation.isPending || activeJobLive || uiState === "refreshing";
   const pipelineStatus =
     isRefreshing
       ? "syncing"
