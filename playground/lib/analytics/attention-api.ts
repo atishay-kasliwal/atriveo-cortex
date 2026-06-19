@@ -16,7 +16,8 @@ import type {
   DailyAttentionReport,
   WeeklyAttentionReport,
 } from "./attention-types";
-import { buildPresenceRollups, computePresenceMetrics, mapStateRows } from "@/lib/analytics/presence-api";
+import { buildPresenceRollups, computePresenceMetrics } from "@/lib/analytics/idle-presence";
+import { mapStateRows } from "@/lib/analytics/presence-api";
 import { listStateSegments } from "@/lib/analytics/analytics-db";
 import { attentionRepository } from "@/lib/repositories/attention-repository";
 import { analyticsRepository } from "@/lib/repositories/analytics-repository";
