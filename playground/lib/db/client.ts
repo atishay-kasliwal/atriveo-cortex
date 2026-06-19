@@ -23,7 +23,7 @@ function requireDatabaseUrl(): string {
   return url;
 }
 
-function isServerlessRuntime(): boolean {
+export function isServerlessRuntime(): boolean {
   return process.env.CORTEX_DB_SERVERLESS === "1";
 }
 
@@ -60,7 +60,7 @@ export function isTransientDbError(err: unknown): boolean {
     err instanceof Error
       ? `${err.message} ${(err as { cause?: Error }).cause?.message ?? ""}`
       : String(err);
-  return /CONNECTION_DESTROYED|ECONNRESET|connection terminated|socket hang up|57P01|connection closed|Client has encountered a connection error/i.test(
+  return /CONNECTION_DESTROYED|ECONNRESET|connection terminated|socket hang up|57P01|connection closed|Client has encountered a connection error|Too many subrequests/i.test(
     msg,
   );
 }
@@ -104,6 +104,21 @@ async function withDbRetry<T>(fn: () => Promise<T>, attempts?: number): Promise<
   throw last;
 }
 
+/** One pooled connection per Worker request — fresh connect only on retry after transient errors. */
+async function runSqlQuery<T>(fn: (sql: CortexSql) => Promise<T>): Promise<T> {
+  return withDbRetry(async () => {
+    try {
+      return await fn(getSql());
+    } catch (err) {
+      if (isServerlessRuntime() && isTransientDbError(err)) {
+        closeSqlPool();
+        return withFreshServerlessSql(fn);
+      }
+      throw err;
+    }
+  });
+}
+
 /** Retry a block of DB work — use for multi-step handlers on Workers. */
 export async function withDbOperation<T>(fn: () => Promise<T>): Promise<T> {
   return withDbRetry(fn);
@@ -128,33 +143,20 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
 export async function withTransaction<T>(
   fn: (tx: postgres.TransactionSql) => Promise<T>,
 ): Promise<T> {
-  return withDbRetry(() => {
-    if (isServerlessRuntime()) {
-      return withFreshServerlessSql((sql) => sql.begin(fn) as Promise<T>);
-    }
-    return getSql().begin(fn) as Promise<T>;
-  });
+  return runSqlQuery((sql) => sql.begin(fn) as Promise<T>);
 }
 
 export async function runUnsafe<T extends Record<string, unknown>>(
   query: string,
   params: unknown[] = [],
 ): Promise<T[]> {
-  return withDbRetry(() => {
-    if (isServerlessRuntime()) {
-      return withFreshServerlessSql(
-        (sql) =>
-          sql.unsafe(
-            query,
-            params as postgres.ParameterOrJSON<never>[],
-          ) as Promise<T[]>,
-      );
-    }
-    return getSql().unsafe(
-      query,
-      params as postgres.ParameterOrJSON<never>[],
-    ) as Promise<T[]>;
-  });
+  return runSqlQuery(
+    (sql) =>
+      sql.unsafe(
+        query,
+        params as postgres.ParameterOrJSON<never>[],
+      ) as Promise<T[]>,
+  );
 }
 
 export async function runUnsafeOne<T extends Record<string, unknown>>(
@@ -169,12 +171,7 @@ export async function execUnsafe(
   query: string,
   params: unknown[] = [],
 ): Promise<void> {
-  await withDbRetry(() => {
-    if (isServerlessRuntime()) {
-      return withFreshServerlessSql((sql) =>
-        sql.unsafe(query, params as postgres.ParameterOrJSON<never>[]),
-      );
-    }
-    return getSql().unsafe(query, params as postgres.ParameterOrJSON<never>[]);
-  });
+  await runSqlQuery((sql) =>
+    sql.unsafe(query, params as postgres.ParameterOrJSON<never>[]),
+  );
 }

@@ -105,3 +105,43 @@ export async function rebuildDerivedLayers(
     healthSnapshots: healthReport.projects.length,
   };
 }
+
+/**
+ * Cloud Worker refresh — recompute attention/screens/reviews only.
+ * Skips heavy backfill, loops, search index, and project health to stay within Worker limits.
+ */
+export async function rebuildDerivedLayersCloud(
+  dates: string[],
+  forceReviews: boolean,
+): Promise<DerivedLayersResult> {
+  const targetDates = dates.length > 0 ? dates : [localDateString()];
+
+  let reviewsUpdated = 0;
+  if (forceReviews) {
+    for (const date of targetDates) {
+      const review = await getDailyReview(date, { regenerate: true });
+      if (review) reviewsUpdated++;
+    }
+    await touchStage(SYNC_KEYS.lastReviewGenerated);
+  }
+
+  for (const date of targetDates) {
+    await computeAndPersistDayAttention(date);
+  }
+  await touchStage(SYNC_KEYS.lastAttentionComputed);
+
+  for (const date of targetDates) {
+    await computeAndPersistDayScreens(date).catch((err) => {
+      console.error(`[pipeline] screens compute failed for ${date}:`, err);
+    });
+  }
+
+  return {
+    loopsUpdated: 0,
+    reviewsUpdated,
+    indexEntries: 0,
+    attentionDates: targetDates.length,
+    screensDates: targetDates.length,
+    healthSnapshots: 0,
+  };
+}

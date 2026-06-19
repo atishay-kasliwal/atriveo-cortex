@@ -5,7 +5,7 @@
 import { isTransientDbError } from "@/lib/db/client";
 
 const INTERNAL_PATTERNS =
-  /neon\.tech|pooler\.|postgres|CONNECTION_|ECONNRESET|DATABASE_URL|socket hang up|57P01/i;
+  /neon\.tech|pooler\.|postgres|CONNECTION_|ECONNRESET|DATABASE_URL|socket hang up|57P01|Too many subrequests|subrequests/i;
 
 /** User-safe API error text — never expose DB hostnames or connection internals. */
 export function sanitizeApiErrorMessage(

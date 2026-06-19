@@ -7,7 +7,8 @@ import { withDbOperation } from "@/lib/db/client";
 import { dailyReviewRepository } from "@/lib/repositories/daily-review-repository";
 import { screenpipeDbExists } from "@/lib/screenpipe-db";
 import { probeScreenpipe } from "@/lib/system/screenpipe-probe";
-import { rebuildDerivedLayers } from "./pipeline-derived-layers";
+import { rebuildDerivedLayers, rebuildDerivedLayersCloud } from "./pipeline-derived-layers";
+import { isServerlessRuntime } from "@/lib/db/client";
 import {
   recordRefreshTelemetry,
   type RefreshMode,
@@ -15,7 +16,8 @@ import {
 import { syncScreenpipeToCortex } from "./screenpipe-sync";
 import { getSyncStatus } from "./sync-status";
 
-const RELAY_POLL_MS = 90_000;
+const RELAY_POLL_MS = 45_000;
+const RELAY_POLL_INTERVAL_MS = 5_000;
 const RETRY_DELAY_MS = 1_500;
 
 function sleep(ms: number): Promise<void> {
@@ -68,7 +70,7 @@ async function pollMacSyncComplete(
     ) {
       return true;
     }
-    await sleep(2000);
+    await sleep(RELAY_POLL_INTERVAL_MS);
   }
   return false;
 }
@@ -261,9 +263,12 @@ export async function runMemoryRefresh(options?: {
   const datesToRebuild =
     syncedDates.length > 0 ? syncedDates : [localDateString()];
 
+  const useCloudRebuild = isServerlessRuntime() && !captureSucceeded;
+  const rebuild = useCloudRebuild ? rebuildDerivedLayersCloud : rebuildDerivedLayers;
+
   try {
     const derived = await withDbOperation(() =>
-      rebuildDerivedLayers(
+      rebuild(
         datesToRebuild,
         options?.forceReviews ?? (recordsImported > 0 || !captureSucceeded),
       ),
@@ -281,7 +286,7 @@ export async function runMemoryRefresh(options?: {
     closeSqlPool();
     await sleep(RETRY_DELAY_MS);
     try {
-      const derived = await withDbOperation(() => rebuildDerivedLayers(datesToRebuild, true));
+      const derived = await withDbOperation(() => rebuild(datesToRebuild, true));
       reviewsUpdated = derived.reviewsUpdated;
       memoryRefreshed = true;
       stagesCompleted.push("memory_refresh_retry");

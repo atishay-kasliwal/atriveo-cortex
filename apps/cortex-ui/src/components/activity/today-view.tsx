@@ -21,6 +21,7 @@ import { WorkTimeline } from "@/components/activity/work-timeline";
 import { EmptyState } from "@/components/dashboard/states";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
 import { hasTodayActivity } from "@/lib/activity/activity-state";
+import { yesterdayDate } from "@/lib/activity/date-nav";
 import {
   dayViewHeading,
   dayViewTemporalSubtitle,
@@ -54,12 +55,29 @@ export function TodayView({
     return <TodaySkeleton />;
   }
   if (!hasTodayActivity(data)) {
+    const isCalendarToday =
+      viewDate && calendarToday && viewDate === calendarToday;
     return (
       <EmptyState
         icon={Clock}
-        title="No activity data yet"
-        description="Historical analytics will appear here after ScreenPipe captures and syncs to Cortex."
-        hint="Start ScreenPipe on your capture Mac"
+        title={isCalendarToday ? "Nothing synced for today yet" : "No activity data yet"}
+        description={
+          isCalendarToday
+            ? "Capture runs on your Mac. Today’s timeline appears after ScreenPipe syncs new frames — your last capture may still be from yesterday evening."
+            : "Historical analytics will appear here after ScreenPipe captures and syncs to Cortex."
+        }
+        hint={isCalendarToday ? undefined : "Start ScreenPipe on your capture Mac"}
+        action={
+          isCalendarToday ? (
+            <Link
+              to={compact ? "/" : "/activity"}
+              search={{ date: yesterdayDate(calendarToday) }}
+              className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-2"
+            >
+              View yesterday’s activity
+            </Link>
+          ) : undefined
+        }
       />
     );
   }

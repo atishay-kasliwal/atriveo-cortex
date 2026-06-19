@@ -10,13 +10,16 @@ export function sanitizeClientErrorMessage(
   fallback = "Something went wrong. Please try again.",
 ): string {
   if (
-    /CONNECTION_DESTROYED|ECONNRESET|connection terminated|socket hang up|57P01|connection closed/i.test(
+    /CONNECTION_DESTROYED|ECONNRESET|connection terminated|socket hang up|57P01|connection closed|Too many subrequests/i.test(
       message,
     )
   ) {
     return "Connection interrupted. Please try again.";
   }
-  if (/neon\.tech|pooler\.|postgres|DATABASE_URL/i.test(message) || message.length > 160) {
+  if (
+    /neon\.tech|pooler\.|postgres|DATABASE_URL|subrequests/i.test(message) ||
+    message.length > 160
+  ) {
     return fallback;
   }
   return message;
