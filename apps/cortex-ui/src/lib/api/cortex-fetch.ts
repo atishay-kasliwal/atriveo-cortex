@@ -80,3 +80,8 @@ export async function cortexFetch<T>(path: string, init?: RequestInit): Promise<
 
   return (json ?? (text ? JSON.parse(text) : null)) as T;
 }
+
+/** True when the API returned 404 — usually "no data for this date", not a server outage. */
+export function isApiNotFound(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
+}

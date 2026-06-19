@@ -34,7 +34,7 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const calendarToday = useMemo(() => localDateString(), []);
   const { date: dateParam } = Route.useSearch();
-  const [viewDate, setViewDate] = useState(dateParam ?? calendarToday);
+  const [viewDate, setViewDate] = useState(dateParam ?? yesterdayDate(calendarToday));
 
   useEffect(() => {
     if (dateParam) setViewDate(dateParam);

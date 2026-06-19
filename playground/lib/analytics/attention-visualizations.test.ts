@@ -118,5 +118,7 @@ describe("buildAttentionVisualizations", () => {
     expect(view.sankey.nodes.length).toBeGreaterThan(0);
     expect(view.focusMountain.points.length).toBe(96);
     expect(view.monitorHeatmap).toBeNull();
+    expect(view.weather.cells.length).toBe(6);
+    expect(view.weather.headline.length).toBeGreaterThan(5);
   });
 });

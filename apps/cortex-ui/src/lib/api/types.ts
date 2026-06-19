@@ -419,6 +419,7 @@ export type DayAttention = {
   attentionConfidence: "high" | "medium" | "low";
   decision: AttentionDecisionView;
   visualizations: AttentionVisualizations;
+  productMomentum: ProductMomentumRow[];
 };
 
 export type AttentionQualityLabel = "Strong" | "Good" | "Fair" | "Weak";
@@ -468,6 +469,23 @@ export type AttentionVisualizations = {
       cells: Array<{ hour: number; intensity: number; category: string }>;
     }>;
   } | null;
+  weather: {
+    headline: string;
+    cells: Array<{
+      startMinute: number;
+      endMinute: number;
+      periodLabel: string;
+      kind: "clear" | "storm" | "fog" | "drizzle" | "overcast" | "windy";
+      description: string;
+    }>;
+  };
+};
+
+export type ProductMomentumRow = {
+  project: string;
+  attentionPercent: number;
+  changePercent: number;
+  momentum: "gaining" | "losing" | "flat";
 };
 
 export type WeekAttention = {

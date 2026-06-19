@@ -11,6 +11,7 @@ import {
 } from "./aggregator";
 import { buildAttentionDecisionView, type AttentionDecisionView } from "./attention-decision";
 import { buildAttentionVisualizations, type AttentionVisualizations } from "./attention-visualizations";
+import { buildProductMomentum, type ProductMomentumRow } from "./product-momentum";
 import { buildDailyAttentionReport } from "./attention-engine";
 import { computeAndPersistDayAttention } from "./attention-db";
 import type {
@@ -97,9 +98,10 @@ export type DayAttentionDTO = {
   presenceScore: number;
   decision: AttentionDecisionView;
   visualizations: AttentionVisualizations;
+  productMomentum: ProductMomentumRow[];
 };
 
-export type { AttentionDecisionView, AttentionVisualizations };
+export type { AttentionDecisionView, AttentionVisualizations, ProductMomentumRow };
 
 export type WeekAttentionDTO = {
   weekStart: string;
@@ -254,9 +256,15 @@ export async function buildDayAttention(date?: string | null): Promise<DayAttent
   }
   const dto = toDayDTO(report, stateRows);
   const screens = await buildDayScreens(d).catch(() => null);
+  const prevReport = await loadOrComputeDay(shiftDate(d, -1)).catch(() => null);
+  const productMomentum = buildProductMomentum(
+    report.projectAttention,
+    prevReport?.projectAttention,
+  );
   return {
     ...dto,
     visualizations: buildAttentionVisualizations(report, screens),
+    productMomentum,
   };
 }
 

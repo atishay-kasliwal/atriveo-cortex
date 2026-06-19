@@ -10,6 +10,7 @@ import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { fmtClock, fmtDuration } from "@/components/dashboard/time";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { isApiNotFound } from "@/lib/api/client";
 import { api } from "@/lib/api/client";
 import { auditDayQuery, qk } from "@/lib/api/queries";
 import type { SegmentAudit } from "@/lib/api/types";
@@ -134,7 +135,7 @@ export function HomeAuditSection({ viewDate }: { viewDate: string }) {
 
       {day.isLoading ? (
         <div className="h-24 animate-pulse rounded-xl bg-surface-2/50" />
-      ) : day.isError ? (
+      ) : day.isError && !isApiNotFound(day.error) ? (
         <ErrorState error={day.error} onRetry={day.refetch} />
       ) : !day.data ? (
         <EmptyState

@@ -4,10 +4,11 @@
 
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Brain, Monitor } from "lucide-react";
+import { ArrowUpRight, Brain, Monitor, TrendingUp } from "lucide-react";
 import { TodayView } from "@/components/activity/today-view";
 import { AttentionMemorySection } from "@/components/attention/visualizations/attention-memory-section";
 import { HomeAuditSection } from "@/components/home/home-audit-section";
+import { ProductMomentumMap } from "@/components/home/product-momentum-map";
 import { MemoryStatusRibbon } from "@/components/home/memory-status-ribbon";
 import { ActivityCard } from "@/components/activity/shared";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScreensSnapshotPanel } from "@/components/screens/screens-snapshot-panel";
 import { formatDateLabel } from "@/lib/activity/date-nav";
 import { hasTodayActivity, resolveActivityPipelineState } from "@/lib/activity/activity-state";
+import { isApiNotFound } from "@/lib/api/client";
 import { fetchSyncStatus } from "@/lib/api/sync-adapter";
 import {
   attentionDayQuery,
@@ -100,6 +102,43 @@ export function MemoryHomeView({
         )}
       </section>
 
+      {/* Product momentum */}
+      <section className="space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg tracking-tight">Product momentum</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Which projects are heating up or cooling off — day over day.
+            </p>
+          </div>
+          <Link
+            to="/projects"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            All projects
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
+
+        {attention.isLoading ? (
+          <div className="h-24 animate-pulse rounded-xl bg-surface-2/50" />
+        ) : attention.isError && !isApiNotFound(attention.error) ? (
+          <ErrorState error={attention.error} onRetry={attention.refetch} />
+        ) : !attention.data?.productMomentum?.length ? (
+          <EmptyState
+            icon={TrendingUp}
+            title="No project momentum yet"
+            description="Project trajectory appears after attention is computed for this day."
+          />
+        ) : (
+          <ActivityCard title="Where is attention moving?" subtitle="Bar = share today · % = vs yesterday">
+            <div className="px-5 py-4">
+              <ProductMomentumMap rows={attention.data.productMomentum} compact />
+            </div>
+          </ActivityCard>
+        )}
+      </section>
+
       {/* Screens */}
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
@@ -121,7 +160,7 @@ export function MemoryHomeView({
 
         {screens.isLoading ? (
           <div className="h-32 animate-pulse rounded-xl bg-surface-2/50" />
-        ) : screens.isError ? (
+        ) : screens.isError && !isApiNotFound(screens.error) ? (
           <ErrorState error={screens.error} onRetry={screens.refetch} />
         ) : !screens.data || screens.data.monitors.length === 0 ? (
           <EmptyState
@@ -195,7 +234,7 @@ export function MemoryHomeView({
 
         {attention.isLoading ? (
           <div className="h-40 animate-pulse rounded-xl bg-surface-2/50" />
-        ) : attention.isError ? (
+        ) : attention.isError && !isApiNotFound(attention.error) ? (
           <ErrorState error={attention.error} onRetry={attention.refetch} />
         ) : !attention.data ? (
           <EmptyState
@@ -204,7 +243,7 @@ export function MemoryHomeView({
             description="Attention is computed after activity sync."
           />
         ) : (
-          <AttentionMemorySection visualizations={attention.data.visualizations} />
+          <AttentionMemorySection visualizations={attention.data.visualizations} compact />
         )}
       </section>
     </div>

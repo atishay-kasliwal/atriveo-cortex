@@ -54,9 +54,7 @@ import {
   fetchProjectDecisions,
 } from "./decision-adapter";
 import { fetchAnalyticsHistory } from "./analytics-history-adapter";
-import { ApiError } from "./cortex-fetch";
-
-export { ApiError };
+export { ApiError, isApiNotFound } from "./cortex-fetch";
 export type { ActionBucket };
 
 export const api = {
