@@ -37,6 +37,7 @@ export const qk = {
   auditDay: (date: string) => ["audit", "day", date] as const,
   auditMetrics: (start?: string, end?: string) =>
     ["audit", "metrics", start ?? "default", end ?? "default"] as const,
+  accuracyDashboard: ["accuracy", "dashboard"] as const,
   recurrence: ["recurrence"] as const,
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
@@ -276,3 +277,9 @@ export const auditMetricsQuery = (start?: string, end?: string) =>
     queryFn: () => api.audit.metrics(start, end),
     staleTime: STALE,
   });
+
+export const accuracyDashboardQuery = queryOptions({
+  queryKey: qk.accuracyDashboard,
+  queryFn: () => api.accuracy.dashboard(),
+  staleTime: STALE,
+});

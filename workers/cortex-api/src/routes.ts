@@ -83,6 +83,10 @@ import {
   buildDayAudit,
   saveAuditFeedback,
 } from "@/lib/analytics/audit-api";
+import {
+  buildAccuracyDashboard,
+  buildClassificationAccuracyReport,
+} from "@/lib/analytics/accuracy-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
 import { fetchSyncStatus, triggerManualSync } from "@/lib/sync/sync-api";
 import { apiError, apiSuccess } from "./env";
@@ -305,6 +309,43 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, result);
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to save audit feedback", 500);
+    }
+  });
+
+  app.get("/api/accuracy/dashboard", async (c) => {
+    try {
+      const data = await buildAccuracyDashboard();
+      if (!data) {
+        return apiError(
+          c,
+          "No accuracy data yet — rate segments in Truth Audit first",
+          404,
+        );
+      }
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(
+        c,
+        e instanceof Error ? e.message : "Failed to load accuracy dashboard",
+        500,
+      );
+    }
+  });
+
+  app.get("/api/accuracy/report", async (c) => {
+    try {
+      const data = await buildClassificationAccuracyReport(
+        c.req.query("start") ?? null,
+        c.req.query("end") ?? null,
+      );
+      if (!data) return apiError(c, "No accuracy data for this range", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(
+        c,
+        e instanceof Error ? e.message : "Failed to load accuracy report",
+        500,
+      );
     }
   });
 

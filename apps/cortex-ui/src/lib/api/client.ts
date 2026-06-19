@@ -42,6 +42,10 @@ import {
   fetchDayAudit,
   submitAuditFeedback,
 } from "./audit-adapter";
+import {
+  fetchAccuracyDashboard,
+  fetchClassificationAccuracyReport,
+} from "./accuracy-adapter";
 import { fetchMemorySearch } from "./search-adapter";
 import { fetchProjectsHealth, fetchProjectHealthTrends } from "./project-health-adapter";
 import {
@@ -141,5 +145,11 @@ export const api = {
       predictedState: string;
       verdict: "correct" | "incorrect";
     }) => submitAuditFeedback(input),
+  },
+
+  accuracy: {
+    dashboard: () => fetchAccuracyDashboard(),
+    report: (start?: string, end?: string) =>
+      fetchClassificationAccuracyReport(start, end),
   },
 };

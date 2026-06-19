@@ -567,6 +567,57 @@ export type AuditMetrics = {
   daily: Array<{ date: string; metrics: AuditAccuracyMetrics }>;
 };
 
+export type ClassificationBucket = {
+  key: string;
+  label: string;
+  kind: "state" | "category";
+  totalReviewed: number;
+  correct: number;
+  incorrect: number;
+  accuracy: number | null;
+};
+
+export type ConfidenceCalibrationBin = {
+  label: string;
+  minConfidence: number;
+  maxConfidence: number;
+  predictedAvg: number;
+  actualCorrectRate: number;
+  count: number;
+  calibrationGap: number;
+};
+
+export type ConfidenceCalibration = {
+  bins: ConfidenceCalibrationBin[];
+  overconfidentCount: number;
+  underconfidentCount: number;
+  overconfident: Array<{ predictedState: string; confidence: number; date: string }>;
+  underconfident: Array<{ predictedState: string; confidence: number; date: string }>;
+  signals: string[];
+};
+
+export type PeriodAccuracyReport = {
+  startDate: string;
+  endDate: string;
+  overallAccuracy: number | null;
+  classificationAccuracy: number | null;
+  idleAccuracy: number | null;
+  attentionAccuracy: number | null;
+  totalReviewed: number;
+  byState: ClassificationBucket[];
+  byCategory: ClassificationBucket[];
+  lowestAccuracy: ClassificationBucket[];
+  mostCorrected: ClassificationBucket[];
+  calibration: ConfidenceCalibration;
+};
+
+export type AccuracyDashboard = {
+  generatedAt: ISODate;
+  today: PeriodAccuracyReport;
+  last7Days: PeriodAccuracyReport;
+  last30Days: PeriodAccuracyReport;
+};
+
 export type ProjectAttentionDetail = {
   project: string;
   startDate: string;

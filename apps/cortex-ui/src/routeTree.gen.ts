@@ -23,6 +23,7 @@ import { Route as AttentionRouteImport } from './routes/attention'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as ActionsRouteImport } from './routes/actions'
+import { Route as AccuracyRouteImport } from './routes/accuracy'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsHealthRouteImport } from './routes/projects.health'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
@@ -102,6 +103,11 @@ const ActionsRoute = ActionsRouteImport.update({
   path: '/actions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccuracyRoute = AccuracyRouteImport.update({
+  id: '/accuracy',
+  path: '/accuracy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -145,6 +151,7 @@ const ActionsIdRoute = ActionsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accuracy': typeof AccuracyRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accuracy': typeof AccuracyRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
@@ -194,6 +202,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accuracy': typeof AccuracyRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accuracy'
     | '/actions'
     | '/activity'
     | '/ask'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accuracy'
     | '/actions'
     | '/activity'
     | '/ask'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accuracy'
     | '/actions'
     | '/activity'
     | '/ask'
@@ -293,6 +305,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccuracyRoute: typeof AccuracyRoute
   ActionsRoute: typeof ActionsRouteWithChildren
   ActivityRoute: typeof ActivityRoute
   AskRoute: typeof AskRoute
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accuracy': {
+      id: '/accuracy'
+      path: '/accuracy'
+      fullPath: '/accuracy'
+      preLoaderRoute: typeof AccuracyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -519,6 +539,7 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccuracyRoute: AccuracyRoute,
   ActionsRoute: ActionsRouteWithChildren,
   ActivityRoute: ActivityRoute,
   AskRoute: AskRoute,

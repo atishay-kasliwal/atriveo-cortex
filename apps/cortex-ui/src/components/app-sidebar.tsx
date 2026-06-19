@@ -21,6 +21,7 @@ import {
   Crosshair,
   Monitor,
   ClipboardCheck,
+  Gauge,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -79,6 +80,7 @@ const nav = [
       { title: "Activity Log", url: "/activity", icon: Activity },
       { title: "Screens", url: "/screens", icon: Monitor },
       { title: "Truth Audit", url: "/audit", icon: ClipboardCheck },
+      { title: "Accuracy", url: "/accuracy", icon: Gauge },
       { title: "Telemetry", url: "/debug/telemetry", icon: Activity },
     ],
   },

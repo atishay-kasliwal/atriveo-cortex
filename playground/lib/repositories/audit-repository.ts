@@ -136,6 +136,32 @@ export class AuditRepository {
       [date, segmentStartTime, segmentEndTime],
     );
   }
+
+  async listRatedSegmentsRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<
+    Array<{
+      date: string;
+      predicted_state: string;
+      verdict: AuditVerdict;
+      confidence: number;
+      evidence_json: string;
+    }>
+  > {
+    return runUnsafe(
+      `SELECT f.date, f.predicted_state, f.verdict,
+              e.confidence, e.evidence_json
+       FROM segment_audit_feedback f
+       INNER JOIN segment_audit_evidence e
+         ON f.date = e.date
+        AND f.segment_start_time = e.segment_start_time
+        AND f.segment_end_time = e.segment_end_time
+       WHERE f.date >= $1 AND f.date <= $2
+       ORDER BY f.date ASC, f.segment_start_time ASC`,
+      [startDate, endDate],
+    );
+  }
 }
 
 export const auditRepository = new AuditRepository();

@@ -212,6 +212,7 @@ export function AuditView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.auditDay(viewDate) });
       queryClient.invalidateQueries({ queryKey: qk.auditMetrics() });
+      queryClient.invalidateQueries({ queryKey: qk.accuracyDashboard });
     },
   });
 
