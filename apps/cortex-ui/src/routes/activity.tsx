@@ -32,6 +32,8 @@ import {
   resolveActivityPipelineState,
 } from "@/lib/activity/activity-state";
 import { isApiNotFound } from "@/lib/api/client";
+import {
+  analyticsHistoryQuery,
   monthQuery,
   screenpipeHealthQuery,
   todayQuery,
