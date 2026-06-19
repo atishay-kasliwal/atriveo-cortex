@@ -53,6 +53,7 @@ export function aggregateAppUsage(
 
 export function aggregateWebsiteUsage(
   rows: WebsiteUsageRow[],
+  overrides?: Map<string, import("./website-intelligence").WebsiteCategory>,
 ): Array<{
   domain: string;
   durationSec: number;
@@ -77,12 +78,13 @@ export function aggregateWebsiteUsage(
   return [...domains]
     .map((domain) => {
       const intel = buildWebsiteIntel(domain, confidence.get(domain) ?? 0.72)!;
+      const override = overrides?.get(intel.domain);
       return {
         domain,
         durationSec: Math.round(duration.get(domain) ?? 0),
         visits: visits.get(domain) ?? 0,
-        category: intel.category,
-        confidence: intel.confidence,
+        category: override ?? intel.category,
+        confidence: override ? 1 : intel.confidence,
       };
     })
     .sort((a, b) => b.durationSec - a.durationSec);

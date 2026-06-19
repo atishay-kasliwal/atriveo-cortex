@@ -13,9 +13,10 @@ import {
 import { ActivityBreakdown } from "@/components/activity/activity-breakdown";
 import { ActivityCard, AllocationRow } from "@/components/activity/shared";
 import {
-  WebsiteCategoryBadge,
   WebsiteCategorySummary,
+  websiteCategoryStyle,
 } from "@/components/activity/website-categories";
+import { WebsiteCategoryTagPicker } from "@/components/activity/website-category-tag-picker";
 import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
 import { SessionList } from "@/components/activity/session-list";
 import { WorkTimeline } from "@/components/activity/work-timeline";
@@ -156,6 +157,7 @@ export function TodayView({
           <WebsiteList
             items={data.websites}
             categories={data.websiteCategories ?? []}
+            viewDate={viewDate ?? data.date}
           />
         </ActivityCard>
       </div>
@@ -231,9 +233,11 @@ function AppList({ items }: { items: TodayActivity["apps"] }) {
 function WebsiteList({
   items,
   categories,
+  viewDate,
 }: {
   items: TodayActivity["websites"];
   categories: TodayActivity["websiteCategories"];
+  viewDate?: string;
 }) {
   if (items.length === 0) return <MiniEmpty icon={Globe} label="No websites yet" />;
   const max = Math.max(...items.map((i) => i.durationSec), 1);
@@ -241,17 +245,24 @@ function WebsiteList({
     <div>
       <WebsiteCategorySummary items={categories} />
       <ul className="divide-y divide-border/40">
-        {items.slice(0, 8).map((w) => (
+        {items.slice(0, 8).map((w) => {
+          const barClass =
+            websiteCategoryStyle[w.category]?.bar ?? "bg-gradient-brand";
+          return (
           <li key={w.domain}>
             <div className="group flex items-center gap-3 px-5 py-2.5 transition hover:bg-surface-2/30">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-[13px]">{w.domain}</span>
-                  <WebsiteCategoryBadge category={w.category} />
+                  <WebsiteCategoryTagPicker
+                    domain={w.domain}
+                    category={w.category}
+                    viewDate={viewDate}
+                  />
                 </div>
                 <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2/60">
                   <div
-                    className="h-full rounded-full bg-gradient-brand"
+                    className={"h-full rounded-full " + barClass}
                     style={{ width: `${Math.max(2, (w.durationSec / max) * 100)}%` }}
                   />
                 </div>
@@ -266,7 +277,8 @@ function WebsiteList({
               </div>
             </div>
           </li>
-        ))}
+        );
+        })}
       </ul>
     </div>
   );

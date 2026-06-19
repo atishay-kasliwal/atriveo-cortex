@@ -148,6 +148,34 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/analytics/domain-tags", async (c) => {
+    try {
+      const { listDomainCategoryTags } = await import("@/lib/analytics/domain-category-api");
+      return apiSuccess(c, await listDomainCategoryTags());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load domain tags", 500);
+    }
+  });
+
+  app.put("/api/analytics/domain-tags", async (c) => {
+    try {
+      const body = await c.req.json<{ domain?: string; category?: string }>();
+      if (!body.domain?.trim() || !body.category) {
+        return apiError(c, "domain and category are required", 400);
+      }
+      const { setDomainCategoryTag } = await import("@/lib/analytics/domain-category-api");
+      return apiSuccess(
+        c,
+        await setDomainCategoryTag(
+          body.domain.trim(),
+          body.category as import("@/lib/analytics/website-intelligence").WebsiteCategory,
+        ),
+      );
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to save domain tag", 500);
+    }
+  });
+
   app.get("/api/search", async (c) => {
     try {
       const q = c.req.query("q")?.trim();

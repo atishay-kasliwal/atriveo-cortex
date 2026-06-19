@@ -22,6 +22,9 @@ import {
 import { ensureDaySynced } from "@/lib/analytics/analytics-sync";
 import { buildPresenceSummary } from "@/lib/analytics/presence-api";
 import { listStateSegments } from "@/lib/analytics/analytics-db";
+import {
+  applyWebsiteOverridesToActivity,
+} from "@/lib/analytics/domain-category-api";
 
 export async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
   const [summary, sessions, appUsageRows, websiteUsageRows, stateRows, emergingIdeas, openLoops] =
@@ -55,7 +58,7 @@ export async function assembleTodayActivity(date: string): Promise<TodayActivity
       }
     : sumSummaries([]);
 
-  return {
+  return applyWebsiteOverridesToActivity({
     date,
     generatedAt: new Date().toISOString(),
     ...totals,
@@ -67,7 +70,7 @@ export async function assembleTodayActivity(date: string): Promise<TodayActivity
     emergingIdeas,
     openLoops,
     ...presence,
-  };
+  });
 }
 
 /** Mac sync path — ensures ScreenPipe frames are processed before read. */
@@ -87,7 +90,7 @@ export async function buildTodayActivityFromNeon(
   const cached = await loadDailyMemory(date);
 
   if (date !== localDateString()) {
-    if (cached) return cached;
+    if (cached) return applyWebsiteOverridesToActivity(cached);
     return materializeDailyMemory(date);
   }
 
@@ -103,7 +106,7 @@ export async function buildTodayActivityFromNeon(
     const lastSyncAt =
       sync.lastSyncCompletedAt ?? sync.lastProcessedTimestamp;
     if (!shouldRefreshDailyMemoryForToday(cached, summary, lastSyncAt)) {
-      return cached;
+      return applyWebsiteOverridesToActivity(cached);
     }
   }
 
@@ -111,7 +114,7 @@ export async function buildTodayActivityFromNeon(
     return await materializeDailyMemory(date);
   } catch (err) {
     console.error("[analytics] failed to materialize daily_memory for today:", err);
-    if (cached) return cached;
+    if (cached) return applyWebsiteOverridesToActivity(cached);
     throw err;
   }
 }
