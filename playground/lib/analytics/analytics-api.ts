@@ -81,11 +81,39 @@ export async function buildTodayActivityFromNeon(
   date: string,
 ): Promise<TodayActivityDTO> {
   const { loadDailyMemory, materializeDailyMemory } = await import(
-    "./daily-memory"
+    "./daily-memory",
   );
+  const { localDateString } = await import("./aggregator");
   const cached = await loadDailyMemory(date);
-  if (cached) return cached;
-  return materializeDailyMemory(date);
+
+  if (date !== localDateString()) {
+    if (cached) return cached;
+    return materializeDailyMemory(date);
+  }
+
+  if (cached) {
+    const { shouldRefreshDailyMemoryForToday } = await import(
+      "./daily-memory-staleness",
+    );
+    const { getSyncStatus } = await import("@/lib/sync/sync-status");
+    const [summary, sync] = await Promise.all([
+      getDailySummary(date),
+      getSyncStatus(),
+    ]);
+    const lastSyncAt =
+      sync.lastSyncCompletedAt ?? sync.lastProcessedTimestamp;
+    if (!shouldRefreshDailyMemoryForToday(cached, summary, lastSyncAt)) {
+      return cached;
+    }
+  }
+
+  try {
+    return await materializeDailyMemory(date);
+  } catch (err) {
+    console.error("[analytics] failed to materialize daily_memory for today:", err);
+    if (cached) return cached;
+    throw err;
+  }
 }
 
 export async function buildDayBuckets(date: string) {
