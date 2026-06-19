@@ -3,6 +3,8 @@
 **Date:** 2026-06-18  
 **Scope:** Dedicated Screens view with per-monitor timelines, summaries, heatmaps, and insights
 
+> **Source of truth for product direction:** [`docs/MULTI_MONITOR_ANALYTICS_DECISION_MEMO.md`](docs/MULTI_MONITOR_ANALYTICS_DECISION_MEMO.md) — display visibility vs interaction layers, capture requirements, and non-goals. This report documents what Phase 15.6 shipped; the decision memo defines what "correct" means going forward.
+
 ---
 
 ## Executive summary
