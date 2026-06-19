@@ -78,6 +78,11 @@ import {
   buildScreensSummary,
   buildWeekScreens,
 } from "@/lib/analytics/screens-api";
+import {
+  buildAuditMetrics,
+  buildDayAudit,
+  saveAuditFeedback,
+} from "@/lib/analytics/audit-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
 import { fetchSyncStatus, triggerManualSync } from "@/lib/sync/sync-api";
 import { apiError, apiSuccess } from "./env";
@@ -252,6 +257,54 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, data);
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load screens summary", 500);
+    }
+  });
+
+  app.get("/api/audit/day", async (c) => {
+    try {
+      const data = await buildDayAudit(c.req.query("date") ?? null);
+      if (!data) return apiError(c, "No audit data for this date", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load day audit", 500);
+    }
+  });
+
+  app.get("/api/audit/metrics", async (c) => {
+    try {
+      const data = await buildAuditMetrics(
+        c.req.query("start") ?? null,
+        c.req.query("end") ?? null,
+      );
+      if (!data) return apiError(c, "No audit metrics for this range", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load audit metrics", 500);
+    }
+  });
+
+  app.post("/api/audit/feedback", async (c) => {
+    try {
+      const body = await c.req.json<{
+        date?: string;
+        startTime?: string;
+        endTime?: string;
+        predictedState?: string;
+        verdict?: string;
+      }>();
+      if (!body.date || !body.startTime || !body.endTime || !body.predictedState || !body.verdict) {
+        return apiError(c, "date, startTime, endTime, predictedState, and verdict are required", 400);
+      }
+      const result = await saveAuditFeedback({
+        date: body.date,
+        startTime: body.startTime,
+        endTime: body.endTime,
+        predictedState: body.predictedState,
+        verdict: body.verdict as "correct" | "incorrect",
+      });
+      return apiSuccess(c, result);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to save audit feedback", 500);
     }
   });
 

@@ -54,6 +54,7 @@ export class AnalyticsRepository {
     await runUnsafe(`DELETE FROM website_usage WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM activity_state_segments WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM idle_segments WHERE date = $1`, [date]);
+    await runUnsafe(`DELETE FROM segment_audit_evidence WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM daily_activity_summary WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM attention_segments WHERE date = $1`, [date]);
     await runUnsafe(`DELETE FROM deep_work_sessions WHERE date = $1`, [date]);

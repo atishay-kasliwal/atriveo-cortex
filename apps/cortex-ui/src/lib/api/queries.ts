@@ -34,6 +34,9 @@ export const qk = {
   screensWeek: (start: string) => ["screens", "week", start] as const,
   screensSummary: (start?: string, end?: string) =>
     ["screens", "summary", start ?? "default", end ?? "default"] as const,
+  auditDay: (date: string) => ["audit", "day", date] as const,
+  auditMetrics: (start?: string, end?: string) =>
+    ["audit", "metrics", start ?? "default", end ?? "default"] as const,
   recurrence: ["recurrence"] as const,
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
@@ -257,5 +260,19 @@ export const screensSummaryQuery = (start?: string, end?: string) =>
   queryOptions({
     queryKey: qk.screensSummary(start, end),
     queryFn: () => api.screens.summary(start, end),
+    staleTime: STALE,
+  });
+
+export const auditDayQuery = (date: string) =>
+  queryOptions({
+    queryKey: qk.auditDay(date),
+    queryFn: () => api.audit.day(date),
+    staleTime: STALE,
+  });
+
+export const auditMetricsQuery = (start?: string, end?: string) =>
+  queryOptions({
+    queryKey: qk.auditMetrics(start, end),
+    queryFn: () => api.audit.metrics(start, end),
     staleTime: STALE,
   });

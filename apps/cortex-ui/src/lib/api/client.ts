@@ -37,6 +37,11 @@ import {
   fetchScreensSummary,
   fetchWeekScreens,
 } from "./screens-adapter";
+import {
+  fetchAuditMetrics,
+  fetchDayAudit,
+  submitAuditFeedback,
+} from "./audit-adapter";
 import { fetchMemorySearch } from "./search-adapter";
 import { fetchProjectsHealth, fetchProjectHealthTrends } from "./project-health-adapter";
 import {
@@ -124,5 +129,17 @@ export const api = {
     day: (date?: string) => fetchDayScreens(date),
     week: (start?: string) => fetchWeekScreens(start),
     summary: (start?: string, end?: string) => fetchScreensSummary(start, end),
+  },
+
+  audit: {
+    day: (date?: string) => fetchDayAudit(date),
+    metrics: (start?: string, end?: string) => fetchAuditMetrics(start, end),
+    feedback: (input: {
+      date: string;
+      startTime: string;
+      endTime: string;
+      predictedState: string;
+      verdict: "correct" | "incorrect";
+    }) => submitAuditFeedback(input),
   },
 };

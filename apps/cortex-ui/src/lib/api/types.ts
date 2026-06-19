@@ -513,6 +513,60 @@ export type ScreensSummary = {
   signals: string[];
 };
 
+export type SegmentEvidence = {
+  primaryApp: string | null;
+  primaryDomain: string | null;
+  focusedWindow: string | null;
+  frameCount: number;
+  keyboardEvents: number;
+  mouseEvents: number;
+  scrollEvents: number;
+  focusEvents: number;
+  interactionCount: number;
+  ocrChanges: number;
+  signals: string[];
+  topApps: string[];
+  idleTier?: string;
+};
+
+export type SegmentAudit = {
+  id: number;
+  startTime: string;
+  endTime: string;
+  durationSec: number;
+  classification: string;
+  state: string;
+  confidence: number;
+  evidence: SegmentEvidence;
+  feedback: "correct" | "incorrect" | null;
+};
+
+export type AuditAccuracyMetrics = {
+  classificationAccuracy: number | null;
+  idleAccuracy: number | null;
+  attentionAccuracy: number | null;
+  ratedCount: number;
+  totalSegments: number;
+  correctCount: number;
+  idleRatedCount: number;
+  attentionRatedCount: number;
+};
+
+export type DayAudit = {
+  date: string;
+  generatedAt: ISODate;
+  segments: SegmentAudit[];
+  metrics: AuditAccuracyMetrics;
+};
+
+export type AuditMetrics = {
+  startDate: string;
+  endDate: string;
+  generatedAt: ISODate;
+  metrics: AuditAccuracyMetrics;
+  daily: Array<{ date: string; metrics: AuditAccuracyMetrics }>;
+};
+
 export type ProjectAttentionDetail = {
   project: string;
   startDate: string;
