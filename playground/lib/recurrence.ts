@@ -1,4 +1,3 @@
-import { backfillActionIdeaMemory } from "./action-idea-memory";
 import { actionRepository, ideaRepository } from "@/lib/repositories";
 
 export type RecurrenceTrend = "Rising" | "Stable" | "Dormant";
@@ -178,13 +177,11 @@ function buildReport(rows: EntityRow[], limit: number): RecurrenceReport {
 }
 
 export async function getActionRecurrenceReport(limit = 20): Promise<RecurrenceReport> {
-  await backfillActionIdeaMemory();
   const rows = await actionRepository.listWithMentionTimestamps();
   return buildReport(rows, limit);
 }
 
 export async function getIdeaRecurrenceReport(limit = 20): Promise<RecurrenceReport> {
-  await backfillActionIdeaMemory();
   const rows = await ideaRepository.listWithMentionTimestamps();
   return buildReport(rows, limit);
 }

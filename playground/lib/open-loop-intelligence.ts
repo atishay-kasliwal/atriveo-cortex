@@ -10,7 +10,7 @@ import {
   openLoopRepository,
 } from "@/lib/repositories";
 import { dailyReviewRepository } from "@/lib/repositories/daily-review-repository";
-import { backfillActionIdeaMemory } from "./action-idea-memory";
+import { backfillAllActionIdeaMemory } from "./action-idea-memory";
 import { computeDaysSeen } from "./recurrence";
 import { normalizeEntityText } from "./text-normalize";
 
@@ -394,7 +394,7 @@ async function loadCompletionEvidence(): Promise<string[]> {
 }
 
 export async function detectLoopCandidates(): Promise<LoopCandidate[]> {
-  await backfillActionIdeaMemory();
+  await backfillAllActionIdeaMemory();
 
   const [actions, ideas, sessions, reviews] = await Promise.all([
     actionRepository.listWithMentionTimestamps().then(buildActionCandidates),

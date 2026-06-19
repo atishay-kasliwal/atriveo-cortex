@@ -24,13 +24,21 @@ import { buildPresenceSummary } from "@/lib/analytics/presence-api";
 import { listStateSegments } from "@/lib/analytics/analytics-db";
 
 async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
-  const summary = await getDailySummary(date);
-  const sessions = await listSessions(date, date);
-  const apps = aggregateAppUsage(await listApplicationUsage(date, date));
-  const websites = aggregateWebsiteUsage(await listWebsiteUsage(date, date));
+  const [summary, sessions, appUsageRows, websiteUsageRows, stateRows, emergingIdeas, openLoops] =
+    await Promise.all([
+      getDailySummary(date),
+      listSessions(date, date),
+      listApplicationUsage(date, date),
+      listWebsiteUsage(date, date),
+      listStateSegments(date),
+      getEmergingIdeas().catch(() => [] as Awaited<ReturnType<typeof getEmergingIdeas>>),
+      getOpenLoopBriefs().catch(() => [] as Awaited<ReturnType<typeof getOpenLoopBriefs>>),
+    ]);
+
+  const apps = aggregateAppUsage(appUsageRows);
+  const websites = aggregateWebsiteUsage(websiteUsageRows);
   const websiteCategories = aggregateWebsiteCategories(websites);
   const projects = toProjectTimeDTO(aggregateProjectUsage(sessions));
-  const stateRows = await listStateSegments(date);
   const presence = buildPresenceSummary(stateRows);
 
   const totals = summary
@@ -56,8 +64,8 @@ async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
     websites,
     websiteCategories,
     projects,
-    emergingIdeas: await getEmergingIdeas(),
-    openLoops: await getOpenLoopBriefs(),
+    emergingIdeas,
+    openLoops,
     ...presence,
   };
 }

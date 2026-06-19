@@ -31,8 +31,7 @@ import {
   hasWeekActivity,
   resolveActivityPipelineState,
 } from "@/lib/activity/activity-state";
-import {
-  analyticsHistoryQuery,
+import { isApiNotFound } from "@/lib/api/client";
   monthQuery,
   screenpipeHealthQuery,
   todayQuery,
@@ -202,7 +201,7 @@ function ActivityLogPage() {
         />
       </div>
 
-      {active.isError ? (
+      {active.isError && !isApiNotFound(active.error) ? (
         <div className="mt-6">
           <ErrorState error={active.error} onRetry={active.refetch} />
         </div>

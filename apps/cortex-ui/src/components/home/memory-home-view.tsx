@@ -89,7 +89,7 @@ export function MemoryHomeView({
             <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
-        {activity.isError ? (
+        {activity.isError && !isApiNotFound(activity.error) ? (
           <ErrorState error={activity.error} onRetry={activity.refetch} />
         ) : (
           <TodayView

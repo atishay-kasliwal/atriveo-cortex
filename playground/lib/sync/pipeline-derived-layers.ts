@@ -6,6 +6,7 @@ import { isoWeekStart, localDateString } from "@/lib/analytics/aggregator";
 import { computeAndPersistDayAttention } from "@/lib/analytics/attention-db";
 import { computeAndPersistDayScreens } from "@/lib/analytics/screens-db";
 import { rebuildMemorySearchIndex } from "@/lib/memory-search-api";
+import { backfillAllActionIdeaMemory } from "@/lib/action-idea-memory";
 import { syncOpenLoopIntelligence } from "@/lib/open-loop-intelligence";
 import { systemRepository } from "@/lib/repositories";
 import { getDailyReview } from "@/lib/review/daily-review-service";
@@ -53,6 +54,10 @@ export async function rebuildDerivedLayers(
   forceReviews: boolean,
 ): Promise<DerivedLayersResult> {
   const targetDates = dates.length > 0 ? dates : [localDateString()];
+
+  await backfillAllActionIdeaMemory().catch((err) => {
+    console.error("[pipeline] action/idea backfill failed:", err);
+  });
 
   const loopsUpdated = await syncOpenLoopIntelligence();
   await touchStage(SYNC_KEYS.lastLoopsSync);

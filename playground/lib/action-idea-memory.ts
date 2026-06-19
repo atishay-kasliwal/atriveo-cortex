@@ -60,10 +60,14 @@ export async function linkExtractionActionsAndIdeas(
   await extractionRepository.markEntitiesLinked(extractionId);
 }
 
-export async function backfillActionIdeaMemory(): Promise<number> {
+export async function backfillActionIdeaMemory(options?: {
+  /** Max extractions to link per call — prevents read-path timeouts. */
+  maxBatch?: number;
+}): Promise<number> {
+  const maxBatch = options?.maxBatch ?? 50;
   const extractions = await extractionRepository.listUnlinkedEntities();
   let linked = 0;
-  for (const row of extractions) {
+  for (const row of extractions.slice(0, maxBatch)) {
     const parsed = parseExtractionJson(row.parsed_json).parsed;
     if (!parsed) continue;
     await linkExtractionActionsAndIdeas(row.id, row.timestamp, parsed);
@@ -72,30 +76,36 @@ export async function backfillActionIdeaMemory(): Promise<number> {
   return linked;
 }
 
+/** Sync pipeline — drain all unlinked extractions in bounded batches. */
+export async function backfillAllActionIdeaMemory(): Promise<number> {
+  let total = 0;
+  for (let pass = 0; pass < 200; pass++) {
+    const linked = await backfillActionIdeaMemory({ maxBatch: 100 });
+    total += linked;
+    if (linked === 0) break;
+  }
+  return total;
+}
+
 export async function listActionsReport(limit = 20): Promise<ActionsListReport> {
-  await backfillActionIdeaMemory();
   return actionRepository.listReport(limit);
 }
 
 export async function listIdeasReport(limit = 20): Promise<IdeasListReport> {
-  await backfillActionIdeaMemory();
   return ideaRepository.listReport(limit);
 }
 
 export async function getActionDetail(id: number): Promise<ActionDetail | null> {
-  await backfillActionIdeaMemory();
   return actionRepository.getDetail(id);
 }
 
 export async function getIdeaDetail(id: number): Promise<IdeaDetail | null> {
-  await backfillActionIdeaMemory();
   return ideaRepository.getDetail(id);
 }
 
 export async function getProjectActionsAndIdeas(
   canonicalProject: string,
 ): Promise<Pick<ProjectTimeline, "actions" | "ideas">> {
-  await backfillActionIdeaMemory();
   const actions = await actionRepository.getProjectActions(canonicalProject);
   const ideas = await ideaRepository.getProjectIdeas(canonicalProject);
   return { actions, ideas };
