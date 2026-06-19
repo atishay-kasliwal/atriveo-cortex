@@ -14,6 +14,7 @@ import { Route as ScreensRouteImport } from './routes/screens'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RecurrenceRouteImport } from './routes/recurrence'
 import { Route as ProjectsRouteImport } from './routes/projects'
+import { Route as PlatformHealthRouteImport } from './routes/platform-health'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as OpenLoopsRouteImport } from './routes/open-loops'
 import { Route as IdeasRouteImport } from './routes/ideas'
@@ -57,6 +58,11 @@ const RecurrenceRoute = RecurrenceRouteImport.update({
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformHealthRoute = PlatformHealthRouteImport.update({
+  id: '/platform-health',
+  path: '/platform-health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OverviewRoute = OverviewRouteImport.update({
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
+  '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
+  '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
+  '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/ideas'
     | '/open-loops'
     | '/overview'
+    | '/platform-health'
     | '/projects'
     | '/recurrence'
     | '/review'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/ideas'
     | '/open-loops'
     | '/overview'
+    | '/platform-health'
     | '/projects'
     | '/recurrence'
     | '/review'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/ideas'
     | '/open-loops'
     | '/overview'
+    | '/platform-health'
     | '/projects'
     | '/recurrence'
     | '/review'
@@ -328,6 +340,7 @@ export interface RootRouteChildren {
   IdeasRoute: typeof IdeasRouteWithChildren
   OpenLoopsRoute: typeof OpenLoopsRouteWithChildren
   OverviewRoute: typeof OverviewRoute
+  PlatformHealthRoute: typeof PlatformHealthRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RecurrenceRoute: typeof RecurrenceRoute
   ReviewRoute: typeof ReviewRoute
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/platform-health': {
+      id: '/platform-health'
+      path: '/platform-health'
+      fullPath: '/platform-health'
+      preLoaderRoute: typeof PlatformHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/overview': {
@@ -570,6 +590,7 @@ const rootRouteChildren: RootRouteChildren = {
   IdeasRoute: IdeasRouteWithChildren,
   OpenLoopsRoute: OpenLoopsRouteWithChildren,
   OverviewRoute: OverviewRoute,
+  PlatformHealthRoute: PlatformHealthRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   RecurrenceRoute: RecurrenceRoute,
   ReviewRoute: ReviewRoute,

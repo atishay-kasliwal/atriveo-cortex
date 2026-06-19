@@ -120,6 +120,9 @@ function SummaryStrip({ data, nowMs }: { data: PlatformHealth; nowMs: number }) 
       <span className="text-xs text-emerald-400">{data.summary.healthy} healthy</span>
       <span className="text-xs text-amber-400">{data.summary.warning} warning</span>
       <span className="text-xs text-rose-400">{data.summary.critical} critical</span>
+      {data.summary.disabled > 0 ? (
+        <span className="text-xs text-muted-foreground">{data.summary.disabled} disabled</span>
+      ) : null}
       <span className="text-xs text-muted-foreground">{data.services.length} services</span>
     </div>
   );

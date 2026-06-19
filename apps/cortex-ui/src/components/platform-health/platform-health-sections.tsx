@@ -42,6 +42,28 @@ function Dot({ status }: { status: PlatformServiceHealth["status"] }) {
   return <span className={`size-2 rounded-full ${statusDotClass(status)}`} />;
 }
 
+function SignalRow({
+  label,
+  iso,
+  nowMs,
+}: {
+  label: string;
+  iso: string | null;
+  nowMs: number;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="font-mono text-[10px] text-muted-foreground">{label}</span>
+      <div className="text-right">
+        <div className="font-mono text-xs">{relativeTime(iso, nowMs)}</div>
+        <div className="font-mono text-[10px] tabular-nums text-muted-foreground">
+          {absoluteTime(iso)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DualStampSection({
   services,
   nowMs,
@@ -52,25 +74,43 @@ export function DualStampSection({
   return (
     <Section
       n="01"
-      title="Dual Stamp — relative + absolute"
-      note="Human-readable relative time with exact UTC below. Hover rows for detail."
+      title="Service signals — liveness vs data"
+      note="Liveness is whether the service responded. Data freshness is when output last changed. Status uses the metric that matters per service type."
     >
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {services.slice(0, 8).map((s) => (
+        {services.map((s) => (
           <div
             key={s.id}
-            className="flex items-center justify-between rounded-md border border-border/50 bg-surface/40 px-4 py-3"
+            className="rounded-md border border-border/50 bg-surface/40 px-4 py-3"
           >
-            <div className="flex items-center gap-3">
-              <Dot status={s.status} />
-              <span className="font-mono text-sm">{s.name}</span>
-            </div>
-            <div className="text-right">
-              <div className="font-mono text-sm">{relativeTime(s.lastHeartbeat, nowMs)}</div>
-              <div className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                {absoluteTime(s.lastHeartbeat)}
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Dot status={s.status} />
+                <span className="font-mono text-sm">{s.name}</span>
               </div>
+              <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                {s.status}
+              </span>
             </div>
+            {s.status === "disabled" ? (
+              <p className="font-mono text-xs text-muted-foreground">
+                {s.statusReason ?? "Not configured"}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <SignalRow label={s.liveness.label} iso={s.liveness.lastAt} nowMs={nowMs} />
+                {s.dataFreshness ? (
+                  <SignalRow
+                    label={s.dataFreshness.label}
+                    iso={s.dataFreshness.lastAt}
+                    nowMs={nowMs}
+                  />
+                ) : null}
+                {s.statusReason ? (
+                  <p className="font-mono text-[10px] text-amber-400/90">{s.statusReason}</p>
+                ) : null}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -280,7 +320,7 @@ export function CountdownSinceSection({
     <Section
       n="05"
       title="Countdown Since — a stopwatch of silence"
-      note="Not when — how long since the last heartbeat. Thresholds: healthy &lt;10m, warning 10–30m, critical &gt;30m."
+      note="Not when — how long since the last liveness signal. Thresholds vary by service type (continuous &lt;10m, scheduled &lt;60m, on-demand &lt;120m)."
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {services.map((s) => (

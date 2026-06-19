@@ -10,22 +10,38 @@ import {
 import { analyticsRepository } from "@/lib/repositories/analytics-repository";
 import { healthEventsRepository } from "@/lib/repositories/health-events-repository";
 import { systemRepository } from "@/lib/repositories";
+import { resolveCloudCaptureTimestamps } from "@/lib/sync/capture-timestamps";
 import { SYNC_KEYS } from "@/lib/sync/sync-keys";
 import { getSyncStatus } from "@/lib/sync/sync-status";
 import {
   ageMinutesFromIso,
-  classifyPlatformHealthStatus,
-  statusFromIso,
+  buildHealthSignal,
+  classifyByServiceType,
+  resolveServiceStatus,
   type PlatformHealthStatus,
+  type PlatformServiceStatus,
+  type PlatformServiceType,
 } from "@/lib/platform/platform-health-rules";
+
+export type HealthSignalDTO = {
+  lastAt: string | null;
+  ageMinutes: number | null;
+  status: PlatformHealthStatus;
+  label: string;
+};
 
 export type PlatformServiceHealthDTO = {
   id: string;
   name: string;
-  status: PlatformHealthStatus;
+  serviceType: PlatformServiceType;
+  status: PlatformServiceStatus;
+  statusReason: string | null;
   firstSeen: string | null;
+  /** Primary stamp for backward compatibility — liveness lastAt */
   lastHeartbeat: string | null;
   ageMinutes: number | null;
+  liveness: HealthSignalDTO;
+  dataFreshness: HealthSignalDTO | null;
   heartbeatCount24h: number;
   uptimePercent24h: number;
   avgLatencyMs: number | null;
@@ -41,13 +57,18 @@ export type PlatformHealthDTO = {
     healthy: number;
     warning: number;
     critical: number;
+    disabled: number;
   };
 };
 
 type ServiceProbe = {
   id: string;
   name: string;
-  lastHeartbeat: string | null;
+  serviceType: PlatformServiceType;
+  livenessAt: string | null;
+  dataAt: string | null;
+  livenessLabel: string;
+  dataLabel: string;
   latencyMs?: number | null;
   firstSeenFallback?: string | null;
 };
@@ -84,11 +105,12 @@ async function latestDailyMemoryAt(): Promise<string | null> {
 }
 
 async function probeServices(nowIso: string): Promise<ServiceProbe[]> {
-  const [sync, agent, db, activityEnd] = await Promise.all([
-    getSyncStatus(),
+  const sync = await getSyncStatus();
+  const [agent, db, activityEnd, captureTimes] = await Promise.all([
     agentHeartbeatRepository.get(MAC_CAPTURE_AGENT_ID),
     measureDatabaseLatencyMs(),
     analyticsRepository.getLatestActivityEndTime(),
+    resolveCloudCaptureTimestamps(sync),
   ]);
 
   const [
@@ -109,85 +131,133 @@ async function probeServices(nowIso: string): Promise<ServiceProbe[]> {
     latestDailyMemoryAt().catch(() => null),
   ]);
 
-  const captureAt =
-    agent?.latestCaptureTime ??
-    sync.lastFrameTimestamp ??
-    sync.lastObservedFrameTimestamp;
   const syncAt =
     agent?.latestSyncTime ??
     sync.lastSyncCompletedAt ??
     sync.lastProcessedTimestamp;
+  const relayConfigured = Boolean(process.env.MAC_SYNC_RELAY_URL?.trim());
 
   return [
     {
       id: "screenpipe-capture",
       name: "ScreenPipe Capture",
-      lastHeartbeat: captureAt,
-      firstSeenFallback: agent?.updatedAt ?? null,
+      serviceType: "continuous",
+      livenessAt: captureTimes.displayCaptureAt,
+      dataAt: captureTimes.syncedFrameAt,
+      livenessLabel: "Last capture",
+      dataLabel: "Last synced to Neon",
+      firstSeenFallback: agent?.updatedAt ?? captureTimes.observedFrameAt,
     },
     {
       id: "cortex-sync",
       name: "Cortex Sync",
-      lastHeartbeat: syncAt,
+      serviceType: "continuous",
+      livenessAt: agent?.lastSeenAt ?? sync.captureAgentHeartbeat,
+      dataAt: syncAt,
+      livenessLabel: "Agent last seen",
+      dataLabel: "Last sync completed",
       firstSeenFallback: syncAt,
     },
     {
       id: "neon-database",
       name: "Neon Database",
-      lastHeartbeat: db.ok ? nowIso : null,
+      serviceType: "continuous",
+      livenessAt: db.ok ? nowIso : null,
+      dataAt: db.ok ? nowIso : null,
+      livenessLabel: "Last probe",
+      dataLabel: "Last probe",
       latencyMs: db.latencyMs,
     },
     {
       id: "cloudflare-worker",
       name: "Cloudflare Worker",
-      lastHeartbeat: nowIso,
+      serviceType: "continuous",
+      livenessAt: nowIso,
+      dataAt: nowIso,
+      livenessLabel: "Last request",
+      dataLabel: "Last request",
       latencyMs: 0,
     },
     {
       id: "analytics-api",
       name: "Analytics API",
-      lastHeartbeat: activityEnd,
-      firstSeenFallback: activityEnd,
+      serviceType: "on_demand",
+      livenessAt: nowIso,
+      dataAt: activityEnd,
+      livenessLabel: "Last probe",
+      dataLabel: "Last session materialized",
     },
     {
       id: "memory-builder",
       name: "Memory Builder",
-      lastHeartbeat: memoryJobAt,
+      serviceType: "on_demand",
+      livenessAt: nowIso,
+      dataAt: memoryJobAt,
+      livenessLabel: "Last probe",
+      dataLabel: "Last job completed",
     },
     {
       id: "daily-materializer",
       name: "Daily Materializer",
-      lastHeartbeat: dailyMemoryAt,
+      serviceType: "on_demand",
+      livenessAt: nowIso,
+      dataAt: dailyMemoryAt,
+      livenessLabel: "Last probe",
+      dataLabel: "Last materialization",
     },
     {
       id: "review-planner",
       name: "Review Planner",
-      lastHeartbeat: lastReview,
+      serviceType: "scheduled",
+      livenessAt: nowIso,
+      dataAt: lastReview,
+      livenessLabel: "Last probe",
+      dataLabel: "Last review generated",
     },
     {
       id: "search-index",
       name: "Search Index",
-      lastHeartbeat: lastIndex,
+      serviceType: "scheduled",
+      livenessAt: nowIso,
+      dataAt: lastIndex,
+      livenessLabel: "Last probe",
+      dataLabel: "Last index rebuild",
     },
     {
       id: "attention-engine",
       name: "Attention Engine",
-      lastHeartbeat: lastAttention,
+      serviceType: "scheduled",
+      livenessAt: nowIso,
+      dataAt: lastAttention,
+      livenessLabel: "Last probe",
+      dataLabel: "Last attention compute",
     },
     {
       id: "open-loops-sync",
       name: "Open Loops Sync",
-      lastHeartbeat: lastLoops,
+      serviceType: "scheduled",
+      livenessAt: nowIso,
+      dataAt: lastLoops,
+      livenessLabel: "Last probe",
+      dataLabel: "Last loops sync",
     },
     {
       id: "project-health",
       name: "Project Health",
-      lastHeartbeat: lastProjectHealth,
+      serviceType: "scheduled",
+      livenessAt: nowIso,
+      dataAt: lastProjectHealth,
+      livenessLabel: "Last probe",
+      dataLabel: "Last health snapshot",
     },
     {
       id: "relay-worker",
       name: "Relay Worker",
-      lastHeartbeat: process.env.MAC_SYNC_RELAY_URL ? syncAt : null,
+      serviceType: relayConfigured ? "scheduled" : "disabled",
+      livenessAt: relayConfigured ? syncAt : null,
+      dataAt: relayConfigured ? syncAt : null,
+      livenessLabel: "Last relay sync",
+      dataLabel: "Last relay sync",
     },
   ];
 }
@@ -198,12 +268,45 @@ function uptimeFromSparkline(sparkline: number[]): number {
   return Math.round((active / sparkline.length) * 100);
 }
 
+function eventStatusForRecord(
+  status: PlatformServiceStatus,
+): PlatformHealthStatus {
+  if (status === "disabled") return "healthy";
+  return status;
+}
+
 async function buildServiceDto(
   probe: ServiceProbe,
   nowMs: number,
+  upstreamSyncCritical: boolean,
 ): Promise<PlatformServiceHealthDTO> {
-  const ageMinutes = ageMinutesFromIso(probe.lastHeartbeat, nowMs);
-  const status = classifyPlatformHealthStatus(ageMinutes);
+  const type =
+    probe.serviceType === "disabled" ? "scheduled" : probe.serviceType;
+
+  const liveness =
+    probe.serviceType === "disabled"
+      ? {
+          lastAt: null,
+          ageMinutes: null,
+          status: "healthy" as const,
+          label: probe.livenessLabel,
+        }
+      : buildHealthSignal(probe.livenessAt, type, probe.livenessLabel, nowMs);
+  const dataFreshness =
+    probe.serviceType === "disabled"
+      ? null
+      : probe.dataAt === probe.livenessAt && probe.dataLabel === probe.livenessLabel
+        ? null
+        : buildHealthSignal(probe.dataAt, type, probe.dataLabel, nowMs);
+
+  const { status, statusReason } = resolveServiceStatus({
+    serviceId: probe.id,
+    serviceType: probe.serviceType,
+    liveness: liveness.status,
+    data: dataFreshness?.status ?? liveness.status,
+    upstreamSyncCritical,
+  });
+
   const since24h = new Date(nowMs - 24 * 3_600_000).toISOString();
   const since6h = new Date(nowMs - 6 * 3_600_000).toISOString();
 
@@ -217,15 +320,24 @@ async function buildServiceDto(
     ]);
 
   const resolvedFirstSeen =
-    firstSeen ?? probe.firstSeenFallback ?? probe.lastHeartbeat;
+    firstSeen ?? probe.firstSeenFallback ?? probe.livenessAt ?? probe.dataAt;
+
+  const ageMinutes =
+    status === "disabled"
+      ? null
+      : ageMinutesFromIso(probe.livenessAt ?? probe.dataAt, nowMs);
 
   return {
     id: probe.id,
     name: probe.name,
+    serviceType: probe.serviceType,
     status,
+    statusReason,
     firstSeen: resolvedFirstSeen,
-    lastHeartbeat: probe.lastHeartbeat,
+    lastHeartbeat: liveness.lastAt,
     ageMinutes,
+    liveness,
+    dataFreshness,
     heartbeatCount24h,
     uptimePercent24h: uptimeFromSparkline(sparkline),
     avgLatencyMs: avgLatencyMs ?? probe.latencyMs ?? null,
@@ -246,25 +358,37 @@ export async function buildPlatformHealth(): Promise<PlatformHealthDTO> {
   const nowIso = new Date(nowMs).toISOString();
   const probes = await probeServices(nowIso);
 
+  const syncProbe = probes.find((p) => p.id === "cortex-sync");
+  const syncDataAge = ageMinutesFromIso(syncProbe?.dataAt ?? null, nowMs);
+  const upstreamSyncCritical =
+    classifyByServiceType(syncDataAge, "continuous") === "critical";
+
+  const services = await Promise.all(
+    probes.map((probe) => buildServiceDto(probe, nowMs, upstreamSyncCritical)),
+  );
+
   await healthEventsRepository.recordBatch(
-    probes.map((probe) => ({
-      service: probe.id,
-      status: statusFromIso(probe.lastHeartbeat, nowMs),
-      latencyMs: probe.latencyMs ?? null,
+    services.map((service) => ({
+      service: service.id,
+      status: eventStatusForRecord(service.status),
+      latencyMs: service.avgLatencyMs,
+      metadata: {
+        serviceType: service.serviceType,
+        statusReason: service.statusReason,
+        livenessAt: service.liveness.lastAt,
+        dataAt: service.dataFreshness?.lastAt ?? service.liveness.lastAt,
+      },
     })),
   );
 
   const pruneBefore = new Date(nowMs - 7 * 86_400_000).toISOString();
   await healthEventsRepository.pruneOlderThan(pruneBefore).catch(() => {});
 
-  const services = await Promise.all(
-    probes.map((probe) => buildServiceDto(probe, nowMs)),
-  );
-
   const summary = {
     healthy: services.filter((s) => s.status === "healthy").length,
     warning: services.filter((s) => s.status === "warning").length,
     critical: services.filter((s) => s.status === "critical").length,
+    disabled: services.filter((s) => s.status === "disabled").length,
   };
 
   return { generatedAt: nowIso, services, summary };

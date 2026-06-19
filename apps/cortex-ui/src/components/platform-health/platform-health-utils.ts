@@ -6,6 +6,7 @@ import type {
   PlatformHealth,
   PlatformHealthStatus,
   PlatformServiceHealth,
+  PlatformServiceStatus,
 } from "./platform-health-types";
 
 export function relativeTime(iso: string | null, nowMs = Date.now()): string {
@@ -27,7 +28,10 @@ export function silenceSeconds(iso: string | null, nowMs = Date.now()): number {
   return Math.max(0, Math.floor((nowMs - Date.parse(iso)) / 1000));
 }
 
-export function statusDotClass(status: PlatformHealthStatus): string {
+export function statusDotClass(status: PlatformServiceStatus): string {
+  if (status === "disabled") {
+    return "bg-zinc-500/60";
+  }
   if (status === "healthy") {
     return "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]";
   }
@@ -44,7 +48,12 @@ export function silenceTone(sec: number): string {
   return "text-rose-400";
 }
 
-export function sparkBarClass(value: number, max: number, status: PlatformHealthStatus): string {
+export function sparkBarClass(
+  value: number,
+  max: number,
+  status: PlatformServiceStatus,
+): string {
+  if (status === "disabled") return "bg-white/10";
   const ratio = max > 0 ? value / max : 0;
   if (ratio === 0) return "bg-white/10";
   if (status === "critical") return "bg-rose-500/80";
