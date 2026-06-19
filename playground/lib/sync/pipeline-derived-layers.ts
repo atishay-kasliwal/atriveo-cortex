@@ -4,6 +4,7 @@
 
 import { isoWeekStart, localDateString } from "@/lib/analytics/aggregator";
 import { computeAndPersistDayAttention } from "@/lib/analytics/attention-db";
+import { computeAndPersistDayScreens } from "@/lib/analytics/screens-db";
 import { rebuildMemorySearchIndex } from "@/lib/memory-search-api";
 import { syncOpenLoopIntelligence } from "@/lib/open-loop-intelligence";
 import { systemRepository } from "@/lib/repositories";
@@ -18,6 +19,7 @@ export const DERIVED_PIPELINE_STAGES = [
   "reviews",
   "search_index",
   "attention",
+  "screens",
   "project_health",
 ] as const;
 
@@ -28,6 +30,7 @@ export type DerivedLayersResult = {
   reviewsUpdated: number;
   indexEntries: number;
   attentionDates: number;
+  screensDates: number;
   healthSnapshots: number;
 };
 
@@ -74,6 +77,12 @@ export async function rebuildDerivedLayers(
   }
   await touchStage(SYNC_KEYS.lastAttentionComputed);
 
+  for (const date of targetDates) {
+    await computeAndPersistDayScreens(date).catch((err) => {
+      console.error(`[pipeline] screens compute failed for ${date}:`, err);
+    });
+  }
+
   const healthReport = await buildProjectsHealth({ persist: true }).catch((err) => {
     console.error("[pipeline] project health persist failed:", err);
     return { projects: [] as Awaited<ReturnType<typeof buildProjectsHealth>>["projects"] };
@@ -87,6 +96,7 @@ export async function rebuildDerivedLayers(
     reviewsUpdated,
     indexEntries: indexed,
     attentionDates: targetDates.length,
+    screensDates: targetDates.length,
     healthSnapshots: healthReport.projects.length,
   };
 }

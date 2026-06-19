@@ -73,6 +73,11 @@ import {
   buildProjectAttentionDetail,
   buildWeekAttention,
 } from "@/lib/analytics/attention-api";
+import {
+  buildDayScreens,
+  buildScreensSummary,
+  buildWeekScreens,
+} from "@/lib/analytics/screens-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
 import { fetchSyncStatus, triggerManualSync } from "@/lib/sync/sync-api";
 import { apiError, apiSuccess } from "./env";
@@ -214,6 +219,39 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       );
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load attention trends", 500);
+    }
+  });
+
+  app.get("/api/screens/day", async (c) => {
+    try {
+      const data = await buildDayScreens(c.req.query("date") ?? null);
+      if (!data) return apiError(c, "No screens data for this date", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load day screens", 500);
+    }
+  });
+
+  app.get("/api/screens/week", async (c) => {
+    try {
+      const data = await buildWeekScreens(c.req.query("start") ?? null);
+      if (!data) return apiError(c, "No screens data for this week", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load week screens", 500);
+    }
+  });
+
+  app.get("/api/screens/summary", async (c) => {
+    try {
+      const data = await buildScreensSummary(
+        c.req.query("start") ?? null,
+        c.req.query("end") ?? null,
+      );
+      if (!data) return apiError(c, "No screens summary for this range", 404);
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load screens summary", 500);
     }
   });
 

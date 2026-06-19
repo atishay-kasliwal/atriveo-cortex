@@ -32,6 +32,11 @@ import {
   fetchDayAttention,
   fetchWeekAttention,
 } from "./attention-adapter";
+import {
+  fetchDayScreens,
+  fetchScreensSummary,
+  fetchWeekScreens,
+} from "./screens-adapter";
 import { fetchMemorySearch } from "./search-adapter";
 import { fetchProjectsHealth, fetchProjectHealthTrends } from "./project-health-adapter";
 import {
@@ -113,5 +118,11 @@ export const api = {
     day: (date?: string) => fetchDayAttention(date),
     week: (start?: string) => fetchWeekAttention(start),
     trends: (start?: string, end?: string) => fetchAttentionTrends(start, end),
+  },
+
+  screens: {
+    day: (date?: string) => fetchDayScreens(date),
+    week: (start?: string) => fetchWeekScreens(start),
+    summary: (start?: string, end?: string) => fetchScreensSummary(start, end),
   },
 };

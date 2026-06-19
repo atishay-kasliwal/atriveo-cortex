@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WeeklyReviewRouteImport } from './routes/weekly-review'
+import { Route as ScreensRouteImport } from './routes/screens'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RecurrenceRouteImport } from './routes/recurrence'
 import { Route as ProjectsRouteImport } from './routes/projects'
@@ -33,6 +34,11 @@ import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 const WeeklyReviewRoute = WeeklyReviewRouteImport.update({
   id: '/weekly-review',
   path: '/weekly-review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScreensRoute = ScreensRouteImport.update({
+  id: '/screens',
+  path: '/screens',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewRoute = ReviewRouteImport.update({
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
+  '/screens': typeof ScreensRoute
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
+  '/screens': typeof ScreensRoute
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
+  '/screens': typeof ScreensRoute
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/recurrence'
     | '/review'
+    | '/screens'
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/recurrence'
     | '/review'
+    | '/screens'
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/recurrence'
     | '/review'
+    | '/screens'
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
@@ -280,6 +292,7 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RecurrenceRoute: typeof RecurrenceRoute
   ReviewRoute: typeof ReviewRoute
+  ScreensRoute: typeof ScreensRoute
   WeeklyReviewRoute: typeof WeeklyReviewRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
   DebugTelemetryRoute: typeof DebugTelemetryRoute
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       path: '/weekly-review'
       fullPath: '/weekly-review'
       preLoaderRoute: typeof WeeklyReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/screens': {
+      id: '/screens'
+      path: '/screens'
+      fullPath: '/screens'
+      preLoaderRoute: typeof ScreensRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/review': {
@@ -490,6 +510,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRouteWithChildren,
   RecurrenceRoute: RecurrenceRoute,
   ReviewRoute: ReviewRoute,
+  ScreensRoute: ScreensRoute,
   WeeklyReviewRoute: WeeklyReviewRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
   DebugTelemetryRoute: DebugTelemetryRoute,

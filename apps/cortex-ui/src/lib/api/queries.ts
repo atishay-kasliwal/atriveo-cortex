@@ -30,6 +30,10 @@ export const qk = {
   attentionWeek: (start: string) => ["attention", "week", start] as const,
   attentionTrends: (start?: string, end?: string) =>
     ["attention", "trends", start ?? "default", end ?? "default"] as const,
+  screensDay: (date: string) => ["screens", "day", date] as const,
+  screensWeek: (start: string) => ["screens", "week", start] as const,
+  screensSummary: (start?: string, end?: string) =>
+    ["screens", "summary", start ?? "default", end ?? "default"] as const,
   recurrence: ["recurrence"] as const,
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
@@ -232,5 +236,26 @@ export const attentionTrendsQuery = (start?: string, end?: string) =>
   queryOptions({
     queryKey: qk.attentionTrends(start, end),
     queryFn: () => api.attention.trends(start, end),
+    staleTime: STALE,
+  });
+
+export const screensDayQuery = (date: string) =>
+  queryOptions({
+    queryKey: qk.screensDay(date),
+    queryFn: () => api.screens.day(date),
+    staleTime: STALE,
+  });
+
+export const screensWeekQuery = (weekStart: string) =>
+  queryOptions({
+    queryKey: qk.screensWeek(weekStart),
+    queryFn: () => api.screens.week(weekStart),
+    staleTime: STALE,
+  });
+
+export const screensSummaryQuery = (start?: string, end?: string) =>
+  queryOptions({
+    queryKey: qk.screensSummary(start, end),
+    queryFn: () => api.screens.summary(start, end),
     staleTime: STALE,
   });

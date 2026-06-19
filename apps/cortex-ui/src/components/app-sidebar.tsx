@@ -19,6 +19,7 @@ import {
   Activity,
   HeartPulse,
   Crosshair,
+  Monitor,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -75,6 +76,7 @@ const nav = [
     group: "Debug",
     items: [
       { title: "Activity Log", url: "/activity", icon: Activity },
+      { title: "Screens", url: "/screens", icon: Monitor },
       { title: "Telemetry", url: "/debug/telemetry", icon: Activity },
     ],
   },

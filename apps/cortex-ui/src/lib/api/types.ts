@@ -431,6 +431,88 @@ export type WeekAttention = {
   dailyScores: Array<{ date: string; score: number }>;
 };
 
+export type MonitorIdentity = {
+  monitorId: string;
+  displayName: string;
+  resolution: string | null;
+};
+
+export type MonitorTimelineBlock = {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  durationSec: number;
+  primaryApp: string;
+  primaryDomain: string | null;
+  windowTitle: string | null;
+  category: string;
+  label: string;
+  confidence: number;
+};
+
+export type MonitorDailySummary = {
+  monitorId: string;
+  displayName: string;
+  totalSec: number;
+  topApps: Array<{ app: string; durationSec: number }>;
+  topWebsites: Array<{ domain: string; durationSec: number }>;
+  topCategories: Array<{ category: string; label: string; durationSec: number }>;
+};
+
+export type MonitorHeatmapRow = {
+  monitorId: string;
+  displayName: string;
+  topApp: string;
+  topCategory: string;
+  durationSec: number;
+  utilizationPercent: number;
+};
+
+export type MonitorInsights = {
+  mostUsedMonitor: { monitorId: string; displayName: string; totalSec: number } | null;
+  mostProductiveMonitor: { monitorId: string; displayName: string; productiveSec: number } | null;
+  mostDistractingMonitor: { monitorId: string; displayName: string; entertainmentSec: number } | null;
+  researchMonitor: { monitorId: string; displayName: string; researchSec: number } | null;
+  entertainmentMonitor: { monitorId: string; displayName: string; entertainmentSec: number } | null;
+};
+
+export type DayScreens = {
+  date: string;
+  generatedAt: ISODate;
+  monitors: MonitorIdentity[];
+  timelines: Record<string, MonitorTimelineBlock[]>;
+  dailySummary: MonitorDailySummary[];
+  heatmap: MonitorHeatmapRow[];
+  insights: MonitorInsights;
+};
+
+export type WeekScreens = {
+  weekStart: string;
+  weekEnd: string;
+  generatedAt: ISODate;
+  days: DayScreens[];
+  aggregate: {
+    totalSec: number;
+    topApps: Array<{ app: string; durationSec: number }>;
+    topWebsites: Array<{ domain: string; durationSec: number }>;
+    topCategories: Array<{ category: string; label: string; durationSec: number }>;
+  };
+  monitorTotals: Array<{ monitorId: string; displayName: string; totalSec: number }>;
+};
+
+export type ScreensSummary = {
+  startDate: string;
+  endDate: string;
+  generatedAt: ISODate;
+  activeDays: number;
+  monitorCount: number;
+  totalVisibleSec: number;
+  insights: MonitorInsights;
+  topMonitors: Array<{ monitorId: string; displayName: string; totalSec: number }>;
+  topApps: Array<{ app: string; durationSec: number }>;
+  signals: string[];
+};
+
 export type ProjectAttentionDetail = {
   project: string;
   startDate: string;
