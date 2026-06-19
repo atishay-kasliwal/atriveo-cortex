@@ -37,6 +37,26 @@ export type StoredScreensPayload = {
   dailySummary: MonitorDailySummary[];
   heatmap: MonitorHeatmapRow[];
   insights: MonitorInsights;
+  interactionTimelines?: Record<
+    string,
+    Array<{
+      id: string;
+      startedAt: string;
+      endedAt: string;
+      durationSec: number;
+      primaryApp: string;
+      primaryDomain: string | null;
+      windowTitle: string | null;
+      category: string;
+      label: string;
+      confidence: number;
+    }>
+  >;
+  interactionSummary?: Array<{
+    monitorId: string;
+    displayName: string;
+    interactionSec: number;
+  }>;
 };
 
 export class ScreensRepository {

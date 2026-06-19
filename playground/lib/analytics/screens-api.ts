@@ -12,7 +12,8 @@ import {
   aggregateScreensSummaries,
   buildScreensIntelligence,
   buildMonitorInsights,
-  dedupeCrossMonitorSegments,
+  bridgeSegmentGaps,
+  dedupeMirroredSegments,
   rollupMonitorSummaries,
   type MonitorDailySummary,
   type MonitorHeatmapRow,
@@ -28,6 +29,8 @@ import {
   buildScreensDecisionView,
   type ScreensDecisionView,
 } from "./screens-decision";
+import { buildMonitorInteractionSegments, rollupInteractionByMonitor } from "./monitor-interaction";
+import { getMonitorRoleMap } from "./monitor-roles-api";
 import { screensRepository } from "@/lib/repositories/screens-repository";
 import { fetchFramesForWindow } from "@/lib/screenpipe-db";
 import { applyMonitorOverridesToDay } from "./monitor-names-api";
@@ -40,6 +43,7 @@ export type DayScreensDTO = {
   date: string;
   generatedAt: string;
   monitors: MonitorIdentity[];
+  /** Layer A — display-visible timelines per monitor */
   timelines: Record<
     string,
     Array<{
@@ -55,6 +59,18 @@ export type DayScreensDTO = {
       confidence: number;
     }>
   >;
+  /** Layer B — user focus / interaction per monitor */
+  interactionTimelines: DayScreensDTO["timelines"];
+  interactionSummary: Array<{
+    monitorId: string;
+    displayName: string;
+    interactionSec: number;
+  }>;
+  monitorRoles: Array<{
+    monitorId: string;
+    roleLabel: string;
+    categoryMix: Array<{ category: string; label: string; percent: number }>;
+  }>;
   dailySummary: MonitorSummaryDTO[];
   heatmap: MonitorHeatmapRow[];
   insights: MonitorInsights;
@@ -154,7 +170,9 @@ function postProcessStoredDay(
   insights: MonitorInsights;
   timelines: DayScreensDTO["timelines"];
 } {
-  const dedupedSegments = dedupeCrossMonitorSegments(rowsToSegments(rows));
+  const dedupedSegments = bridgeSegmentGaps(
+    dedupeMirroredSegments(rowsToSegments(rows)),
+  );
   const dailySummary = rollupMonitorSummaries(dedupedSegments);
   const monitors = payload.monitors.map((monitor) => {
     const summary = dailySummary.find((row) => row.monitorId === monitor.monitorId);
@@ -185,6 +203,35 @@ function postProcessStoredDay(
     insights: buildMonitorInsights(dailySummary),
     timelines: rowsToTimelines(dedupedSegments),
   };
+}
+
+async function buildInteractionLayer(
+  date: string,
+  payload: NonNullable<Awaited<ReturnType<typeof loadDayScreensPayload>>>,
+): Promise<{
+  interactionTimelines: DayScreensDTO["interactionTimelines"];
+  interactionSummary: DayScreensDTO["interactionSummary"];
+}> {
+  if (payload.interactionTimelines && payload.interactionSummary) {
+    return {
+      interactionTimelines: payload.interactionTimelines,
+      interactionSummary: payload.interactionSummary,
+    };
+  }
+
+  const { start, end } = localDayBounds(date);
+  const frames = fetchFramesForWindow(start, end);
+  const interactionSegments = buildMonitorInteractionSegments(frames, end);
+  const interactionTimelines = rowsToTimelines(interactionSegments);
+  const interactionSummary = rollupInteractionByMonitor(interactionSegments).map((row) => {
+    const monitor = payload.monitors.find((m) => m.monitorId === row.monitorId);
+    return {
+      ...row,
+      displayName: monitor?.displayName ?? row.displayName,
+    };
+  });
+
+  return { interactionTimelines, interactionSummary };
 }
 
 async function loadOrComputeDay(date: string): Promise<DayScreensDTO | null> {
@@ -222,11 +269,26 @@ async function loadOrComputeDay(date: string): Promise<DayScreensDTO | null> {
       row.displayName,
   }));
 
+  const roleMap = await getMonitorRoleMap();
+  const monitorRoles = monitors.map((monitor) => {
+    const role = roleMap.get(monitor.monitorId);
+    return {
+      monitorId: monitor.monitorId,
+      roleLabel: role?.roleLabel ?? "Mixed Monitor",
+      categoryMix: role?.categoryMix ?? [],
+    };
+  });
+
+  const interaction = await buildInteractionLayer(date, payload);
+
   const base = {
     date,
     generatedAt: new Date().toISOString(),
     monitors,
     timelines: processed.timelines,
+    interactionTimelines: interaction.interactionTimelines,
+    interactionSummary: interaction.interactionSummary,
+    monitorRoles,
     dailySummary,
     heatmap,
     insights: processed.insights,
@@ -239,6 +301,8 @@ async function loadOrComputeDay(date: string): Promise<DayScreensDTO | null> {
       monitors: base.monitors,
       timelines: base.timelines,
       dailySummary: base.dailySummary,
+      monitorRoles,
+      interactionSummary: base.interactionSummary,
     }),
   };
 }

@@ -550,6 +550,17 @@ export type DayScreens = {
   generatedAt: ISODate;
   monitors: MonitorIdentity[];
   timelines: Record<string, MonitorTimelineBlock[]>;
+  interactionTimelines: Record<string, MonitorTimelineBlock[]>;
+  interactionSummary: Array<{
+    monitorId: string;
+    displayName: string;
+    interactionSec: number;
+  }>;
+  monitorRoles: Array<{
+    monitorId: string;
+    roleLabel: string;
+    categoryMix: Array<{ category: string; label: string; percent: number }>;
+  }>;
   dailySummary: MonitorDailySummary[];
   heatmap: MonitorHeatmapRow[];
   insights: MonitorInsights;
@@ -583,6 +594,7 @@ export type ScreensDecisionView = {
     role: MonitorRoleLabel;
     primaryCategory: string;
     totalSec: number;
+    interactionSec: number;
     topApps: Array<{ app: string; durationSec: number }>;
     topWebsites: Array<{ domain: string; durationSec: number }>;
     categories: Array<{ category: string; label: string; percent: number; durationSec: number }>;
@@ -605,6 +617,16 @@ export type ScreensDecisionView = {
       } | null>;
     }
   >;
+  monitorRoles: Array<{
+    monitorId: string;
+    roleLabel: string;
+    categoryMix: Array<{ category: string; label: string; percent: number }>;
+  }>;
+  interactionSummary: Array<{
+    monitorId: string;
+    displayName: string;
+    interactionSec: number;
+  }>;
 };
 
 export type WeekScreens = {

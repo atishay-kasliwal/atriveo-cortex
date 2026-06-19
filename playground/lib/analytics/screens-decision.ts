@@ -40,6 +40,7 @@ export type MonitorCardView = {
   role: MonitorRoleLabel;
   primaryCategory: string;
   totalSec: number;
+  interactionSec: number;
   topApps: Array<{ app: string; durationSec: number }>;
   topWebsites: Array<{ domain: string; durationSec: number }>;
   categories: Array<{ category: string; label: string; percent: number; durationSec: number }>;
@@ -68,6 +69,16 @@ export type ScreensDecisionView = {
   monitorCards: MonitorCardView[];
   snapshotSlots: string[];
   snapshots: Record<string, ScreenSnapshot>;
+  monitorRoles: Array<{
+    monitorId: string;
+    roleLabel: string;
+    categoryMix: Array<{ category: string; label: string; percent: number }>;
+  }>;
+  interactionSummary: Array<{
+    monitorId: string;
+    displayName: string;
+    interactionSec: number;
+  }>;
 };
 
 export type ScreensDecisionInput = {
@@ -75,6 +86,16 @@ export type ScreensDecisionInput = {
   monitors: MonitorIdentity[];
   timelines: Record<string, TimelineBlockInput[]>;
   dailySummary: MonitorDailySummary[];
+  monitorRoles?: Array<{
+    monitorId: string;
+    roleLabel: string;
+    categoryMix: Array<{ category: string; label: string; percent: number }>;
+  }>;
+  interactionSummary?: Array<{
+    monitorId: string;
+    displayName: string;
+    interactionSec: number;
+  }>;
 };
 
 const COMPARE_CATEGORIES = [
@@ -260,11 +281,17 @@ export function resolveScreenSnapshot(
 
 function buildMonitorCards(input: ScreensDecisionInput): MonitorCardView[] {
   const summaryById = new Map(input.dailySummary.map((s) => [s.monitorId, s]));
+  const roleById = new Map((input.monitorRoles ?? []).map((r) => [r.monitorId, r]));
+  const interactionById = new Map(
+    (input.interactionSummary ?? []).map((r) => [r.monitorId, r.interactionSec]),
+  );
 
   return input.monitors.map((monitor) => {
     const summary = summaryById.get(monitor.monitorId);
+    const roleProfile = roleById.get(monitor.monitorId);
     const blocks = input.timelines[monitor.monitorId] ?? [];
     const totalSec = summary?.totalSec ?? 0;
+    const interactionSec = interactionById.get(monitor.monitorId) ?? 0;
     const categories = (summary?.topCategories ?? []).map((cat) => ({
       category: cat.category,
       label: cat.label,
@@ -272,10 +299,12 @@ function buildMonitorCards(input: ScreensDecisionInput): MonitorCardView[] {
       percent: totalSec > 0 ? Math.round((cat.durationSec / totalSec) * 100) : 0,
     }));
 
+    const stableRole = roleProfile?.roleLabel ?? (summary ? inferMonitorRole(summary) : "Mixed Use");
+
     return {
       monitorId: monitor.monitorId,
       displayName: monitor.displayName,
-      role: summary ? inferMonitorRole(summary) : "Mixed Use",
+      role: stableRole as MonitorRoleLabel,
       primaryCategory: categories[0]?.label ?? "Other",
       totalSec,
       topApps: (summary?.topApps ?? []).slice(0, 3),
@@ -283,6 +312,7 @@ function buildMonitorCards(input: ScreensDecisionInput): MonitorCardView[] {
       categories: categories.slice(0, 5),
       ribbon: condenseRibbon(input.date, blocks),
       segmentCount: blocks.length,
+      interactionSec,
     };
   });
 }
@@ -311,5 +341,7 @@ export function buildScreensDecisionView(
     monitorCards: buildMonitorCards(input),
     snapshotSlots,
     snapshots,
+    monitorRoles: input.monitorRoles ?? [],
+    interactionSummary: input.interactionSummary ?? [],
   };
 }

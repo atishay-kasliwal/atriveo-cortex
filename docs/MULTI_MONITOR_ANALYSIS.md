@@ -467,3 +467,19 @@ The product principle in the decision memo is **correct** and **not yet implemen
 - Decision memo: `docs/MULTI_MONITOR_ANALYTICS_DECISION_MEMO.md`
 - Phase 15.6 shipped audit: `MULTI_MONITOR_INTELLIGENCE_REPORT.md`
 - UX targets: `SCREENS_UX_REDESIGN_REPORT.md`
+
+---
+
+## 15. Implementation status (2026-06-19)
+
+| Phase | Status | Location |
+|-------|--------|----------|
+| 0 Analysis | Done | This document |
+| 1 ScreenPipe capture | Done | `Screenpipe/.../event_driven_capture.rs` — `BackgroundVisibility`, Cold 60s / Warm 30s heartbeat |
+| 2 Layer A/B | Done | `monitor-interaction.ts`, API `interactionTimelines` + `interactionSummary` |
+| 3 Mirror dedupe | Done | `dedupeMirroredSegments` (90% overlap), `bridgeSegmentGaps` |
+| 4 Rolling roles | Done | `monitor_role_profiles`, `monitor-roles-api.ts` |
+| 5 Timeline UI | Done | `multi-monitor-timeline.tsx` |
+| 6 Migration/tests | Done | `migrate-monitor-analytics-v2.ts`, `screens-v2.test.ts` |
+
+Rebuild the ScreenPipe desktop app on Mac for Phase 1 capture changes. Cortex worker deploys Phases 2–6.

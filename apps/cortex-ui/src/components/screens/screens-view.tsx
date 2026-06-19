@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScreensSnapshotPanel } from "@/components/screens/screens-snapshot-panel";
 import { ScreensPageHeader } from "@/components/screens/screens-page-header";
+import { MultiMonitorTimeline } from "@/components/screens/multi-monitor-timeline";
 import { MonitorNameEditor } from "@/components/screens/monitor-name-editor";
 import {
   Sheet,
@@ -158,7 +159,10 @@ function MonitorCard({
               className="font-display text-sm font-normal"
             />
             <p className="mt-0.5 text-[12px] text-muted-foreground">
-              {card.role} · {fmtDuration(card.totalSec)} active
+              {card.role} · visible {fmtDuration(card.totalSec)}
+              {card.interactionSec > 0
+                ? ` · interaction ${fmtDuration(card.interactionSec)}`
+                : ""}
             </p>
           </div>
           <Badge variant="secondary" className="shrink-0 gap-1.5 text-[10px]">
@@ -313,6 +317,7 @@ function DayScreensContent({
 
   return (
     <div className="space-y-6">
+      <MultiMonitorTimeline data={data} />
       <CategoryComparisonSection rows={data.decision.categoryComparison} />
       <SnapshotSection decision={data.decision} />
       <div className="grid gap-4 lg:grid-cols-2">

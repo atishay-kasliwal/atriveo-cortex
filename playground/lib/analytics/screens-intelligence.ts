@@ -91,7 +91,7 @@ function deviceKey(deviceName: string | null | undefined): string {
 }
 
 const CROSS_MONITOR_DEDUPE_WINDOW_MS = 45_000;
-const SEGMENT_OVERLAP_RATIO = 0.45;
+const MIRROR_OVERLAP_RATIO = 0.9;
 
 function frameFingerprint(frame: ScreenFrame): string {
   const app = normalizeAppName(frame.app_name);
@@ -214,8 +214,8 @@ export function dedupeCrossMonitorFrames(frames: ScreenFrame[]): ScreenFrame[] {
   );
 }
 
-/** Remove overlapping duplicate segments so each moment counts on one display. */
-export function dedupeCrossMonitorSegments(
+/** Remove overlapping duplicate segments only when displays are truly mirrored. */
+export function dedupeMirroredSegments(
   segments: MonitorTimelineSegment[],
 ): MonitorTimelineSegment[] {
   if (segments.length <= 1) return segments;
@@ -270,7 +270,7 @@ export function dedupeCrossMonitorSegments(
         if (overlapMs <= 0) continue;
 
         const shorterMs = Math.min(a.durationSec, b.durationSec) * 1000;
-        if (shorterMs <= 0 || overlapMs / shorterMs < SEGMENT_OVERLAP_RATIO) {
+        if (shorterMs <= 0 || overlapMs / shorterMs < MIRROR_OVERLAP_RATIO) {
           continue;
         }
 
@@ -282,6 +282,38 @@ export function dedupeCrossMonitorSegments(
   }
 
   return sorted.filter((_, idx) => !dropped.has(idx));
+}
+
+/** @deprecated Use dedupeMirroredSegments — kept for transitional imports */
+export const dedupeCrossMonitorSegments = dedupeMirroredSegments;
+
+const MAX_BRIDGE_GAP_MS = 120_000;
+
+/** Extend segments across sparse background samples when content is unchanged. */
+export function bridgeSegmentGaps(
+  segments: MonitorTimelineSegment[],
+): MonitorTimelineSegment[] {
+  const sorted = [...segments].sort(
+    (a, b) => Date.parse(a.startTime) - Date.parse(b.startTime),
+  );
+  const bridged: MonitorTimelineSegment[] = [];
+
+  for (const seg of sorted) {
+    const last = bridged[bridged.length - 1];
+    if (
+      last &&
+      last.monitorId === seg.monitorId &&
+      segmentFingerprint(last) === segmentFingerprint(seg) &&
+      Date.parse(seg.startTime) - Date.parse(last.endTime) <= MAX_BRIDGE_GAP_MS
+    ) {
+      last.endTime = seg.endTime;
+      last.durationSec += seg.durationSec;
+      continue;
+    }
+    bridged.push({ ...seg });
+  }
+
+  return bridged;
 }
 
 /** ScreenPipe uses `device_name` (e.g. monitor_0, Display 1) — not a separate monitor_id column. */
@@ -619,8 +651,10 @@ export function buildScreensIntelligence(
   }
 
   const dedupedFrames = dedupeCrossMonitorFrames(frames);
-  const segments = dedupeCrossMonitorSegments(
-    buildPerMonitorSegments(dedupedFrames, identities, windowEnd),
+  const segments = bridgeSegmentGaps(
+    dedupeMirroredSegments(
+      buildPerMonitorSegments(dedupedFrames, identities, windowEnd),
+    ),
   );
   const dailySummary = rollupMonitorSummaries(segments);
   const monitors = [...identities.values()].sort((a, b) =>
