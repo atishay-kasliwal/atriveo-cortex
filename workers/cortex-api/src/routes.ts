@@ -765,6 +765,15 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/platform/health", async (c) => {
+    try {
+      const { buildPlatformHealth } = await import("@/lib/platform/platform-health-api");
+      return apiSuccess(c, await buildPlatformHealth());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load platform health", 500);
+    }
+  });
+
   app.get("/api/sync", async (c) => {
     try {
       return apiSuccess(c, await fetchSyncStatus());

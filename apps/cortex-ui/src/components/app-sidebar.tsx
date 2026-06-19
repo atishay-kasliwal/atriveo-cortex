@@ -82,6 +82,7 @@ const nav = [
       { title: "Truth Audit", url: "/audit", icon: ClipboardCheck },
       { title: "Accuracy", url: "/accuracy", icon: Gauge },
       { title: "Telemetry", url: "/debug/telemetry", icon: Activity },
+      { title: "Platform Health", url: "/platform-health", icon: HeartPulse },
     ],
   },
 ];
