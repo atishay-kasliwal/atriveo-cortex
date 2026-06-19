@@ -15,6 +15,7 @@
     "db:verify": "tsx scripts/verify-neon.ts",
     "sync:screenpipe": "tsx scripts/sync-screenpipe.ts",
     "capture:watermark": "tsx scripts/capture-watermark.ts",
+    "capture:recover": "tsx scripts/capture-stall-recovery.ts",
     "backfill:analytics": "tsx scripts/backfill-analytics.ts",
     "audit:history": "tsx scripts/audit-history.ts",
     "migrate:idle": "tsx scripts/migrate-idle-detection.ts",

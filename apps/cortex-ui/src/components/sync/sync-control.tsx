@@ -12,7 +12,9 @@ import {
   fetchSyncStatus,
   formatDurationMs,
   formatLastSyncAt,
-  healthSignalStyle,
+  freshnessSlaStyle,
+  headerHealthChip,
+  isLiveMemoryJob,
   memoryFreshnessStyle,
   readCachedSyncStatus,
   syncPipelineLabels,
@@ -22,6 +24,7 @@ import {
   type ManualSyncResult,
   type SyncUiState,
 } from "@/lib/api/sync-adapter";
+import { CaptureDoctorLink } from "@/components/sync/capture-doctor-view";
 import { qk } from "@/lib/api/queries";
 import { isRetryableApiError } from "@/lib/api/cortex-fetch";
 
@@ -83,7 +86,10 @@ export function SyncControl() {
     staleTime: 15_000,
     retry: (failureCount, error) => failureCount < 3 && isRetryableApiError(error),
     placeholderData: (previous) => previous ?? readCachedSyncStatus(),
-    refetchInterval: uiState === "refreshing" ? 2000 : 30_000,
+    refetchInterval: (query) => {
+      const job = query.state.data?.agentHealth?.activeJob;
+      return isLiveMemoryJob(job) ? 2_000 : 30_000;
+    },
   });
 
   const refreshMutation = useMutation({
@@ -118,6 +124,9 @@ export function SyncControl() {
         duration: 8000,
       });
     },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: SYNC_STATUS_KEY });
+    },
   });
 
   useEffect(() => {
@@ -131,54 +140,69 @@ export function SyncControl() {
   const freshness = status?.memoryFreshness;
   const score = freshness?.score ?? null;
   const statusLoading = statusQuery.isLoading && !status;
-  const statusUnavailable = statusQuery.isError && !status;
   const activeJob = agentHealth?.activeJob;
+  const activeJobLive = isLiveMemoryJob(activeJob);
+  const isRefreshing = refreshMutation.isPending || activeJobLive;
   const pipelineStatus =
-    uiState === "refreshing" || activeJob
+    isRefreshing
       ? "syncing"
       : statusLoading
         ? "syncing"
-        : (status?.pipelineStatus ??
-          (statusUnavailable ? readCachedSyncStatus()?.pipelineStatus : undefined) ??
-          (statusUnavailable ? "stale" : "offline"));
+        : (status?.pipelineStatus ?? readCachedSyncStatus()?.pipelineStatus ?? "offline");
   const pipelineStyle = syncPipelineStyles[pipelineStatus];
-  const isRefreshing =
-    uiState === "refreshing" || refreshMutation.isPending || Boolean(activeJob);
-  const canRefresh = status?.canRefreshMemory !== false && !activeJob;
+  const canRefresh = status?.canRefreshMemory !== false && !isRefreshing;
 
-  const captureLabel =
-    agentHealth?.capture.label ??
-    (status?.lastFrameAt ? `Last capture ${formatLastSyncAt(status.lastFrameAt)}` : "Capture unknown");
-  const syncLabel = agentHealth?.sync.label ?? "Sync unknown";
-  const activityLabel =
-    agentHealth?.data.latestActivityLabel ?? "Latest activity unknown";
+  const captureSla = agentHealth?.capture.slaLevel ?? "offline";
+  const syncSla = agentHealth?.sync.slaLevel ?? "offline";
+  const captureAt = agentHealth?.capture.lastCaptureAt ?? status?.lastFrameAt ?? null;
+  const syncAt = agentHealth?.sync.lastSyncAt ?? status?.lastSyncAt ?? null;
+  const captureChip = headerHealthChip("capture", captureSla, captureAt);
+  const syncChip = headerHealthChip("sync", syncSla, syncAt);
+  const showDiagnose = captureSla === "stale" || captureSla === "offline";
+
+  const pipelineLabel = isRefreshing
+    ? activeJob?.currentStage
+      ? `Refreshing · ${activeJob.currentStage}`
+      : "Refreshing"
+    : statusLoading
+      ? "Loading"
+      : syncPipelineLabels[pipelineStatus];
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
-      <div className="hidden flex-col items-end gap-0.5 text-right sm:flex">
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${pipelineStyle.dot}`}
-            aria-hidden
-          />
-          <span className={`text-[11px] font-medium ${pipelineStyle.text}`}>
-            {isRefreshing ? "Refreshing" : statusLoading ? "Loading" : syncPipelineLabels[pipelineStatus]}
+      <div className="hidden items-center gap-2 text-[11px] md:flex">
+        <span className={`inline-flex items-center gap-1.5 font-medium ${pipelineStyle.text}`}>
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pipelineStyle.dot}`} aria-hidden />
+          {pipelineLabel}
+        </span>
+        {score != null ? (
+          <span className={`font-medium tabular-nums ${memoryFreshnessStyle(score)}`}>
+            {score}%
           </span>
-          {score != null ? (
-            <span className={`text-[11px] font-medium ${memoryFreshnessStyle(score)}`}>
-              · Memory {score}%
+        ) : null}
+        {!statusLoading && status ? (
+          <>
+            <span className="text-border" aria-hidden>
+              ·
             </span>
-          ) : null}
-        </div>
-        <p className={`text-[10px] ${healthSignalStyle[agentHealth?.capture.status ?? "unknown"]}`}>
-          Capture · {captureLabel}
-        </p>
-        <p className={`text-[10px] ${healthSignalStyle[agentHealth?.sync.status ?? "unknown"]}`}>
-          Sync · {syncLabel}
-        </p>
-        <p className="text-[10px] text-muted-foreground">{activityLabel}</p>
-        {agentHealth?.data.emptyTodayMessage ? (
-          <p className="text-[10px] text-muted-foreground">{agentHealth.data.emptyTodayMessage}</p>
+            <span className={`whitespace-nowrap ${freshnessSlaStyle[captureSla]}`}>
+              {captureChip}
+            </span>
+            <span className="text-border" aria-hidden>
+              ·
+            </span>
+            <span className={`whitespace-nowrap ${freshnessSlaStyle[syncSla]}`}>
+              {syncChip}
+            </span>
+            {showDiagnose ? (
+              <>
+                <span className="text-border" aria-hidden>
+                  ·
+                </span>
+                <CaptureDoctorLink className="whitespace-nowrap text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline" />
+              </>
+            ) : null}
+          </>
         ) : null}
       </div>
       <Button
@@ -197,7 +221,8 @@ export function SyncControl() {
         ) : (
           <RefreshCw className="h-3.5 w-3.5" />
         )}
-        {isRefreshing ? "Refreshing…" : "Refresh Memory"}
+        <span className="hidden sm:inline">{isRefreshing ? "Refreshing…" : "Refresh Memory"}</span>
+        <span className="sm:hidden">{isRefreshing ? "…" : "Refresh"}</span>
       </Button>
     </div>
   );

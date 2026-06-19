@@ -73,6 +73,7 @@ sync_log "Working directory: $(pwd)"
 
 {
   echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync start ==="
+  npm run capture:recover || true
   npm run capture:watermark || true
   npm run sync:screenpipe
   echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync done (exit $?) ==="

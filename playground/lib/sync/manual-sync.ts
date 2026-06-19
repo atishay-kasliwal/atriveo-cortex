@@ -7,7 +7,6 @@ import { evaluateCapturePipeline } from "./capture-pipeline-health";
 import {
   freshnessLabelFromScore,
   getMemoryFreshnessScore,
-  pipelineStatusFromScore,
   recommendedActionFromScore,
 } from "./memory-freshness";
 import { assessRefreshCapability, runMemoryRefresh } from "./memory-refresh";
@@ -54,7 +53,7 @@ export async function getManualSyncStatus(): Promise<SyncStatusResponse> {
   });
 
   const hasAnyMemory = capability.hasCloudMemory;
-  const pipelineStatus = pipelineStatusFromScore(memoryFreshness.score, hasAnyMemory);
+  const pipelineStatus = pipeline.pipelineStatus;
   const lastUpdatedAt =
     memoryFreshness.lastCaptureAt ??
     memoryFreshness.lastSyncAt ??
@@ -97,6 +96,9 @@ export async function getManualSyncStatus(): Promise<SyncStatusResponse> {
             status: agentHealth.activeJob.status,
             estimatedWorkUnits: agentHealth.activeJob.estimatedWorkUnits,
             stagesCompleted: agentHealth.activeJob.stagesCompleted,
+            currentStage: agentHealth.activeJob.currentStage,
+            startedAt: agentHealth.activeJob.startedAt,
+            stageMetrics: agentHealth.activeJob.stageMetrics,
           }
         : null,
     },

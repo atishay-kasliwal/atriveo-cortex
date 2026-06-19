@@ -54,11 +54,15 @@ export type SyncStatusResponse = {
       label: string;
       lastCaptureAt: string | null;
       agentOnline: boolean;
+      slaLevel: "fresh" | "delayed" | "stale" | "offline";
+      slaLabel: string;
     };
     sync: {
       status: "online" | "degraded" | "offline" | "unknown";
       label: string;
       lastSyncAt: string | null;
+      slaLevel: "fresh" | "delayed" | "stale" | "offline";
+      slaLabel: string;
     };
     data: {
       latestActivityAt: string | null;
@@ -72,6 +76,9 @@ export type SyncStatusResponse = {
       status: string;
       estimatedWorkUnits: number;
       stagesCompleted: string[];
+      currentStage: string | null;
+      startedAt: string | null;
+      stageMetrics: Record<string, { startedAt: string; finishedAt?: string; durationMs?: number }>;
     } | null;
   };
 };
@@ -82,21 +89,27 @@ export type MemoryJobEnqueueResponse = {
   status: "queued";
   estimatedWorkUnits: number;
   message: string;
+  duplicate?: boolean;
 };
 
 export type MemoryJobStatusResponse = {
   id: string;
   status: string;
   mode: string | null;
+  jobKey: string | null;
+  currentStage: string | null;
   estimatedWorkUnits: number;
   framesProcessed: number;
   recordsImported: number;
   reviewsUpdated: number;
   durationMs: number | null;
   stagesCompleted: string[];
+  stageMetrics: Record<string, { startedAt: string; finishedAt?: string; durationMs?: number }>;
+  error: string | null;
+  errorStack: string | null;
+  retryCount: number;
   userMessage: string | null;
   recommendedAction: string | null;
-  error: string | null;
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;

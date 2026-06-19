@@ -88,7 +88,7 @@ import {
   buildClassificationAccuracyReport,
 } from "@/lib/analytics/accuracy-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
-import { fetchSyncStatus, fetchMemoryJob, processMemoryJob, triggerMemoryJobEnqueue } from "@/lib/sync/sync-api";
+import { fetchSyncStatus, fetchMemoryJob, fetchCaptureDoctor, processMemoryJob, triggerMemoryJobEnqueue, triggerMemoryJobRetry } from "@/lib/sync/sync-api";
 import { apiError, apiErrorFromException, apiSuccess } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
@@ -773,6 +773,14 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/sync/capture-doctor", async (c) => {
+    try {
+      return apiSuccess(c, await fetchCaptureDoctor());
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to run capture diagnostics", 500);
+    }
+  });
+
   app.post("/api/sync", async (c) => {
     try {
       const enqueued = await triggerMemoryJobEnqueue();
@@ -804,6 +812,28 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, job);
     } catch (e) {
       return apiErrorFromException(c, e, "Failed to load memory job", 500);
+    }
+  });
+
+  app.post("/api/sync/jobs/:id/retry", async (c) => {
+    try {
+      const id = c.req.param("id");
+      const existing = await fetchMemoryJob(id);
+      if (!existing) return apiError(c, "Job not found", 404);
+      const enqueued = await triggerMemoryJobRetry(id);
+      const ctx = c.executionCtx;
+      if (ctx) {
+        ctx.waitUntil(
+          processMemoryJob(enqueued.jobId).catch((err) => {
+            console.error("[memory-job] retry processing failed:", err);
+          }),
+        );
+      } else {
+        void processMemoryJob(enqueued.jobId);
+      }
+      return apiSuccess(c, enqueued, 202);
+    } catch (e) {
+      return apiErrorFromException(c, e, "Couldn't retry memory job", 500);
     }
   });
 }

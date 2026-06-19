@@ -12,6 +12,13 @@ import { memoryJobRepository } from "@/lib/repositories/memory-job-repository";
 import { systemRepository } from "@/lib/repositories";
 import { SYNC_KEYS, SYNC_STALE_MS, CAPTURE_STALE_MS } from "./sync-keys";
 import { getSyncStatus } from "./sync-status";
+import {
+  classifyFreshnessSla,
+  freshnessSlaLabel,
+  minutesSince,
+  relativeTimeLabel,
+  type FreshnessSlaLevel,
+} from "./freshness-sla";
 
 export type HealthSignal = "online" | "degraded" | "offline" | "unknown";
 
@@ -20,12 +27,16 @@ export type CaptureHealthView = {
   label: string;
   lastCaptureAt: string | null;
   agentOnline: boolean;
+  slaLevel: FreshnessSlaLevel;
+  slaLabel: string;
 };
 
 export type SyncHealthView = {
   status: HealthSignal;
   label: string;
   lastSyncAt: string | null;
+  slaLevel: FreshnessSlaLevel;
+  slaLabel: string;
 };
 
 export type DataFreshnessView = {
@@ -43,27 +54,19 @@ export type AgentHealthView = {
   activeJob: Awaited<ReturnType<typeof memoryJobRepository.getActive>>;
 };
 
-function minutesSince(iso: string | null): number | null {
-  if (!iso) return null;
-  const ms = Date.now() - Date.parse(iso);
-  return Number.isFinite(ms) ? Math.max(0, Math.round(ms / 60_000)) : null;
+function minutesSinceLocal(iso: string | null): number | null {
+  return minutesSince(iso);
 }
 
 function relativeLabel(iso: string | null): string {
-  const mins = minutesSince(iso);
-  if (mins == null) return "Unknown";
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  return relativeTimeLabel(iso);
 }
 
 function captureSignal(
   lastCaptureAt: string | null,
   agentOnline: boolean,
 ): HealthSignal {
-  const mins = minutesSince(lastCaptureAt);
+  const mins = minutesSinceLocal(lastCaptureAt);
   if (agentOnline && mins != null && mins * 60_000 <= CAPTURE_STALE_MS) {
     return "online";
   }
@@ -72,7 +75,7 @@ function captureSignal(
 }
 
 function syncSignal(lastSyncAt: string | null): HealthSignal {
-  const mins = minutesSince(lastSyncAt);
+  const mins = minutesSinceLocal(lastSyncAt);
   if (mins != null && mins * 60_000 <= SYNC_STALE_MS / 2) return "online";
   if (mins != null && mins * 60_000 <= SYNC_STALE_MS) return "degraded";
   if (lastSyncAt) return "degraded";
@@ -117,8 +120,11 @@ export async function buildAgentHealthView(): Promise<AgentHealthView> {
     sync.lastProcessedTimestamp;
   const agentOnline =
     Boolean(agent) &&
-    minutesSince(agent?.lastSeenAt ?? null) != null &&
-    minutesSince(agent!.lastSeenAt)! * 60_000 <= SYNC_STALE_MS;
+    minutesSinceLocal(agent?.lastSeenAt ?? null) != null &&
+    minutesSinceLocal(agent!.lastSeenAt)! * 60_000 <= SYNC_STALE_MS;
+
+  const captureSla = classifyFreshnessSla(lastCaptureAt);
+  const syncSla = classifyFreshnessSla(lastSyncAt);
 
   const captureStatus = captureSignal(lastCaptureAt, agentOnline);
   const syncStatus = syncSignal(lastSyncAt);
@@ -146,6 +152,8 @@ export async function buildAgentHealthView(): Promise<AgentHealthView> {
             : "Capture unavailable",
       lastCaptureAt,
       agentOnline,
+      slaLevel: captureSla,
+      slaLabel: freshnessSlaLabel(lastCaptureAt),
     },
     sync: {
       status: syncStatus,
@@ -156,6 +164,8 @@ export async function buildAgentHealthView(): Promise<AgentHealthView> {
             ? `Last sync ${relativeLabel(lastSyncAt)}`
             : "Sync unavailable",
       lastSyncAt,
+      slaLevel: syncSla,
+      slaLabel: freshnessSlaLabel(lastSyncAt),
     },
     data: {
       latestActivityAt,

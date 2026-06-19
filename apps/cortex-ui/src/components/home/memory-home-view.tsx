@@ -46,10 +46,12 @@ export function MemoryHomeView({
   });
 
   const dateLabel = formatDateLabel(viewDate, calendarToday);
-  const pipelineState = resolveActivityPipelineState(
-    screenpipeHealth.data,
-    hasTodayActivity(activity.data),
-  );
+  const pipelineState =
+    syncStatus.data?.pipelineStatus ??
+    resolveActivityPipelineState(
+      screenpipeHealth.data,
+      hasTodayActivity(activity.data),
+    );
 
   const loading =
     activity.isLoading && screens.isLoading && attention.isLoading;
@@ -166,7 +168,7 @@ export function MemoryHomeView({
           <EmptyState
             icon={Monitor}
             title="No screen memory yet"
-            description="Per-monitor capture appears after ScreenPipe sync with device_name."
+            description="Per-monitor capture appears after ScreenPipe syncs frames from your Mac."
           />
         ) : (
           <div className="space-y-4">

@@ -18,6 +18,7 @@ import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as OpenLoopsRouteImport } from './routes/open-loops'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as DecisionsRouteImport } from './routes/decisions'
+import { Route as CaptureDoctorRouteImport } from './routes/capture-doctor'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AttentionRouteImport } from './routes/attention'
 import { Route as AskRouteImport } from './routes/ask'
@@ -76,6 +77,11 @@ const IdeasRoute = IdeasRouteImport.update({
 const DecisionsRoute = DecisionsRouteImport.update({
   id: '/decisions',
   path: '/decisions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureDoctorRoute = CaptureDoctorRouteImport.update({
+  id: '/capture-doctor',
+  path: '/capture-doctor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
+  '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
+  '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
+  '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/open-loops': typeof OpenLoopsRouteWithChildren
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/ask'
     | '/attention'
     | '/audit'
+    | '/capture-doctor'
     | '/decisions'
     | '/ideas'
     | '/open-loops'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/ask'
     | '/attention'
     | '/audit'
+    | '/capture-doctor'
     | '/decisions'
     | '/ideas'
     | '/open-loops'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/ask'
     | '/attention'
     | '/audit'
+    | '/capture-doctor'
     | '/decisions'
     | '/ideas'
     | '/open-loops'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   AskRoute: typeof AskRoute
   AttentionRoute: typeof AttentionRoute
   AuditRoute: typeof AuditRoute
+  CaptureDoctorRoute: typeof CaptureDoctorRoute
   DecisionsRoute: typeof DecisionsRoute
   IdeasRoute: typeof IdeasRouteWithChildren
   OpenLoopsRoute: typeof OpenLoopsRouteWithChildren
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/decisions'
       fullPath: '/decisions'
       preLoaderRoute: typeof DecisionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture-doctor': {
+      id: '/capture-doctor'
+      path: '/capture-doctor'
+      fullPath: '/capture-doctor'
+      preLoaderRoute: typeof CaptureDoctorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -545,6 +565,7 @@ const rootRouteChildren: RootRouteChildren = {
   AskRoute: AskRoute,
   AttentionRoute: AttentionRoute,
   AuditRoute: AuditRoute,
+  CaptureDoctorRoute: CaptureDoctorRoute,
   DecisionsRoute: DecisionsRoute,
   IdeasRoute: IdeasRouteWithChildren,
   OpenLoopsRoute: OpenLoopsRouteWithChildren,

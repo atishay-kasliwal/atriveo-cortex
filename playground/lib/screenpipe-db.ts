@@ -324,3 +324,54 @@ export function countFramesSince(sinceIso: string): number {
   db.close();
   return row.c;
 }
+
+/** Frames captured in the rolling window (local SQLite only). */
+export function countFramesInLastMinutes(minutes: number): number {
+  if (!screenpipeDbExists() || minutes <= 0) return 0;
+  const since = new Date(Date.now() - minutes * 60_000).toISOString();
+  return countFramesSince(since);
+}
+
+export type SqliteStorageInspection = {
+  dbExists: boolean;
+  walExists: boolean;
+  shmExists: boolean;
+  walBytes: number | null;
+  dbBytes: number | null;
+  volumeHint: string | null;
+};
+
+/** Inspect SQLite files — useful when capture stops on external volumes. */
+export function inspectSqliteStorage(): SqliteStorageInspection {
+  if (!screenpipeDbExists()) {
+    return {
+      dbExists: false,
+      walExists: false,
+      shmExists: false,
+      walBytes: null,
+      dbBytes: null,
+      volumeHint: null,
+    };
+  }
+  const walPath = `${SCREENPIPE_DB}-wal`;
+  const shmPath = `${SCREENPIPE_DB}-shm`;
+  let walBytes: number | null = null;
+  let dbBytes: number | null = null;
+  try {
+    dbBytes = fs.statSync(SCREENPIPE_DB).size;
+    if (fs.existsSync(walPath)) walBytes = fs.statSync(walPath).size;
+  } catch {
+    // ignore stat errors on exotic volumes
+  }
+  const onExternalVolume = SCREENPIPE_DB.startsWith("/Volumes/");
+  return {
+    dbExists: true,
+    walExists: fs.existsSync(walPath),
+    shmExists: fs.existsSync(shmPath),
+    walBytes,
+    dbBytes,
+    volumeHint: onExternalVolume
+      ? "SQLite on external volumes (e.g. ExFAT) can stall WAL writes — APFS is more reliable"
+      : null,
+  };
+}

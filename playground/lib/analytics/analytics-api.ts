@@ -23,7 +23,7 @@ import { ensureDaySynced } from "@/lib/analytics/analytics-sync";
 import { buildPresenceSummary } from "@/lib/analytics/presence-api";
 import { listStateSegments } from "@/lib/analytics/analytics-db";
 
-async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
+export async function assembleTodayActivity(date: string): Promise<TodayActivityDTO> {
   const [summary, sessions, appUsageRows, websiteUsageRows, stateRows, emergingIdeas, openLoops] =
     await Promise.all([
       getDailySummary(date),
@@ -76,11 +76,16 @@ export async function buildTodayActivity(date: string): Promise<TodayActivityDTO
   return assembleTodayActivity(date);
 }
 
-/** Cloud Worker read path — Neon only, no ScreenPipe sync. */
+/** Cloud Worker read path — prefers materialized daily_memory, falls back to live assembly. */
 export async function buildTodayActivityFromNeon(
   date: string,
 ): Promise<TodayActivityDTO> {
-  return assembleTodayActivity(date);
+  const { loadDailyMemory, materializeDailyMemory } = await import(
+    "./daily-memory"
+  );
+  const cached = await loadDailyMemory(date);
+  if (cached) return cached;
+  return materializeDailyMemory(date);
 }
 
 export async function buildDayBuckets(date: string) {

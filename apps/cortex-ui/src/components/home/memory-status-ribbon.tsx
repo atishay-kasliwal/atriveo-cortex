@@ -18,9 +18,9 @@ function RibbonStat({ label, value }: { label: string; value: string }) {
 }
 
 const MEMORY_STATE_LABEL: Record<ActivityPipelineState, string> = {
-  live: "Memory up to date",
+  live: "Capture & sync current",
   syncing: "Updating memory",
-  stale: "Memory slightly behind",
+  stale: "Capture paused — memory available",
   offline: "Memory offline",
 };
 

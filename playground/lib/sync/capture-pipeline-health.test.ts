@@ -69,6 +69,21 @@ describe("evaluateCapturePipeline", () => {
     expect(h.syncHealthy).toBe(true);
   });
 
+  it("reports stale when agent port is open but frames are hours old", () => {
+    const h = evaluateCapturePipeline({
+      lastFrameAt: isoMinutesAgo(11 * 60),
+      lastSyncAt: isoMinutesAgo(4),
+      lastSyncCompletedAt: isoMinutesAgo(4),
+      capturePortOpen: true,
+      captureApiReachable: true,
+      hasHistoricalData: true,
+      now,
+    });
+    expect(h.pipelineStatus).toBe("stale");
+    expect(h.captureActive).toBe(false);
+    expect(h.syncHealthy).toBe(true);
+  });
+
   it("reports offline with no data and no recent activity", () => {
     const h = evaluateCapturePipeline({
       lastFrameAt: null,

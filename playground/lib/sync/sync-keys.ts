@@ -12,6 +12,7 @@ export const SYNC_KEYS = {
   capturePortOpen: "capture_port_open",
   captureApiReachable: "capture_api_reachable",
   captureHeartbeat: "capture_agent_heartbeat",
+  lastCaptureRecovery: "last_capture_recovery_at",
   lastLoopsSync: "last_loops_sync_at",
   lastReviewGenerated: "last_review_generated_at",
   lastIndexRebuild: "last_index_rebuild_at",

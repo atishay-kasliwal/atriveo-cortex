@@ -41,8 +41,37 @@ Separate **Capture**, **Sync**, and **Latest activity** — no longer conflate r
 
 `memory_jobs` stores: status, stages, duration, records, errors, estimated work units.
 
-## Next steps
+## Phase 18 (materialization + job hardening)
 
-- Cloudflare Queues consumer (replace `waitUntil` for long jobs)
-- Materialized `daily_memory` table
+### Materialized daily memory
+
+`daily_memory` table — Today page reads cached `TodayActivityDTO` instead of full recompute.
+
+```text
+Refresh completes → materializeDailyMemory(dates) → GET /api/analytics/today reads daily_memory
+```
+
+### Idempotent jobs
+
+`job_key = memory_refresh` — duplicate `POST /api/sync` returns existing active job (`duplicate: true`).
+
+### Stage metrics
+
+Canonical stages: `IMPORT` → `ANALYZE` → `GENERATE` → `INDEX` → `COMPLETE`
+
+`stage_metrics` JSON stores per-stage duration; `current_stage` on active jobs.
+
+### Dead letter / retry
+
+Failed jobs store `error`, `error_stack`, `payload`, `retry_count`.
+
+`POST /api/sync/jobs/:id/retry` re-enqueues with incremented retry count.
+
+### Freshness SLA
+
+Capture and sync show `slaLevel`: Fresh (&lt;15m), Delayed (15m–2h), Stale (2h–12h), Offline (&gt;12h).
+
+## Deferred
+
+- Cloudflare Queues consumer (replace `waitUntil` when CPU/runtime pressure appears)
 - Mac agent writes `agent_heartbeats` directly each sync tick

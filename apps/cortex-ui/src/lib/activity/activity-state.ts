@@ -76,7 +76,10 @@ export function activityPipelineBannerMessage(
   hasHistoricalData: boolean,
 ): string {
   if (state === "live") {
-    return "Live — ScreenPipe capturing and Cortex sync is current.";
+    if (health?.captureActive) {
+      return "Live — ScreenPipe capturing and Cortex sync is current.";
+    }
+    return "Live — Cortex sync is current. Capture is idle but recent.";
   }
   if (state === "syncing") {
     return "Syncing — New capture detected. Analytics updating.";

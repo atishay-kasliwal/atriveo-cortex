@@ -26,17 +26,23 @@ export type MemoryFreshnessSummary = {
   recommendedAction: string | null;
 };
 
+export type FreshnessSlaLevel = "fresh" | "delayed" | "stale" | "offline";
+
 export type AgentHealthSummary = {
   capture: {
     status: HealthSignal;
     label: string;
     lastCaptureAt: string | null;
     agentOnline: boolean;
+    slaLevel: FreshnessSlaLevel;
+    slaLabel: string;
   };
   sync: {
     status: HealthSignal;
     label: string;
     lastSyncAt: string | null;
+    slaLevel: FreshnessSlaLevel;
+    slaLabel: string;
   };
   data: {
     latestActivityAt: string | null;
@@ -50,8 +56,24 @@ export type AgentHealthSummary = {
     status: string;
     estimatedWorkUnits: number;
     stagesCompleted: string[];
+    currentStage: string | null;
+    startedAt: string | null;
+    stageMetrics: Record<string, { startedAt: string; finishedAt?: string; durationMs?: number }>;
   } | null;
 };
+
+const LIVE_JOB_MAX_MS = 5 * 60_000;
+
+export function isLiveMemoryJob(
+  job: AgentHealthSummary["activeJob"],
+): boolean {
+  if (!job) return false;
+  if (job.status !== "queued" && job.status !== "running") return false;
+  const anchor = job.startedAt ?? null;
+  if (!anchor) return true;
+  const ageMs = Date.now() - Date.parse(anchor);
+  return Number.isFinite(ageMs) && ageMs >= 0 && ageMs < LIVE_JOB_MAX_MS;
+}
 
 export type SyncStatus = {
   pipelineStatus: PipelineStatus;
@@ -72,21 +94,27 @@ export type MemoryJobEnqueue = {
   status: "queued";
   estimatedWorkUnits: number;
   message: string;
+  duplicate?: boolean;
 };
 
 export type MemoryJobStatus = {
   id: string;
   status: string;
   mode: string | null;
+  jobKey: string | null;
+  currentStage: string | null;
   estimatedWorkUnits: number;
   framesProcessed: number;
   recordsImported: number;
   reviewsUpdated: number;
   durationMs: number | null;
   stagesCompleted: string[];
+  stageMetrics: Record<string, { startedAt: string; finishedAt?: string; durationMs?: number }>;
+  error: string | null;
+  errorStack: string | null;
+  retryCount: number;
   userMessage: string | null;
   recommendedAction: string | null;
-  error: string | null;
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;
@@ -186,9 +214,16 @@ async function pollMemoryJob(jobId: string): Promise<ManualSyncResult> {
       fetchMemoryJob(jobId),
       fetchSyncStatus().catch(() => undefined),
     ]);
-    if (job.status === "success" || job.status === "partial" || job.status === "failed") {
-      if (status) writeCachedSyncStatus(status);
-      return jobToManualResult(job, status);
+    if (
+      job.status === "success" ||
+      job.status === "partial" ||
+      job.status === "failed"
+    ) {
+      const freshStatus =
+        status ??
+        (await fetchSyncStatus().catch(() => undefined));
+      if (freshStatus) writeCachedSyncStatus(freshStatus);
+      return jobToManualResult(job, freshStatus);
     }
     await new Promise((resolve) => setTimeout(resolve, JOB_POLL_MS));
   }
@@ -235,6 +270,13 @@ export const healthSignalStyle: Record<HealthSignal, string> = {
   degraded: "text-[oklch(0.82_0.13_80)]",
   offline: "text-muted-foreground",
   unknown: "text-muted-foreground",
+};
+
+export const freshnessSlaStyle: Record<FreshnessSlaLevel, string> = {
+  fresh: "text-[oklch(0.78_0.14_155)]",
+  delayed: "text-[oklch(0.82_0.13_80)]",
+  stale: "text-[oklch(0.78_0.15_80)]",
+  offline: "text-muted-foreground",
 };
 
 export const memoryFreshnessStyle = (score: number): string => {
@@ -285,6 +327,37 @@ export function formatLastSyncAt(iso: string | null): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+/** Short relative time for header chips — e.g. "3m ago", "11h ago". */
+export function formatRelativeAgo(iso: string | null): string {
+  if (!iso) return "—";
+  const mins = Math.round((Date.now() - Date.parse(iso)) / 60_000);
+  if (!Number.isFinite(mins) || mins < 0) return "—";
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+const SLA_TIER_SHORT: Record<FreshnessSlaLevel, string> = {
+  fresh: "fresh",
+  delayed: "delayed",
+  stale: "stale",
+  offline: "offline",
+};
+
+/** One-line header chip: "Cap stale · 11h ago". */
+export function headerHealthChip(
+  kind: "capture" | "sync",
+  slaLevel: FreshnessSlaLevel,
+  at: string | null,
+): string {
+  const prefix = kind === "capture" ? "Cap" : "Sync";
+  const tier = SLA_TIER_SHORT[slaLevel];
+  const rel = formatRelativeAgo(at);
+  return `${prefix} ${tier} · ${rel}`;
 }
 
 export function formatLastUpdated(iso: string | null, label: string | null): string {

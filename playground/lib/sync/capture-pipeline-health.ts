@@ -79,15 +79,15 @@ export function evaluateCapturePipeline(
 
   let pipelineStatus: PipelineStatus;
 
-  // Idle capture is healthy when ScreenPipe is up and sync is fresh.
-  if (captureRunning && syncHealthy && !analyticsStale) {
+  // Live requires recent frames — agent port open alone is not "capturing".
+  if (captureRecentlySeen && syncHealthy && !analyticsStale) {
     pipelineStatus = "live";
   } else if (
     analyticsStale &&
-    (captureRunning || captureRecentlySeen)
+    (captureRecentlySeen || captureRunning)
   ) {
     pipelineStatus = "syncing";
-  } else if (syncStale || !captureRunning) {
+  } else if (syncStale || !captureRecentlySeen) {
     pipelineStatus = signals.hasHistoricalData ? "stale" : "offline";
   } else {
     pipelineStatus = "syncing";

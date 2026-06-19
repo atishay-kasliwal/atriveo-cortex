@@ -41,7 +41,9 @@ export async function getCloudScreenpipeHealth(
     audioCountToday: 0,
     lastRestartAt: null,
     restartCount: 0,
-    lastError: pipeline.syncStale
+    lastError: !pipeline.captureActive && lastCaptureAt
+      ? "No new capture frames recently — check ScreenPipe on your Mac"
+      : pipeline.syncStale
       ? "Sync agent on capture Mac may be offline"
       : pipeline.analyticsStale
         ? "Analytics catching up to latest capture"
