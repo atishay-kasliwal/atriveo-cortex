@@ -1,5 +1,6 @@
 import { AlertTriangle, Inbox, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
+import { sanitizeClientErrorMessage } from "@/lib/api/cortex-fetch";
 
 export function LoadingRows({ rows = 5, className = "" }: { rows?: number; className?: string }) {
   return (
@@ -69,7 +70,11 @@ export function ErrorState({
   error: unknown;
   onRetry?: () => void;
 }) {
-  const message = error instanceof Error ? error.message : "Unknown error";
+  const raw = error instanceof Error ? error.message : "Unknown error";
+  const message = sanitizeClientErrorMessage(
+    raw,
+    "Cortex is temporarily unavailable. Try again in a moment.",
+  );
   return (
     <div className="surface-card flex flex-col items-center justify-center rounded-xl border-destructive/30 px-6 py-14 text-center">
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-destructive/40 bg-destructive/10 text-destructive">

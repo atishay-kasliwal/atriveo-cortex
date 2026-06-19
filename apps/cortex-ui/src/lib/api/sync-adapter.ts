@@ -59,6 +59,28 @@ export type ManualSyncResult = {
 
 export type SyncUiState = "idle" | "refreshing" | "success" | "partial" | "failed";
 
+const SYNC_STATUS_CACHE_KEY = "cortex-sync-status-v1";
+
+export function readCachedSyncStatus(): SyncStatus | undefined {
+  if (typeof sessionStorage === "undefined") return undefined;
+  try {
+    const raw = sessionStorage.getItem(SYNC_STATUS_CACHE_KEY);
+    if (!raw) return undefined;
+    return JSON.parse(raw) as SyncStatus;
+  } catch {
+    return undefined;
+  }
+}
+
+export function writeCachedSyncStatus(status: SyncStatus): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(SYNC_STATUS_CACHE_KEY, JSON.stringify(status));
+  } catch {
+    // ignore quota errors
+  }
+}
+
 export function fetchSyncStatus(): Promise<SyncStatus> {
   return cortexFetch<SyncStatus>("/api/sync");
 }

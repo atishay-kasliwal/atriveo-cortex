@@ -4,6 +4,7 @@
 
 import type { Context } from "hono";
 import { closeSqlPool } from "@/lib/db/client";
+import { sanitizeApiErrorMessage } from "@/lib/api/public-errors";
 
 export type Env = {
   DATABASE_URL: string;
@@ -36,7 +37,19 @@ export function apiSuccess<T>(c: Context, data: T, status = 200) {
 }
 
 export function apiError(c: Context, message: string, status = 500) {
-  return c.json({ success: false, error: message }, status);
+  return c.json(
+    { success: false, error: sanitizeApiErrorMessage(message, message) },
+    status,
+  );
+}
+
+export function apiErrorFromException(
+  c: Context,
+  err: unknown,
+  fallback: string,
+  status = 500,
+) {
+  return apiError(c, sanitizeApiErrorMessage(err, fallback), status);
 }
 
 export function corsOrigin(env: Env): string {

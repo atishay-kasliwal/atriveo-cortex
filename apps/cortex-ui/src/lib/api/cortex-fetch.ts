@@ -4,14 +4,40 @@
 
 import type { ApiErrorResponse, ApiSuccessResponse } from "./cortex-types";
 
+/** User-safe message — hide Neon hostnames and connection internals. */
+export function sanitizeClientErrorMessage(
+  message: string,
+  fallback = "Something went wrong. Please try again.",
+): string {
+  if (
+    /CONNECTION_DESTROYED|ECONNRESET|connection terminated|socket hang up|57P01|connection closed/i.test(
+      message,
+    )
+  ) {
+    return "Connection interrupted. Please try again.";
+  }
+  if (/neon\.tech|pooler\.|postgres|DATABASE_URL/i.test(message) || message.length > 160) {
+    return fallback;
+  }
+  return message;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
   ) {
-    super(message);
+    super(sanitizeClientErrorMessage(message));
     this.name = "ApiError";
   }
+}
+
+/** True for transient server/DB failures worth retrying. */
+export function isRetryableApiError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 404) return false;
+  if (error.status >= 500) return true;
+  return /connection interrupted|try again/i.test(error.message);
 }
 
 function normalizeApiBase(raw: string | undefined): string {

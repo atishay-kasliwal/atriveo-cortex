@@ -13,13 +13,16 @@ import {
   formatDurationMs,
   formatLastSyncAt,
   memoryFreshnessStyle,
+  readCachedSyncStatus,
   syncPipelineLabels,
   syncPipelineStyles,
   triggerMemoryRefresh,
+  writeCachedSyncStatus,
   type ManualSyncResult,
   type SyncUiState,
 } from "@/lib/api/sync-adapter";
 import { qk } from "@/lib/api/queries";
+import { isRetryableApiError } from "@/lib/api/cortex-fetch";
 
 const SYNC_STATUS_KEY = ["sync", "status"] as const;
 
@@ -71,10 +74,14 @@ export function SyncControl() {
 
   const statusQuery = useQuery({
     queryKey: SYNC_STATUS_KEY,
-    queryFn: fetchSyncStatus,
+    queryFn: async () => {
+      const status = await fetchSyncStatus();
+      writeCachedSyncStatus(status);
+      return status;
+    },
     staleTime: 15_000,
-    retry: 2,
-    placeholderData: (previous) => previous,
+    retry: (failureCount, error) => failureCount < 3 && isRetryableApiError(error),
+    placeholderData: (previous) => previous ?? readCachedSyncStatus(),
     refetchInterval: uiState === "refreshing" ? 2000 : 30_000,
   });
 
@@ -128,18 +135,26 @@ export function SyncControl() {
       ? "syncing"
       : statusLoading
         ? "syncing"
-        : (status?.pipelineStatus ?? (statusUnavailable ? "stale" : "offline"));
+        : (status?.pipelineStatus ??
+          (statusUnavailable ? readCachedSyncStatus()?.pipelineStatus : undefined) ??
+          (statusUnavailable ? "stale" : "offline"));
   const pipelineStyle = syncPipelineStyles[pipelineStatus];
   const isRefreshing = uiState === "refreshing" || refreshMutation.isPending;
   const canRefresh = status?.canRefreshMemory !== false;
 
   const lastCaptureIso =
-    freshness?.lastCaptureAt ?? status?.lastFrameAt ?? status?.lastUpdatedAt ?? null;
+    freshness?.lastCaptureAt ??
+    status?.lastFrameAt ??
+    status?.lastUpdatedAt ??
+    readCachedSyncStatus()?.memoryFreshness?.lastCaptureAt ??
+    null;
   const lastCaptureText = statusLoading
     ? "Loading…"
-    : statusUnavailable && !lastCaptureIso
-      ? "Unavailable"
-      : formatLastSyncAt(lastCaptureIso);
+    : lastCaptureIso
+      ? formatLastSyncAt(lastCaptureIso)
+      : statusUnavailable
+        ? "Temporarily unavailable"
+        : "Never";
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">

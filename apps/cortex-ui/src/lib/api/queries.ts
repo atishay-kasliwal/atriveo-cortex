@@ -1,8 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, type ActionBucket } from "./client";
-import { ApiError } from "./cortex-fetch";
+import { isRetryableApiError } from "./cortex-fetch";
 
 const STALE = 30_000;
+
+function defaultQueryRetry(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 3) return false;
+  return isRetryableApiError(error);
+}
 
 export const qk = {
   overview: ["overview"] as const,
@@ -56,8 +61,7 @@ export const todayQuery = (date?: string) =>
     queryKey: qk.today(date),
     queryFn: () => api.analytics.today(date),
     staleTime: STALE,
-    retry: (failureCount, error) =>
-      failureCount < 2 && !(error instanceof ApiError && error.status === 404),
+    retry: defaultQueryRetry,
   });
 
 export const weekQuery = (start?: string) =>

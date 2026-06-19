@@ -69,19 +69,44 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function withDbRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+function serverlessRetryAttempts(): number {
+  return isServerlessRuntime() ? 5 : 3;
+}
+
+async function withFreshServerlessSql<T>(
+  fn: (sql: CortexSql) => Promise<T>,
+): Promise<T> {
+  const sql = postgres(requireDatabaseUrl(), sqlOptions());
+  try {
+    return await fn(sql);
+  } finally {
+    try {
+      await sql.end({ timeout: 0 });
+    } catch {
+      // ignore close errors
+    }
+  }
+}
+
+async function withDbRetry<T>(fn: () => Promise<T>, attempts?: number): Promise<T> {
+  const maxAttempts = attempts ?? serverlessRetryAttempts();
   let last: unknown;
-  for (let i = 0; i < attempts; i++) {
+  for (let i = 0; i < maxAttempts; i++) {
     try {
       return await fn();
     } catch (err) {
       last = err;
-      if (!isTransientDbError(err) || i >= attempts - 1) throw err;
+      if (!isTransientDbError(err) || i >= maxAttempts - 1) throw err;
       closeSqlPool();
-      await sleep(250 * (i + 1));
+      await sleep(300 * (i + 1));
     }
   }
   throw last;
+}
+
+/** Retry a block of DB work — use for multi-step handlers on Workers. */
+export async function withDbOperation<T>(fn: () => Promise<T>): Promise<T> {
+  return withDbRetry(fn);
 }
 
 export function getSql(): CortexSql {
@@ -104,8 +129,10 @@ export async function withTransaction<T>(
   fn: (tx: postgres.TransactionSql) => Promise<T>,
 ): Promise<T> {
   return withDbRetry(() => {
-    const sql = getSql();
-    return sql.begin(fn) as Promise<T>;
+    if (isServerlessRuntime()) {
+      return withFreshServerlessSql((sql) => sql.begin(fn) as Promise<T>);
+    }
+    return getSql().begin(fn) as Promise<T>;
   });
 }
 
@@ -113,12 +140,21 @@ export async function runUnsafe<T extends Record<string, unknown>>(
   query: string,
   params: unknown[] = [],
 ): Promise<T[]> {
-  return withDbRetry(() =>
-    getSql().unsafe(
+  return withDbRetry(() => {
+    if (isServerlessRuntime()) {
+      return withFreshServerlessSql(
+        (sql) =>
+          sql.unsafe(
+            query,
+            params as postgres.ParameterOrJSON<never>[],
+          ) as Promise<T[]>,
+      );
+    }
+    return getSql().unsafe(
       query,
       params as postgres.ParameterOrJSON<never>[],
-    ) as Promise<T[]>,
-  );
+    ) as Promise<T[]>;
+  });
 }
 
 export async function runUnsafeOne<T extends Record<string, unknown>>(
@@ -133,7 +169,12 @@ export async function execUnsafe(
   query: string,
   params: unknown[] = [],
 ): Promise<void> {
-  await withDbRetry(() =>
-    getSql().unsafe(query, params as postgres.ParameterOrJSON<never>[]),
-  );
+  await withDbRetry(() => {
+    if (isServerlessRuntime()) {
+      return withFreshServerlessSql((sql) =>
+        sql.unsafe(query, params as postgres.ParameterOrJSON<never>[]),
+      );
+    }
+    return getSql().unsafe(query, params as postgres.ParameterOrJSON<never>[]);
+  });
 }
