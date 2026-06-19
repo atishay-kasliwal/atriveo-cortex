@@ -15,6 +15,8 @@ import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/tim
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScreensSnapshotPanel } from "@/components/screens/screens-snapshot-panel";
+import { ScreensPageHeader } from "@/components/screens/screens-page-header";
+import { MonitorNameEditor } from "@/components/screens/monitor-name-editor";
 import {
   Sheet,
   SheetContent,
@@ -96,10 +98,7 @@ function CategoryComparisonSection({
 
 function SnapshotSection({ decision }: { decision: ScreensDecisionView }) {
   return (
-    <ActivityCard
-      title="What was on my screens?"
-      subtitle="Memory snapshots — pick a time to see each display"
-    >
+    <ActivityCard title="Snapshots" subtitle="Pick a moment — see what was on screen">
       <div className="px-5 py-4">
         <ScreensSnapshotPanel decision={decision} />
       </div>
@@ -134,22 +133,36 @@ function MonitorRibbon({
 
 function MonitorCard({
   card,
+  viewDate,
   onDetails,
 }: {
   card: ScreensDecisionView["monitorCards"][number];
+  viewDate: string;
   onDetails: () => void;
 }) {
   const maxCat = Math.max(...card.categories.map((c) => c.durationSec), 1);
+  const roleCat =
+    categoryStyle[
+      (card.categories[0]?.category ?? "other") as keyof typeof categoryStyle
+    ] ?? categoryStyle.other;
 
   return (
     <section className="surface-card overflow-hidden rounded-xl border border-border/60">
       <header className="border-b border-border/60 px-4 py-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="font-display text-sm font-normal">{card.displayName}</h3>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">{card.role}</p>
+            <MonitorNameEditor
+              monitorId={card.monitorId}
+              displayName={card.displayName}
+              viewDate={viewDate}
+              className="font-display text-sm font-normal"
+            />
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              {card.role} · {fmtDuration(card.totalSec)} active
+            </p>
           </div>
-          <Badge variant="secondary" className="shrink-0 text-[10px]">
+          <Badge variant="secondary" className="shrink-0 gap-1.5 text-[10px]">
+            <span className={"size-1.5 rounded-full " + roleCat.dot} />
             {card.primaryCategory}
           </Badge>
         </div>
@@ -184,13 +197,16 @@ function MonitorCard({
             <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
               Top sites
             </div>
-            <ul className="mt-1 space-y-0.5 text-[12px] text-muted-foreground">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {card.topWebsites.map((row) => (
-                <li key={row.domain} className="truncate">
+                <span
+                  key={row.domain}
+                  className="rounded-full border border-border/60 bg-surface-2/50 px-2.5 py-1 text-[11px] text-muted-foreground"
+                >
                   {row.domain}
-                </li>
+                </span>
               ))}
-            </ul>
+            </div>
           </div>
         ) : null}
 
@@ -281,7 +297,13 @@ function MonitorDetailsSheet({
   );
 }
 
-function DayScreensContent({ data }: { data: DayScreens }) {
+function DayScreensContent({
+  data,
+  viewDate,
+}: {
+  data: DayScreens;
+  viewDate: string;
+}) {
   const [detailsMonitorId, setDetailsMonitorId] = useState<string | null>(null);
   const detailsMonitor = useMemo(
     () => data.monitors.find((m) => m.monitorId === detailsMonitorId) ?? null,
@@ -298,6 +320,7 @@ function DayScreensContent({ data }: { data: DayScreens }) {
           <MonitorCard
             key={card.monitorId}
             card={card}
+            viewDate={viewDate}
             onDetails={() => setDetailsMonitorId(card.monitorId)}
           />
         ))}
@@ -325,7 +348,8 @@ export function ScreensView({ date: dateParam }: { date?: string }) {
   const heading = dayViewHeading(viewDate, calendarToday);
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="space-y-6">
+      <ScreensPageHeader data={data} />
       <ActivityPeriodNav
         range="today"
         onRangeChange={() => {}}
@@ -365,7 +389,7 @@ export function ScreensView({ date: dateParam }: { date?: string }) {
               {data.decision.monitorCount === 1 ? "" : "s"}
             </Badge>
           </div>
-          <DayScreensContent data={data} />
+          <DayScreensContent data={data} viewDate={viewDate} />
         </>
       )}
     </div>

@@ -38,6 +38,7 @@ function invalidateAfterRefresh(queryClient: ReturnType<typeof useQueryClient>) 
   void queryClient.invalidateQueries({ queryKey: qk.openLoopsBoard });
   void queryClient.invalidateQueries({ queryKey: ["attention"] });
   void queryClient.invalidateQueries({ queryKey: qk.screenpipeHealth });
+  void queryClient.invalidateQueries({ queryKey: ["screens"] });
   void queryClient.invalidateQueries({ queryKey: qk.projectsHealth });
   void queryClient.invalidateQueries({ queryKey: SYNC_STATUS_KEY });
 }

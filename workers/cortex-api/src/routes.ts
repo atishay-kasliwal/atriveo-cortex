@@ -292,6 +292,31 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/screens/monitor-names", async (c) => {
+    try {
+      const { listMonitorDisplayNames } = await import("@/lib/analytics/monitor-names-api");
+      return apiSuccess(c, await listMonitorDisplayNames());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load monitor names", 500);
+    }
+  });
+
+  app.put("/api/screens/monitor-names", async (c) => {
+    try {
+      const body = await c.req.json<{ monitorId?: string; displayName?: string }>();
+      if (!body.monitorId?.trim() || !body.displayName?.trim()) {
+        return apiError(c, "monitorId and displayName are required", 400);
+      }
+      const { setMonitorDisplayName } = await import("@/lib/analytics/monitor-names-api");
+      return apiSuccess(
+        c,
+        await setMonitorDisplayName(body.monitorId.trim(), body.displayName.trim()),
+      );
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to save monitor name", 500);
+    }
+  });
+
   app.get("/api/audit/day", async (c) => {
     try {
       const data = await buildDayAudit(c.req.query("date") ?? null);

@@ -11,6 +11,9 @@ import {
 import {
   aggregateScreensSummaries,
   buildScreensIntelligence,
+  buildMonitorInsights,
+  dedupeCrossMonitorSegments,
+  rollupMonitorSummaries,
   type MonitorDailySummary,
   type MonitorHeatmapRow,
   type MonitorIdentity,
@@ -27,6 +30,7 @@ import {
 } from "./screens-decision";
 import { screensRepository } from "@/lib/repositories/screens-repository";
 import { fetchFramesForWindow } from "@/lib/screenpipe-db";
+import { applyMonitorOverridesToDay } from "./monitor-names-api";
 
 export type MonitorTimelineDTO = MonitorTimelineSegment;
 
@@ -100,27 +104,87 @@ function segmentLabel(seg: {
   return seg.primaryApp;
 }
 
-function rowsToTimelines(
+function rowsToSegments(
   rows: Awaited<ReturnType<typeof screensRepository.listTimelineSegments>>,
+): MonitorTimelineSegment[] {
+  return rows.map((row) => ({
+    monitorId: row.monitor_id,
+    displayName: row.display_name,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    durationSec: Math.round(row.duration_sec),
+    primaryApp: row.primary_app,
+    primaryDomain: row.primary_domain,
+    windowTitle: row.window_title,
+    category: row.category,
+    confidence: row.confidence,
+  }));
+}
+
+function rowsToTimelines(
+  segments: MonitorTimelineSegment[],
 ): DayScreensDTO["timelines"] {
   const timelines: DayScreensDTO["timelines"] = {};
-  for (const row of rows) {
-    const list = timelines[row.monitor_id] ?? [];
+  for (const seg of segments) {
+    const list = timelines[seg.monitorId] ?? [];
     list.push({
-      id: `${row.monitor_id}-${row.start_time}`,
-      startedAt: row.start_time,
-      endedAt: row.end_time,
-      durationSec: Math.round(row.duration_sec),
-      primaryApp: row.primary_app,
-      primaryDomain: row.primary_domain,
-      windowTitle: row.window_title,
-      category: row.category,
-      label: segmentLabel(row),
-      confidence: row.confidence,
+      id: `${seg.monitorId}-${seg.startTime}`,
+      startedAt: seg.startTime,
+      endedAt: seg.endTime,
+      durationSec: seg.durationSec,
+      primaryApp: seg.primaryApp,
+      primaryDomain: seg.primaryDomain,
+      windowTitle: seg.windowTitle,
+      category: seg.category,
+      label: segmentLabel(seg),
+      confidence: seg.confidence,
     });
-    timelines[row.monitor_id] = list;
+    timelines[seg.monitorId] = list;
   }
   return timelines;
+}
+
+function postProcessStoredDay(
+  payload: NonNullable<Awaited<ReturnType<typeof loadDayScreensPayload>>>,
+  rows: Awaited<ReturnType<typeof screensRepository.listTimelineSegments>>,
+): {
+  monitors: MonitorIdentity[];
+  dailySummary: MonitorDailySummary[];
+  heatmap: MonitorHeatmapRow[];
+  insights: MonitorInsights;
+  timelines: DayScreensDTO["timelines"];
+} {
+  const dedupedSegments = dedupeCrossMonitorSegments(rowsToSegments(rows));
+  const dailySummary = rollupMonitorSummaries(dedupedSegments);
+  const monitors = payload.monitors.map((monitor) => {
+    const summary = dailySummary.find((row) => row.monitorId === monitor.monitorId);
+    return {
+      ...monitor,
+      displayName: summary?.displayName ?? monitor.displayName,
+    };
+  });
+
+  const maxSec = Math.max(...dailySummary.map((m) => m.totalSec), 1);
+  const heatmap = dailySummary.map((m) => {
+    const topApp = m.topApps[0];
+    const topCategory = m.topCategories[0];
+    return {
+      monitorId: m.monitorId,
+      displayName: m.displayName,
+      topApp: topApp?.app ?? "—",
+      topCategory: topCategory?.label ?? "Other",
+      durationSec: m.totalSec,
+      utilizationPercent: Math.round((m.totalSec / maxSec) * 1000) / 10,
+    };
+  });
+
+  return {
+    monitors,
+    dailySummary,
+    heatmap,
+    insights: buildMonitorInsights(dailySummary),
+    timelines: rowsToTimelines(dedupedSegments),
+  };
 }
 
 async function loadOrComputeDay(date: string): Promise<DayScreensDTO | null> {
@@ -137,15 +201,35 @@ async function loadOrComputeDay(date: string): Promise<DayScreensDTO | null> {
 
   if (!payload || payload.monitors.length === 0) return null;
 
-  const timelines = rowsToTimelines(rows);
+  const processed = postProcessStoredDay(payload, rows);
+  const withNames = await applyMonitorOverridesToDay({
+    monitors: processed.monitors,
+    segments: [],
+    dailySummary: processed.dailySummary,
+  });
+
+  const monitors = withNames.monitors;
+  const dailySummary = withNames.dailySummary.map((summary) => ({
+    ...summary,
+    displayName:
+      monitors.find((m) => m.monitorId === summary.monitorId)?.displayName ??
+      summary.displayName,
+  }));
+  const heatmap = processed.heatmap.map((row) => ({
+    ...row,
+    displayName:
+      monitors.find((m) => m.monitorId === row.monitorId)?.displayName ??
+      row.displayName,
+  }));
+
   const base = {
     date,
     generatedAt: new Date().toISOString(),
-    monitors: payload.monitors,
-    timelines,
-    dailySummary: payload.dailySummary,
-    heatmap: payload.heatmap,
-    insights: payload.insights,
+    monitors,
+    timelines: processed.timelines,
+    dailySummary,
+    heatmap,
+    insights: processed.insights,
   };
 
   return {

@@ -90,6 +90,200 @@ function deviceKey(deviceName: string | null | undefined): string {
   return (deviceName ?? "default").trim() || "default";
 }
 
+const CROSS_MONITOR_DEDUPE_WINDOW_MS = 45_000;
+const SEGMENT_OVERLAP_RATIO = 0.45;
+
+function frameFingerprint(frame: ScreenFrame): string {
+  const app = normalizeAppName(frame.app_name);
+  const title = (frame.window_name ?? "").trim().toLowerCase();
+  const domain =
+    extractDomain(frame.app_name, frame.browser_url ?? frame.window_name) ?? "";
+  return `${app}|${title}|${domain}`;
+}
+
+function segmentFingerprint(seg: MonitorTimelineSegment): string {
+  const title = (seg.windowTitle ?? "").trim().toLowerCase();
+  return `${seg.primaryApp}|${title}|${seg.primaryDomain ?? ""}`;
+}
+
+function segmentOverlapMs(
+  a: MonitorTimelineSegment,
+  b: MonitorTimelineSegment,
+): number {
+  const start = Math.max(Date.parse(a.startTime), Date.parse(b.startTime));
+  const end = Math.min(Date.parse(a.endTime), Date.parse(b.endTime));
+  return Math.max(0, end - start);
+}
+
+function monitorUniqueDuration(
+  monitorId: string,
+  segments: MonitorTimelineSegment[],
+): number {
+  const owners = new Map<string, Set<string>>();
+  for (const seg of segments) {
+    const fp = segmentFingerprint(seg);
+    const set = owners.get(fp) ?? new Set<string>();
+    set.add(seg.monitorId);
+    owners.set(fp, set);
+  }
+
+  let total = 0;
+  for (const seg of segments) {
+    if (seg.monitorId !== monitorId) continue;
+    const fp = segmentFingerprint(seg);
+    if (owners.get(fp)?.size === 1) {
+      total += seg.durationSec;
+    }
+  }
+  return total;
+}
+
+function pickFrameWinner(
+  a: ScreenFrame,
+  b: ScreenFrame,
+  uniqueCounts: Map<string, number>,
+): ScreenFrame {
+  if (a.focused === true && b.focused !== true) return a;
+  if (b.focused === true && a.focused !== true) return b;
+
+  const aKey = deviceKey(a.device_name);
+  const bKey = deviceKey(b.device_name);
+  const aScore = uniqueCounts.get(aKey) ?? 0;
+  const bScore = uniqueCounts.get(bKey) ?? 0;
+  if (aScore !== bScore) return aScore > bScore ? a : b;
+
+  return aKey.localeCompare(bKey, undefined, { numeric: true }) <= 0 ? a : b;
+}
+
+/** Drop mirrored foreground captures that ScreenPipe records on multiple displays. */
+export function dedupeCrossMonitorFrames(frames: ScreenFrame[]): ScreenFrame[] {
+  if (frames.length <= 1) return frames;
+
+  const sorted = [...frames].sort(
+    (a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp),
+  );
+
+  const fingerprintMonitors = new Map<string, Set<string>>();
+  for (const frame of sorted) {
+    const fp = frameFingerprint(frame);
+    const key = deviceKey(frame.device_name);
+    const set = fingerprintMonitors.get(fp) ?? new Set<string>();
+    set.add(key);
+    fingerprintMonitors.set(fp, set);
+  }
+
+  const uniqueCounts = new Map<string, number>();
+  for (const monitors of fingerprintMonitors.values()) {
+    if (monitors.size !== 1) continue;
+    for (const monitor of monitors) {
+      uniqueCounts.set(monitor, (uniqueCounts.get(monitor) ?? 0) + 1);
+    }
+  }
+
+  const kept: ScreenFrame[] = [];
+
+  for (const frame of sorted) {
+    const ts = Date.parse(frame.timestamp);
+    const fp = frameFingerprint(frame);
+    const device = deviceKey(frame.device_name);
+
+    const conflictIndex = kept.findIndex((existing) => {
+      const existingTs = Date.parse(existing.timestamp);
+      return (
+        Math.abs(existingTs - ts) <= CROSS_MONITOR_DEDUPE_WINDOW_MS &&
+        frameFingerprint(existing) === fp &&
+        deviceKey(existing.device_name) !== device
+      );
+    });
+
+    if (conflictIndex < 0) {
+      kept.push(frame);
+      continue;
+    }
+
+    const conflict = kept[conflictIndex]!;
+    const winner = pickFrameWinner(frame, conflict, uniqueCounts);
+    if (winner === frame) {
+      kept.splice(conflictIndex, 1);
+      kept.push(frame);
+    }
+  }
+
+  return kept.sort(
+    (a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp),
+  );
+}
+
+/** Remove overlapping duplicate segments so each moment counts on one display. */
+export function dedupeCrossMonitorSegments(
+  segments: MonitorTimelineSegment[],
+): MonitorTimelineSegment[] {
+  if (segments.length <= 1) return segments;
+
+  const sorted = [...segments].sort(
+    (a, b) => Date.parse(a.startTime) - Date.parse(b.startTime),
+  );
+  const uniqueDurationByMonitor = new Map<string, number>();
+  for (const monitorId of new Set(sorted.map((seg) => seg.monitorId))) {
+    uniqueDurationByMonitor.set(
+      monitorId,
+      monitorUniqueDuration(monitorId, sorted),
+    );
+  }
+
+  const byFingerprint = new Map<string, number[]>();
+  sorted.forEach((seg, idx) => {
+    const fp = segmentFingerprint(seg);
+    const list = byFingerprint.get(fp) ?? [];
+    list.push(idx);
+    byFingerprint.set(fp, list);
+  });
+
+  const dropped = new Set<number>();
+
+  const pickPreferred = (aMonitorId: string, bMonitorId: string): string => {
+    const aUnique = uniqueDurationByMonitor.get(aMonitorId) ?? 0;
+    const bUnique = uniqueDurationByMonitor.get(bMonitorId) ?? 0;
+    if (aUnique !== bUnique) {
+      return aUnique > bUnique ? aMonitorId : bMonitorId;
+    }
+    return aMonitorId.localeCompare(bMonitorId, undefined, { numeric: true }) <= 0
+      ? aMonitorId
+      : bMonitorId;
+  };
+
+  for (const indices of byFingerprint.values()) {
+    if (indices.length <= 1) continue;
+
+    for (let i = 0; i < indices.length; i++) {
+      const idxA = indices[i]!;
+      if (dropped.has(idxA)) continue;
+      const a = sorted[idxA]!;
+
+      for (let j = i + 1; j < indices.length; j++) {
+        const idxB = indices[j]!;
+        if (dropped.has(idxB)) continue;
+        const b = sorted[idxB]!;
+        if (a.monitorId === b.monitorId) continue;
+
+        const overlapMs = segmentOverlapMs(a, b);
+        if (overlapMs <= 0) continue;
+
+        const shorterMs = Math.min(a.durationSec, b.durationSec) * 1000;
+        if (shorterMs <= 0 || overlapMs / shorterMs < SEGMENT_OVERLAP_RATIO) {
+          continue;
+        }
+
+        const preferred = pickPreferred(a.monitorId, b.monitorId);
+        dropped.add(preferred === a.monitorId ? idxB : idxA);
+        if (preferred !== a.monitorId) break;
+      }
+    }
+  }
+
+  return sorted.filter((_, idx) => !dropped.has(idx));
+}
+
 /** ScreenPipe uses `device_name` (e.g. monitor_0, Display 1) — not a separate monitor_id column. */
 export function parseMonitorIdentity(
   deviceName: string | null | undefined,
@@ -230,7 +424,7 @@ function buildPerMonitorSegments(
   return mergeAdjacentSegments(segments);
 }
 
-function rollupByMonitor(
+export function rollupMonitorSummaries(
   segments: MonitorTimelineSegment[],
 ): MonitorDailySummary[] {
   const byMonitor = new Map<
@@ -321,7 +515,9 @@ function categorySec(
     .reduce((n, c) => n + c.durationSec, 0);
 }
 
-function buildInsights(dailySummary: MonitorDailySummary[]): MonitorInsights {
+export function buildMonitorInsights(
+  dailySummary: MonitorDailySummary[],
+): MonitorInsights {
   if (dailySummary.length === 0) {
     return {
       mostUsedMonitor: null,
@@ -418,12 +614,15 @@ export function buildScreensIntelligence(
       segments: [],
       dailySummary: [],
       heatmap: [],
-      insights: buildInsights([]),
+      insights: buildMonitorInsights([]),
     };
   }
 
-  const segments = buildPerMonitorSegments(frames, identities, windowEnd);
-  const dailySummary = rollupByMonitor(segments);
+  const dedupedFrames = dedupeCrossMonitorFrames(frames);
+  const segments = dedupeCrossMonitorSegments(
+    buildPerMonitorSegments(dedupedFrames, identities, windowEnd),
+  );
+  const dailySummary = rollupMonitorSummaries(segments);
   const monitors = [...identities.values()].sort((a, b) =>
     a.monitorId.localeCompare(b.monitorId, undefined, { numeric: true }),
   );
@@ -434,7 +633,7 @@ export function buildScreensIntelligence(
     segments,
     dailySummary,
     heatmap: buildHeatmap(dailySummary),
-    insights: buildInsights(dailySummary),
+    insights: buildMonitorInsights(dailySummary),
   };
 }
 

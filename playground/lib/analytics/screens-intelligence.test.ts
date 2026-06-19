@@ -76,6 +76,45 @@ describe("buildScreensIntelligence", () => {
     expect(result.heatmap.length).toBe(3);
   });
 
+  it("dedupes mirrored foreground captures across monitors", () => {
+    const mirrored = buildScreensIntelligence(
+      "2026-06-18",
+      [
+        {
+          timestamp: "2026-06-18T11:00:00.000Z",
+          app_name: "Google Chrome",
+          window_name: "GitHub PR Review",
+          browser_url: "https://github.com/org/repo/pull/42",
+          device_name: "monitor_1",
+        },
+        {
+          timestamp: "2026-06-18T11:00:22.000Z",
+          app_name: "Google Chrome",
+          window_name: "GitHub PR Review",
+          browser_url: "https://github.com/org/repo/pull/42",
+          device_name: "monitor_3",
+        },
+        {
+          timestamp: "2026-06-18T11:05:00.000Z",
+          app_name: "Cursor",
+          window_name: "api.ts — Atriveo",
+          device_name: "monitor_3",
+        },
+      ],
+      DAY_START,
+      DAY_END,
+    );
+
+    const chromeSec = mirrored.dailySummary
+      .flatMap((m) => m.topApps)
+      .filter((a) => a.app === "Google Chrome")
+      .reduce((n, row) => n + row.durationSec, 0);
+    expect(chromeSec).toBeLessThan(600);
+    expect(mirrored.dailySummary.find((m) => m.monitorId === "3")?.topApps[0]?.app).toBe(
+      "Cursor",
+    );
+  });
+
   it("handles single monitor without device_name", () => {
     const result = buildScreensIntelligence(
       "2026-06-18",

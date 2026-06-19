@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { ScreensView } from "@/components/screens/screens-view";
-import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
+import { PageBody } from "@/components/dashboard/page-shell";
 
 export const Route = createFileRoute("/screens")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -25,11 +25,6 @@ export const Route = createFileRoute("/screens")({
 function ScreensPage() {
   return (
     <PageBody>
-      <PageHeader
-        eyebrow="Screens"
-        title="What was on each monitor?"
-        description="Memory view — roles, snapshots, and category comparison. Segment-level detail stays in the drawer."
-      />
       <ScreensView date={Route.useSearch().date} />
     </PageBody>
   );
