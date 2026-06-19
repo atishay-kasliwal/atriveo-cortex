@@ -7,6 +7,9 @@ import { AttentionView } from "@/components/attention/attention-view";
 import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
 
 export const Route = createFileRoute("/attention")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    date: typeof search.date === "string" ? search.date : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Attention · Atriveo Cortex" },
@@ -27,7 +30,7 @@ function AttentionPage() {
         title="Where did my attention live?"
         description="Memory visualizations — flow, focus depth, and monitor heat — not another metrics dashboard."
       />
-      <AttentionView />
+      <AttentionView date={Route.useSearch().date} />
     </PageBody>
   );
 }

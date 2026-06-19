@@ -7,6 +7,9 @@ import { ScreensView } from "@/components/screens/screens-view";
 import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
 
 export const Route = createFileRoute("/screens")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    date: typeof search.date === "string" ? search.date : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Screens · Atriveo Cortex" },
@@ -27,7 +30,7 @@ function ScreensPage() {
         title="What was on each monitor?"
         description="Memory view — roles, snapshots, and category comparison. Segment-level detail stays in the drawer."
       />
-      <ScreensView />
+      <ScreensView date={Route.useSearch().date} />
     </PageBody>
   );
 }

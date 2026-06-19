@@ -8,7 +8,7 @@ import {
   ActivityPeriodNav,
 } from "@/components/activity/activity-period-nav";
 import { MemoryHomeView } from "@/components/home/memory-home-view";
-import { PageBody } from "@/components/dashboard/page-shell";
+import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
 import {
   localDateString,
   shiftDate,
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
       { title: "Home · Atriveo Cortex" },
       {
         name: "description",
-        content: "Your work memory — accomplishments, projects, open loops, and what to do next.",
+        content: "Activity log, screens, truth audit, and attention — your day in one place.",
       },
     ],
   }),
@@ -42,6 +42,11 @@ function HomePage() {
 
   return (
     <PageBody compact>
+      <PageHeader
+        eyebrow="Home"
+        title="Today"
+        description="Activity · Screens · Truth Audit · Attention — honestly combined."
+      />
       <div className="mt-2">
         <ActivityPeriodNav
           range="today"

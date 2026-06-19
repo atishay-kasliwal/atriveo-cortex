@@ -32,11 +32,13 @@ export function TodayView({
   loading,
   viewDate,
   calendarToday,
+  compact = false,
 }: {
   data: TodayActivity | undefined;
   loading: boolean;
   viewDate?: string;
   calendarToday?: string;
+  compact?: boolean;
 }) {
   const heading = dayViewHeading(viewDate ?? data?.date ?? "", calendarToday);
   const temporalSubtitle = dayViewTemporalSubtitle(
@@ -59,6 +61,38 @@ export function TodayView({
         description="Historical analytics will appear here after ScreenPipe captures and syncs to Cortex."
         hint="Start ScreenPipe on your capture Mac"
       />
+    );
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-4">
+        <TodayHero data={data} heading={heading} />
+        <ActivityBreakdown
+          focusedStateSec={data.focusedStateSec}
+          activeStateSec={data.activeStateSec}
+          backgroundStateSec={data.backgroundStateSec}
+          idleStateSec={data.idleStateSec}
+          sleepingStateSec={data.sleepingStateSec}
+          activeSec={data.activeSec}
+          backgroundSec={data.backgroundSec ?? data.passiveSec}
+          idleSec={data.idleSec}
+          sleepingSec={data.sleepingSec}
+          totalIdleSec={data.totalIdleSec}
+          largestIdleBlockSec={data.largestIdleBlockSec}
+          presenceScore={data.presenceScore}
+        />
+        <ActivityCard title="Temporal distribution" subtitle={temporalSubtitle}>
+          <TemporalRibbon
+            blocks={data.timeline}
+            stateTimeline={data.stateTimeline}
+            viewDate={viewDate ?? data.date}
+          />
+        </ActivityCard>
+        <ActivityCard title="Timeline of work" subtitle="Top sessions — full log on Activity page">
+          <WorkTimeline blocks={data.timeline.slice(0, 6)} />
+        </ActivityCard>
+      </div>
     );
   }
 

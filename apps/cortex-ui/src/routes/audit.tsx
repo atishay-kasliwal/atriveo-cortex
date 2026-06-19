@@ -7,6 +7,9 @@ import { AuditView } from "@/components/audit/audit-view";
 import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
 
 export const Route = createFileRoute("/audit")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    date: typeof search.date === "string" ? search.date : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Truth Audit · Atriveo Cortex" },
@@ -27,7 +30,7 @@ function AuditPage() {
         title="Audit"
         description="Inspect every presence classification with evidence — then mark Correct or Incorrect to track accuracy."
       />
-      <AuditView />
+      <AuditView date={Route.useSearch().date} />
     </PageBody>
   );
 }
