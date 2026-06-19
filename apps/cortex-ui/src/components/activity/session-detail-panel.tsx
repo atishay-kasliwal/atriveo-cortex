@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
+import { sessionAppsLine, sessionContextLabel } from "@/lib/activity/session-context";
 import type { TimelineBlock } from "@/lib/api/types";
 
 export function SessionDetailPanel({
@@ -26,6 +27,9 @@ export function SessionDetailPanel({
   const style = categoryStyle[block.category];
   const confidence = block.projectConfidence ?? block.confidence ?? 0;
   const evidence = block.attributionEvidence ?? [];
+  const context = sessionContextLabel(block);
+  const apps = sessionAppsLine(block);
+  const distractions = block.briefDistractions ?? [];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -88,6 +92,47 @@ export function SessionDetailPanel({
             </section>
           ) : null}
 
+          {context || block.windowSnippets?.length || block.repoPathsUsed?.length ? (
+            <section>
+              <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Context
+              </h3>
+              <div className="mt-2 space-y-2 text-[13px] text-muted-foreground">
+                {context ? <p className="text-foreground">{context}</p> : null}
+                {block.windowSnippets?.slice(1).map((snippet) => (
+                  <p key={snippet}>{snippet}</p>
+                ))}
+                {block.repoPathsUsed?.map((repo) => (
+                  <p key={repo} className="font-mono text-[12px]">
+                    {repo}
+                  </p>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {distractions.length > 0 ? (
+            <section>
+              <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Brief distractions
+              </h3>
+              <ul className="mt-2 space-y-2">
+                {distractions.map((item) => (
+                  <li
+                    key={`${item.title}-${item.durationSec}`}
+                    className="rounded-lg border border-border/50 bg-surface-2/40 px-3 py-2 text-[13px]"
+                  >
+                    <div>{item.title}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      {fmtDuration(item.durationSec)}
+                      {item.websitesUsed?.length ? ` · ${item.websitesUsed.join(", ")}` : ""}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           <section>
             <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Activity
@@ -98,10 +143,7 @@ export function SessionDetailPanel({
                   {style.label}
                 </span>
               </p>
-              {block.app ? <p>App: {block.app}</p> : null}
-              {block.applicationsUsed?.length ? (
-                <p>Apps: {block.applicationsUsed.join(", ")}</p>
-              ) : null}
+              {apps ? <p>Apps: {apps}</p> : null}
               {block.websitesUsed?.length ? (
                 <p>Sites: {block.websitesUsed.join(", ")}</p>
               ) : null}

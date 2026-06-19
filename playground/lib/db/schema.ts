@@ -294,6 +294,8 @@ export const activitySessions = pgTable(
     sessionLabel: text("session_label").notNull().default("Work Session"),
     applicationsUsed: text("applications_used").notNull().default("[]"),
     websitesUsed: text("websites_used").notNull().default("[]"),
+    windowSnippets: text("window_snippets").notNull().default("[]"),
+    repoPathsUsed: text("repo_paths_used").notNull().default("[]"),
     date: text("date").notNull(),
   },
   (t) => [

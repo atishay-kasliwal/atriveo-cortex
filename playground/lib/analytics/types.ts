@@ -103,6 +103,8 @@ export type ActivitySessionRow = {
   session_label: string;
   applications_used: string;
   websites_used: string;
+  window_snippets?: string;
+  repo_paths_used?: string;
   date: string;
 };
 

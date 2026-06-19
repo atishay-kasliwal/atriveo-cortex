@@ -22,6 +22,14 @@ export type TimelineBlockDTO = {
   attributionEvidence?: Array<{ type: string; label: string; score: number }>;
   applicationsUsed?: string[];
   websitesUsed?: string[];
+  windowSnippets?: string[];
+  repoPathsUsed?: string[];
+  briefDistractions?: Array<{
+    title: string;
+    durationSec: number;
+    websitesUsed?: string[];
+    windowSnippets?: string[];
+  }>;
 };
 
 export type AppUsageDTO = {
@@ -204,6 +212,8 @@ export type WorkSessionDTO = {
   dominantApp: string;
   applicationsUsed: string[];
   websitesUsed: string[];
+  windowSnippets?: string[];
+  repoPathsUsed?: string[];
   evidence?: AttributionEvidenceDTO[];
 };
 
@@ -271,6 +281,8 @@ export type WeekSessionsDTO = {
 export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
   let applicationsUsed: string[] = [];
   let websitesUsed: string[] = [];
+  let windowSnippets: string[] = [];
+  let repoPathsUsed: string[] = [];
   let evidence: AttributionEvidenceDTO[] = [];
   try {
     applicationsUsed = JSON.parse(row.applications_used) as string[];
@@ -281,6 +293,16 @@ export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
     websitesUsed = sanitizeWebsiteList(JSON.parse(row.websites_used) as string[]);
   } catch {
     websitesUsed = [];
+  }
+  try {
+    windowSnippets = JSON.parse(row.window_snippets ?? "[]") as string[];
+  } catch {
+    windowSnippets = [];
+  }
+  try {
+    repoPathsUsed = JSON.parse(row.repo_paths_used ?? "[]") as string[];
+  } catch {
+    repoPathsUsed = [];
   }
   try {
     evidence = JSON.parse(row.attribution_evidence) as AttributionEvidenceDTO[];
@@ -301,6 +323,8 @@ export function toWorkSessionDTO(row: ActivitySessionRow): WorkSessionDTO {
     dominantApp: row.dominant_app,
     applicationsUsed,
     websitesUsed,
+    windowSnippets,
+    repoPathsUsed,
     evidence,
   };
 }

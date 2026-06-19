@@ -78,7 +78,9 @@ export function fmtDuration(sec: number): string {
   if (!sec || sec < 0) return "0m";
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  if (h === 0) return `${m}m`;
+  const s = Math.floor(sec % 60);
+  if (h === 0 && m === 0) return `${s}s`;
+  if (h === 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
   if (m === 0) return `${h}h`;
   return `${h}h ${m.toString().padStart(2, "0")}m`;
 }

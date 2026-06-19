@@ -17,6 +17,7 @@ import {
   WebsiteCategorySummary,
 } from "@/components/activity/website-categories";
 import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
+import { SessionList } from "@/components/activity/session-list";
 import { WorkTimeline } from "@/components/activity/work-timeline";
 import { EmptyState } from "@/components/dashboard/states";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
@@ -145,7 +146,7 @@ export function TodayView({
         <WorkTimeline blocks={data.timeline} />
       </ActivityCard>
       <ActivityCard title="Sessions" subtitle="Stitched work blocks — not every app switch">
-        <SessionList blocks={data.timeline} />
+        <SessionList blocks={data.timeline} sort="newest" compact />
       </ActivityCard>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ActivityCard title="Applications" subtitle={appsSubtitle}>
@@ -210,39 +211,6 @@ function HeroStat({
         {value}
       </div>
     </div>
-  );
-}
-
-function SessionList({ blocks }: { blocks: TodayActivity["timeline"] }) {
-  const sorted = [...blocks].sort(
-    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
-  );
-  return (
-    <ul className="divide-y divide-border/40">
-      {sorted.map((b) => {
-        const style = categoryStyle[b.category];
-        const apps = b.applicationsUsed?.join(", ") ?? b.app;
-        const sites = b.websitesUsed?.join(", ");
-        return (
-          <li key={b.id} className="flex items-center gap-3 px-5 py-3">
-            <span className={"h-8 w-1 rounded-full " + style.bar} />
-            <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-medium">{b.title}</div>
-              <div className="text-[11px] text-muted-foreground">
-                {fmtClock(b.startedAt)}–{fmtClock(b.endedAt)}
-                {b.projectName ? ` · ${b.projectName}` : ""}
-                {apps ? ` · ${apps}` : ""}
-                {sites ? ` · ${sites}` : ""}
-              </div>
-            </div>
-            <span className={"rounded px-1.5 py-0.5 text-[10px] font-medium " + style.chip}>
-              {style.label}
-            </span>
-            <span className="font-mono text-[12px] tabular-nums">{fmtDuration(b.durationSec)}</span>
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 

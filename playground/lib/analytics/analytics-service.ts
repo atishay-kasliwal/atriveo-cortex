@@ -24,6 +24,8 @@ import type {
   DailySummaryRow,
   WebsiteUsageRow,
 } from "./types";
+import { collapseMicroEntertainment } from "./session-timeline";
+import { parseStringArrayField } from "./session-timeline";
 
 function parseAttributionEvidence(raw: string) {
   try {
@@ -188,19 +190,11 @@ export async function getOpenLoopBriefs() {
 }
 
 export function sessionsToTimeline(sessions: ActivitySessionRow[]) {
-  return sessions.map((s) => {
-    let applicationsUsed: string[] = [];
-    let websitesUsed: string[] = [];
-    try {
-      applicationsUsed = JSON.parse(s.applications_used) as string[];
-    } catch {
-      applicationsUsed = [];
-    }
-    try {
-      websitesUsed = sanitizeWebsiteList(JSON.parse(s.websites_used) as string[]);
-    } catch {
-      websitesUsed = [];
-    }
+  const blocks = sessions.map((s) => {
+    const applicationsUsed = parseStringArrayField(s.applications_used);
+    const websitesUsed = sanitizeWebsiteList(parseStringArrayField(s.websites_used));
+    const windowSnippets = parseStringArrayField(s.window_snippets);
+    const repoPathsUsed = parseStringArrayField(s.repo_paths_used);
     return {
       id: String(s.id),
       startedAt: s.start_time,
@@ -216,8 +210,11 @@ export function sessionsToTimeline(sessions: ActivitySessionRow[]) {
       attributionEvidence: parseAttributionEvidence(s.attribution_evidence),
       applicationsUsed,
       websitesUsed,
+      windowSnippets,
+      repoPathsUsed,
     };
   });
+  return collapseMicroEntertainment(blocks);
 }
 
 export async function categoryBreakdownForDay(date: string) {

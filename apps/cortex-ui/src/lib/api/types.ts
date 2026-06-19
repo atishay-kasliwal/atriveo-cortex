@@ -830,6 +830,16 @@ export type TimelineBlock = {
   attributionEvidence?: AttributionEvidence[];
   applicationsUsed?: string[];
   websitesUsed?: string[];
+  windowSnippets?: string[];
+  repoPathsUsed?: string[];
+  briefDistractions?: BriefDistraction[];
+};
+
+export type BriefDistraction = {
+  title: string;
+  durationSec: number;
+  websitesUsed?: string[];
+  windowSnippets?: string[];
 };
 
 export type AttributionEvidence = {

@@ -72,8 +72,8 @@ export class AnalyticsRepository {
          (start_time, end_time, duration_minutes, dominant_app, dominant_project,
           primary_project, supporting_project, confidence, project_confidence,
           attribution_evidence, session_type, session_label, applications_used,
-          websites_used, date)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          websites_used, window_snippets, repo_paths_used, date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
         [
           s.startTime,
           s.endTime,
@@ -89,6 +89,8 @@ export class AnalyticsRepository {
           s.sessionLabel,
           JSON.stringify(s.applicationsUsed),
           JSON.stringify(s.websitesUsed),
+          JSON.stringify(s.windowSnippets ?? []),
+          JSON.stringify(s.repoPathsUsed ?? []),
           date,
         ],
       );
@@ -227,7 +229,7 @@ export class AnalyticsRepository {
       `SELECT id, start_time, end_time, duration_minutes, dominant_app,
               dominant_project, primary_project, supporting_project, confidence,
               project_confidence, attribution_evidence, session_type, session_label,
-              applications_used, websites_used, date
+              applications_used, websites_used, window_snippets, repo_paths_used, date
        FROM activity_sessions
        WHERE date >= $1 AND date <= $2
        ORDER BY start_time ASC`,
