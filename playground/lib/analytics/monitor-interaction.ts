@@ -6,12 +6,16 @@ import type { MonitorIdentity, MonitorTimelineSegment, ScreenFrame } from "./scr
 import { normalizeAppName } from "./category-map";
 import { parseMonitorIdentity, rollupMonitorSummaries } from "./screens-intelligence";
 
-/** Layer B — time the user had keyboard/mouse focus on each display. */
+export function isInteractionFrame(frame: ScreenFrame): boolean {
+  if (frame.capture_trigger === "background_visibility") return false;
+  return frame.focused === true;
+}
+
 export function buildMonitorInteractionSegments(
   frames: ScreenFrame[],
   windowEnd: string,
 ): MonitorTimelineSegment[] {
-  const focusedFrames = frames.filter((frame) => frame.focused === true);
+  const focusedFrames = frames.filter(isInteractionFrame);
   if (focusedFrames.length === 0) return [];
 
   const identities = new Map<string, MonitorIdentity>();

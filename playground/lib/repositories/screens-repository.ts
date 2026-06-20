@@ -57,6 +57,8 @@ export type StoredScreensPayload = {
     displayName: string;
     interactionSec: number;
   }>;
+  /** Bump when interaction computation logic changes — invalidates stale cached empty arrays. */
+  interactionLayerVersion?: number;
 };
 
 export class ScreensRepository {

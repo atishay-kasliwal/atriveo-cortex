@@ -7,6 +7,7 @@ import {
   bridgeSegmentGaps,
   buildScreensIntelligence,
   dedupeMirroredSegments,
+  isLikelyMirroredSegmentPair,
 } from "./screens-intelligence";
 
 const DAY_START = "2026-06-18T04:00:00.000Z";
@@ -43,6 +44,73 @@ describe("dedupeMirroredSegments", () => {
     const result = dedupeMirroredSegments(segments);
     expect(result).toHaveLength(2);
     expect(result.reduce((n, s) => n + s.durationSec, 0)).toBe(14400);
+  });
+
+  it("does not treat Chrome YouTube vs Chrome Gmail as mirrored", () => {
+    const youtube = {
+      monitorId: "0",
+      displayName: "M1",
+      startTime: "2026-06-18T10:00:00.000Z",
+      endTime: "2026-06-18T11:00:00.000Z",
+      durationSec: 3600,
+      primaryApp: "Google Chrome",
+      primaryDomain: "youtube.com",
+      windowTitle: "YouTube",
+      category: "entertainment",
+      confidence: 0.72,
+    };
+    const gmail = {
+      monitorId: "1",
+      displayName: "M2",
+      startTime: "2026-06-18T10:00:05.000Z",
+      endTime: "2026-06-18T11:00:00.000Z",
+      durationSec: 3595,
+      primaryApp: "Google Chrome",
+      primaryDomain: "mail.google.com",
+      windowTitle: "Gmail - Inbox",
+      category: "communication",
+      confidence: 0.95,
+    };
+    expect(isLikelyMirroredSegmentPair(youtube, gmail)).toBe(false);
+    expect(dedupeMirroredSegments([youtube, gmail])).toHaveLength(2);
+  });
+
+  it("keeps duplicate-metadata frames on both monitors (no frame-level dedupe)", () => {
+    const result = buildScreensIntelligence(
+      "2026-06-18",
+      [
+        {
+          timestamp: "2026-06-18T10:00:00.000Z",
+          app_name: "Google Chrome",
+          window_name: "Netflix",
+          browser_url: "https://netflix.com/watch/1",
+          device_name: "monitor_0",
+        },
+        {
+          timestamp: "2026-06-18T10:00:10.000Z",
+          app_name: "Cursor",
+          window_name: "main.ts",
+          device_name: "monitor_1",
+        },
+        {
+          timestamp: "2026-06-18T10:00:20.000Z",
+          app_name: "Google Chrome",
+          window_name: "Netflix",
+          browser_url: "https://netflix.com/watch/1",
+          device_name: "monitor_0",
+        },
+        {
+          timestamp: "2026-06-18T10:00:30.000Z",
+          app_name: "Cursor",
+          window_name: "main.ts",
+          device_name: "monitor_1",
+        },
+      ],
+      DAY_START,
+      DAY_END,
+    );
+    expect(result.dailySummary.find((m) => m.monitorId === "0")?.totalSec ?? 0).toBeGreaterThan(0);
+    expect(result.dailySummary.find((m) => m.monitorId === "1")?.totalSec ?? 0).toBeGreaterThan(0);
   });
 });
 

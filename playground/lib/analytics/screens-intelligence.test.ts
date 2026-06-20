@@ -76,7 +76,7 @@ describe("buildScreensIntelligence", () => {
     expect(result.heatmap.length).toBe(3);
   });
 
-  it("dedupes mirrored foreground captures across monitors", () => {
+  it("dedupes mirrored segments (not frames) across monitors", () => {
     const mirrored = buildScreensIntelligence(
       "2026-06-18",
       [

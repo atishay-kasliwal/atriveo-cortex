@@ -15,6 +15,9 @@ import {
 import { fetchFramesForWindow } from "@/lib/screenpipe-db";
 import { refreshMonitorRoleProfiles } from "./monitor-roles-api";
 
+/** Bump when Layer B computation semantics change. */
+export const INTERACTION_LAYER_VERSION = 2;
+
 function segmentsToTimelineDto(
   segments: ReturnType<typeof buildScreensIntelligence>["segments"],
 ): NonNullable<StoredScreensPayload["interactionTimelines"]> {
@@ -51,6 +54,7 @@ export async function computeAndPersistDayScreens(date: string): Promise<StoredS
     insights: result.insights,
     interactionTimelines: segmentsToTimelineDto(interactionSegments),
     interactionSummary: rollupInteractionByMonitor(interactionSegments),
+    interactionLayerVersion: INTERACTION_LAYER_VERSION,
   };
 
   const totalVisibleSec = result.dailySummary.reduce((n, m) => n + m.totalSec, 0);

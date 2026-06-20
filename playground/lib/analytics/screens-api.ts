@@ -23,6 +23,7 @@ import {
 } from "./screens-intelligence";
 import {
   computeAndPersistDayScreens,
+  INTERACTION_LAYER_VERSION,
   loadDayScreensPayload,
 } from "./screens-db";
 import {
@@ -212,7 +213,11 @@ async function buildInteractionLayer(
   interactionTimelines: DayScreensDTO["interactionTimelines"];
   interactionSummary: DayScreensDTO["interactionSummary"];
 }> {
-  if (payload.interactionTimelines && payload.interactionSummary) {
+  if (
+    payload.interactionLayerVersion === INTERACTION_LAYER_VERSION &&
+    payload.interactionTimelines != null &&
+    payload.interactionSummary != null
+  ) {
     return {
       interactionTimelines: payload.interactionTimelines,
       interactionSummary: payload.interactionSummary,

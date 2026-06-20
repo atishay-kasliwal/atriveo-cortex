@@ -13,6 +13,8 @@ export type ScreenFrame = {
   browser_url?: string | null;
   focused?: boolean | null;
   device_name?: string | null;
+  /** ScreenPipe frames.capture_trigger — used to exclude background visibility from Layer B */
+  capture_trigger?: string | null;
 };
 
 export type MonitorIdentity = {
@@ -90,7 +92,8 @@ function deviceKey(deviceName: string | null | undefined): string {
   return (deviceName ?? "default").trim() || "default";
 }
 
-const CROSS_MONITOR_DEDUPE_WINDOW_MS = 45_000;
+/** Segments on mirrored displays start within this window of each other. */
+const MIRROR_START_SYNC_MS = 60_000;
 const MIRROR_OVERLAP_RATIO = 0.9;
 
 function frameFingerprint(frame: ScreenFrame): string {
@@ -155,10 +158,15 @@ function pickFrameWinner(
   return aKey.localeCompare(bKey, undefined, { numeric: true }) <= 0 ? a : b;
 }
 
-/** Drop mirrored foreground captures that ScreenPipe records on multiple displays. */
+/**
+ * @deprecated Removed from the ingestion pipeline — fingerprint-only frame dedupe
+ * collapsed legitimate multi-monitor activity (Scenario B/E). Mirror handling is
+ * segment-level only via {@link dedupeMirroredSegments}.
+ */
 export function dedupeCrossMonitorFrames(frames: ScreenFrame[]): ScreenFrame[] {
   if (frames.length <= 1) return frames;
 
+  const crossMonitorDedupeWindowMs = 45_000;
   const sorted = [...frames].sort(
     (a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp),
   );
@@ -190,7 +198,7 @@ export function dedupeCrossMonitorFrames(frames: ScreenFrame[]): ScreenFrame[] {
     const conflictIndex = kept.findIndex((existing) => {
       const existingTs = Date.parse(existing.timestamp);
       return (
-        Math.abs(existingTs - ts) <= CROSS_MONITOR_DEDUPE_WINDOW_MS &&
+        Math.abs(existingTs - ts) <= crossMonitorDedupeWindowMs &&
         frameFingerprint(existing) === fp &&
         deviceKey(existing.device_name) !== device
       );
@@ -212,6 +220,26 @@ export function dedupeCrossMonitorFrames(frames: ScreenFrame[]): ScreenFrame[] {
   return kept.sort(
     (a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp),
   );
+}
+
+/** True when two segments on different monitors show the same content simultaneously (mirrored displays). */
+export function isLikelyMirroredSegmentPair(
+  a: MonitorTimelineSegment,
+  b: MonitorTimelineSegment,
+): boolean {
+  if (a.monitorId === b.monitorId) return false;
+  if (segmentFingerprint(a) !== segmentFingerprint(b)) return false;
+
+  const overlapMs = segmentOverlapMs(a, b);
+  if (overlapMs <= 0) return false;
+
+  const shorterMs = Math.min(a.durationSec, b.durationSec) * 1000;
+  if (shorterMs <= 0 || overlapMs / shorterMs < MIRROR_OVERLAP_RATIO) {
+    return false;
+  }
+
+  const startDeltaMs = Math.abs(Date.parse(a.startTime) - Date.parse(b.startTime));
+  return startDeltaMs <= MIRROR_START_SYNC_MS;
 }
 
 /** Remove overlapping duplicate segments only when displays are truly mirrored. */
@@ -266,13 +294,7 @@ export function dedupeMirroredSegments(
         const b = sorted[idxB]!;
         if (a.monitorId === b.monitorId) continue;
 
-        const overlapMs = segmentOverlapMs(a, b);
-        if (overlapMs <= 0) continue;
-
-        const shorterMs = Math.min(a.durationSec, b.durationSec) * 1000;
-        if (shorterMs <= 0 || overlapMs / shorterMs < MIRROR_OVERLAP_RATIO) {
-          continue;
-        }
+        if (!isLikelyMirroredSegmentPair(a, b)) continue;
 
         const preferred = pickPreferred(a.monitorId, b.monitorId);
         dropped.add(preferred === a.monitorId ? idxB : idxA);
@@ -650,10 +672,9 @@ export function buildScreensIntelligence(
     };
   }
 
-  const dedupedFrames = dedupeCrossMonitorFrames(frames);
   const segments = bridgeSegmentGaps(
     dedupeMirroredSegments(
-      buildPerMonitorSegments(dedupedFrames, identities, windowEnd),
+      buildPerMonitorSegments(frames, identities, windowEnd),
     ),
   );
   const dailySummary = rollupMonitorSummaries(segments);

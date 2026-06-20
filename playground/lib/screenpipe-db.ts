@@ -33,6 +33,7 @@ export function fetchFramesForWindow(
   if (columns.has("focused")) extras.push("focused");
   if (columns.has("device_name")) extras.push("device_name");
   if (columns.has("browser_url")) extras.push("browser_url");
+  if (columns.has("capture_trigger")) extras.push("capture_trigger");
   const extraSql = extras.length > 0 ? `, ${extras.join(", ")}` : "";
   const frames = db
     .prepare(

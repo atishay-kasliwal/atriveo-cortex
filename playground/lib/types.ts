@@ -9,6 +9,7 @@ export type FrameRow = {
   focused?: boolean | null;
   device_name?: string | null;
   browser_url?: string | null;
+  capture_trigger?: string | null;
 };
 
 export type UiEventRow = {
