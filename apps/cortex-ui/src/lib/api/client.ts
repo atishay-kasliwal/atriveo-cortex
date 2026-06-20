@@ -54,6 +54,8 @@ import {
   fetchProjectDecisions,
 } from "./decision-adapter";
 import { fetchAnalyticsHistory } from "./analytics-history-adapter";
+import { fetchHealthTimeline } from "./health-adapter";
+import type { HealthPeriod } from "./health-types";
 export { ApiError, isApiNotFound, isRetryableApiError } from "./cortex-fetch";
 export type { ActionBucket };
 
@@ -149,5 +151,9 @@ export const api = {
     dashboard: () => fetchAccuracyDashboard(),
     report: (start?: string, end?: string) =>
       fetchClassificationAccuracyReport(start, end),
+  },
+
+  health: {
+    timeline: (period: HealthPeriod) => fetchHealthTimeline(period),
   },
 };

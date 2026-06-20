@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, type ActionBucket } from "./client";
 import { isRetryableApiError } from "./cortex-fetch";
+import type { HealthPeriod } from "./health-types";
 
 const STALE = 30_000;
 
@@ -48,6 +49,7 @@ export const qk = {
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
     ["analytics", "validation", date ?? "today"] as const,
+  healthTimeline: (period: HealthPeriod) => ["health", "timeline", period] as const,
 };
 
 export const overviewQuery = queryOptions({
@@ -290,3 +292,11 @@ export const accuracyDashboardQuery = queryOptions({
   queryFn: () => api.accuracy.dashboard(),
   staleTime: STALE,
 });
+
+export const healthTimelineQuery = (period: HealthPeriod) =>
+  queryOptions({
+    queryKey: qk.healthTimeline(period),
+    queryFn: () => api.health.timeline(period),
+    staleTime: STALE,
+    retry: defaultQueryRetry,
+  });

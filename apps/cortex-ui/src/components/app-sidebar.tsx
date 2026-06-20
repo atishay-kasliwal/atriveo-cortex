@@ -22,6 +22,7 @@ import {
   Monitor,
   ClipboardCheck,
   Gauge,
+  Watch,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -47,6 +48,7 @@ const nav = [
     items: [
       { title: "Projects", url: "/projects", icon: FolderKanban },
       { title: "Project Health", url: "/projects/health", icon: HeartPulse },
+      { title: "Health", url: "/health", icon: Watch },
     ],
   },
   {

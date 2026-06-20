@@ -26,6 +26,7 @@ import { Route as AskRouteImport } from './routes/ask'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as AccuracyRouteImport } from './routes/accuracy'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsHealthRouteImport } from './routes/projects.health'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
@@ -120,6 +121,11 @@ const AccuracyRoute = AccuracyRouteImport.update({
   path: '/accuracy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -164,6 +170,7 @@ const ActionsIdRoute = ActionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accuracy': typeof AccuracyRoute
+  '/health': typeof HealthRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accuracy': typeof AccuracyRoute
+  '/health': typeof HealthRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accuracy': typeof AccuracyRoute
+  '/health': typeof HealthRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accuracy'
+    | '/health'
     | '/actions'
     | '/activity'
     | '/ask'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accuracy'
+    | '/health'
     | '/actions'
     | '/activity'
     | '/ask'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/accuracy'
+    | '/health'
     | '/actions'
     | '/activity'
     | '/ask'
@@ -330,6 +342,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccuracyRoute: typeof AccuracyRoute
+  HealthRoute: typeof HealthRoute
   ActionsRoute: typeof ActionsRouteWithChildren
   ActivityRoute: typeof ActivityRoute
   AskRoute: typeof AskRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccuracyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -580,6 +600,7 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccuracyRoute: AccuracyRoute,
+  HealthRoute: HealthRoute,
   ActionsRoute: ActionsRouteWithChildren,
   ActivityRoute: ActivityRoute,
   AskRoute: AskRoute,

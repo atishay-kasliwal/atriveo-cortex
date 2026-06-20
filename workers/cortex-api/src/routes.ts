@@ -89,6 +89,7 @@ import {
 } from "@/lib/analytics/accuracy-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
 import { fetchSyncStatus, fetchMemoryJob, fetchCaptureDoctor, processMemoryJob, triggerMemoryJobEnqueue, triggerMemoryJobRetry } from "@/lib/sync/sync-api";
+import { buildHealthTimeline, type HealthPeriod } from "@/lib/health/health-api";
 import { apiError, apiErrorFromException, apiSuccess } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
@@ -111,6 +112,21 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       },
       dbOk ? 200 : 503,
     );
+  });
+
+  app.get("/api/v1/health/:period", async (c) => {
+    try {
+      const period = c.req.param("period") as HealthPeriod;
+      if (!["today", "yesterday", "week", "month"].includes(period)) {
+        return apiError(c, "Invalid period. Use: today, yesterday, week, month", 400);
+      }
+      const tz = c.req.query("timezone") ?? "America/Los_Angeles";
+      const data = await buildHealthTimeline(period, tz);
+      c.header("Cache-Control", "no-store, max-age=0");
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to load health timeline", 500);
+    }
   });
 
   app.get("/api/dashboard/overview", async (c) => {
