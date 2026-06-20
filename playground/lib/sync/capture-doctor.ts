@@ -313,6 +313,7 @@ export async function buildCaptureDoctorReport(): Promise<CaptureDoctorReport> {
       "ScreenPipe has newer frames than Neon has synced.",
     );
     recommendedActions.push(
+      "On your Mac: `cd working-memory/playground && npm run capture:install` to refresh the launchd agents and local sync env.",
       "On your Mac: `npm run capture:watermark` then `npm run sync:screenpipe` in playground.",
       "Check `~/Library/Logs/Atriveo/cortex-sync.log` for errors.",
     );
@@ -323,6 +324,7 @@ export async function buildCaptureDoctorReport(): Promise<CaptureDoctorReport> {
       "ScreenPipe process may have exited or Mac may be asleep.",
     );
     recommendedActions.push(
+      "On your Mac: `cd working-memory/playground && npm run capture:install` to reinstall or repair the launchd agents.",
       "Run `launchctl kickstart -k gui/$UID/com.atriveo.screenpipe` on your Mac.",
       "Check System Settings → Privacy → Screen Recording for ScreenPipe.",
     );
@@ -331,6 +333,7 @@ export async function buildCaptureDoctorReport(): Promise<CaptureDoctorReport> {
     diagnosis = "Sync agent is behind";
     likelyCauses.push("cortex-sync has not completed recently.");
     recommendedActions.push(
+      "On your Mac: `cd working-memory/playground && npm run capture:install` to refresh the launchd sync job and `.env.sync`.",
       "Run `launchctl kickstart -k gui/$UID/com.atriveo.cortex-sync` on your Mac.",
       "Verify DATABASE_URL in `.env.sync` on the capture Mac.",
     );
@@ -343,6 +346,7 @@ export async function buildCaptureDoctorReport(): Promise<CaptureDoctorReport> {
       sqliteStorage.volumeHint ?? "Sync is healthy but re-pushing the same old data.",
     );
     recommendedActions.push(
+      "If launchd agents are missing, run `cd working-memory/playground && npm run capture:install` first.",
       "System Settings → Privacy & Security → Screen Recording — toggle ScreenPipe off and on.",
       "Restart ScreenPipe: `pkill -f screenpipe` then `launchctl kickstart -k gui/$UID/com.atriveo.screenpipe`.",
       "Move windows, wait 30s, then check SQLite: `SELECT MAX(timestamp) FROM frames;`",
@@ -360,6 +364,7 @@ export async function buildCaptureDoctorReport(): Promise<CaptureDoctorReport> {
       "Sync is healthy but re-pushing the same old data.",
     );
     recommendedActions.push(
+      "On your Mac: `cd working-memory/playground && npm run capture:install` to ensure the agents are still registered.",
       "Wake Mac and confirm ScreenPipe is recording.",
       "Check `~/Library/Logs/Atriveo/cortex-sync.log` — 0 records last run is expected until capture resumes.",
     );

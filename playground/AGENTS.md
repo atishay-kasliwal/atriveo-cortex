@@ -10,6 +10,8 @@ npm install
 npm run dev    # http://localhost:3456
 ```
 
+After setting up `playground/.env.sync`, run `npm run capture:install` once on the Mac to install the launchd agents and keep ScreenPipe/sync alive across restarts.
+
 ### Critical: do not run `npm run build` during agent sessions
 
 Running `npm run build` while `npm run dev` is active corrupts the `.next` cache and causes `500 Cannot find module './NNN.js'` errors.

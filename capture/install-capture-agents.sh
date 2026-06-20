@@ -18,6 +18,32 @@ for script in launchd-env.sh wait-for-volume.sh run-screenpipe.sh run-cortex-syn
 done
 echo "Deployed scripts to ${CAPTURE_DIR}"
 
+ensure_sync_env() {
+  local source_env=""
+
+  if [[ -f "${REPO_ROOT}/playground/.env.sync" ]]; then
+    source_env="${REPO_ROOT}/playground/.env.sync"
+  elif [[ -f "${REPO_ROOT}/playground/.env.sync.example" ]]; then
+    cp "${REPO_ROOT}/playground/.env.sync.example" "${REPO_ROOT}/playground/.env.sync"
+    chmod 600 "${REPO_ROOT}/playground/.env.sync"
+    echo "Created ${REPO_ROOT}/playground/.env.sync from .env.sync.example"
+    source_env="${REPO_ROOT}/playground/.env.sync"
+  fi
+
+  if [[ -z "${source_env}" ]]; then
+    echo "Missing playground/.env.sync and playground/.env.sync.example; cannot configure cortex-sync" >&2
+    exit 1
+  fi
+
+  cp "${source_env}" "${CAPTURE_DIR}/.env.sync"
+  chmod 600 "${CAPTURE_DIR}/.env.sync"
+  echo "Copied $(basename "${source_env}") → ${CAPTURE_DIR}/.env.sync (launchd-safe)"
+
+  if grep -q 'DATABASE_URL=postgresql://user:pass@host/db?sslmode=require' "${CAPTURE_DIR}/.env.sync"; then
+    echo "WARNING: ${CAPTURE_DIR}/.env.sync still has the placeholder DATABASE_URL. Edit playground/.env.sync with your real Neon URL." >&2
+  fi
+}
+
 install_plist() {
   local src="$1"
   local name="$2"
@@ -37,11 +63,7 @@ launchctl bootout "gui/$(id -u)/com.atriveo.cortex-sync" 2>/dev/null || true
 install_plist "${REPO_ROOT}/capture/com.atriveo.screenpipe.plist" "com.atriveo.screenpipe.plist"
 install_plist "${REPO_ROOT}/capture/com.atriveo.cortex-sync.plist" "com.atriveo.cortex-sync.plist"
 
-if [[ -f "${REPO_ROOT}/playground/.env.sync" ]]; then
-  cp "${REPO_ROOT}/playground/.env.sync" "${CAPTURE_DIR}/.env.sync"
-  chmod 600 "${CAPTURE_DIR}/.env.sync"
-  echo "Copied playground/.env.sync → ${CAPTURE_DIR}/.env.sync (launchd-safe)"
-fi
+ensure_sync_env
 
 launchctl bootstrap "gui/$(id -u)" "${AGENTS_DIR}/com.atriveo.screenpipe.plist"
 launchctl bootstrap "gui/$(id -u)" "${AGENTS_DIR}/com.atriveo.cortex-sync.plist"

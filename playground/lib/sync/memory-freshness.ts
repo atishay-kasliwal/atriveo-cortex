@@ -62,8 +62,9 @@ function freshnessFromAge(
 ): FreshnessLevel {
   if (age == null) return "unknown";
   if (age <= freshMs) return "fresh";
-  if (age > staleMs) return "stale";
-  return "fresh";
+  if (age >= staleMs) return "stale";
+  // Intermediate zone (freshMs < age < staleMs): degraded but not stale
+  return "unknown";
 }
 
 function subsystem(

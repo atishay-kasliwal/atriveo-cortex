@@ -88,11 +88,20 @@ export async function syncAgentHeartbeatFromState(): Promise<void> {
   const heartbeatAt = sync.captureAgentHeartbeat ?? sync.lastSyncCompletedAt;
   if (!heartbeatAt && !sync.lastFrameTimestamp) return;
 
+  // Use the agent-run heartbeat as latestSyncTime so the sync health signal
+  // reflects whether the agent is alive, not just whether it processed data.
+  // lastSyncCompletedAt only advances when frames exist, which would otherwise
+  // block the fallback to lastProcessedTimestamp in buildAgentHealthView.
+  const latestSyncTime =
+    sync.captureAgentHeartbeat ??
+    sync.lastSyncCompletedAt ??
+    sync.lastProcessedTimestamp;
+
   await agentHeartbeatRepository.upsert({
     agentId: MAC_CAPTURE_AGENT_ID,
     lastSeenAt: heartbeatAt ?? new Date().toISOString(),
     latestCaptureTime: sync.lastFrameTimestamp ?? sync.lastObservedFrameTimestamp,
-    latestSyncTime: sync.lastSyncCompletedAt ?? sync.lastProcessedTimestamp,
+    latestSyncTime,
     capturePortOpen: sync.capturePortOpen,
     captureApiReachable: sync.captureApiReachable,
   });
@@ -114,8 +123,12 @@ export async function buildAgentHealthView(): Promise<AgentHealthView> {
     agent?.latestCaptureTime ??
     sync.lastFrameTimestamp ??
     sync.lastObservedFrameTimestamp;
+  // captureAgentHeartbeat is written every sync-agent run, regardless of frames.
+  // It provides a reliable liveness signal even when lastSyncCompletedAt lags
+  // (which only advances when recordsProcessed > 0 || lastFrame != null).
   const lastSyncAt =
     agent?.latestSyncTime ??
+    sync.captureAgentHeartbeat ??
     sync.lastSyncCompletedAt ??
     sync.lastProcessedTimestamp;
   const agentOnline =
@@ -125,6 +138,32 @@ export async function buildAgentHealthView(): Promise<AgentHealthView> {
 
   const captureSla = classifyFreshnessSla(lastCaptureAt);
   const syncSla = classifyFreshnessSla(lastSyncAt);
+
+  const staleReason =
+    captureSla === "stale" || captureSla === "offline"
+      ? syncSla === "stale" || syncSla === "offline"
+        ? "capture_and_sync_stale"
+        : "capture_stale"
+      : syncSla === "stale" || syncSla === "offline"
+        ? "sync_stale"
+        : null;
+
+  if (staleReason) {
+    console.log(JSON.stringify({
+      event: "agent_health_stale",
+      capture_last_seen: lastCaptureAt,
+      sync_last_seen: lastSyncAt,
+      capture_sla: captureSla,
+      sync_sla: syncSla,
+      stale_reason: staleReason,
+      diagnosis:
+        staleReason === "capture_and_sync_stale"
+          ? "Both capture and sync are behind — Mac likely offline or launchd agents not running"
+          : staleReason === "capture_stale"
+            ? "Capture frames are old — ScreenPipe may have stopped recording"
+            : "Sync agent is behind — cortex-sync may have stopped",
+    }));
+  }
 
   const captureStatus = captureSignal(lastCaptureAt, agentOnline);
   const syncStatus = syncSignal(lastSyncAt);

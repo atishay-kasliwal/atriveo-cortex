@@ -60,6 +60,31 @@ export async function getManualSyncStatus(): Promise<SyncStatusResponse> {
     sync.lastSyncCompletedAt;
   const minutesSinceUpdate = minutesSince(lastUpdatedAt);
 
+  const freshnessScore = memoryFreshness.score;
+  const staleParts: string[] = [];
+  if (memoryFreshness.staleCapture) staleParts.push("capture");
+  if (memoryFreshness.staleSync) staleParts.push("sync");
+  if (memoryFreshness.staleReview) staleParts.push("review");
+  if (memoryFreshness.staleIndex) staleParts.push("index");
+
+  if (freshnessScore < 80 || staleParts.length > 0) {
+    console.log(JSON.stringify({
+      event: "memory_freshness_computed",
+      capture_last_seen: memoryFreshness.lastCaptureAt,
+      sync_last_seen: memoryFreshness.lastSyncAt,
+      freshness_percent: freshnessScore,
+      stale_reason: staleParts.join(",") || "none",
+      diagnosis:
+        memoryFreshness.staleCapture && memoryFreshness.staleSync
+          ? "Both capture and sync stale — agent likely offline"
+          : memoryFreshness.staleCapture
+            ? "Capture frames are stale — ScreenPipe not recording"
+            : memoryFreshness.staleSync
+              ? "Sync agent behind — cortex-sync not running"
+              : `Memory layers stale: ${staleParts.join(",")}`,
+    }));
+  }
+
   return {
     pipelineStatus,
     lastSyncAt: pipeline.lastSyncAt,

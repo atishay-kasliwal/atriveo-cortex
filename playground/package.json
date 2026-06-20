@@ -10,6 +10,7 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "capture:install": "bash ../capture/install-capture-agents.sh",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx scripts/migrate-cortex-to-neon.ts",
     "db:verify": "tsx scripts/verify-neon.ts",
