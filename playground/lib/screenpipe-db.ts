@@ -10,17 +10,23 @@ import type { AudioRow, FrameRow, RawEvidence, UiEventRow } from "./types";
 let _sharedDb: Database.Database | null = null;
 
 function openScreenpipe(): Database.Database {
-  if (_sharedDb) return _sharedDb;
-  const db = new Database(SCREENPIPE_DB, { readonly: true, fileMustExist: true });
+  // Re-open if a prior caller closed the handle directly (via db.close()).
+  if (_sharedDb?.open) return _sharedDb;
+  _sharedDb = null;
+  // ExFAT (external drive) does not support POSIX advisory locks so readonly:true
+  // fails with "connection is not open". Open without the flag — we never write.
+  const db = new Database(SCREENPIPE_DB, { fileMustExist: true });
   // ScreenPipe holds long WAL write locks; retry for up to 30s before giving up.
   db.pragma("busy_timeout = 30000");
+  db.pragma("query_only = ON");
   _sharedDb = db;
   return db;
 }
 
 export function closeScreenpipe(): void {
-  try { _sharedDb?.close(); } catch { /* ignore */ }
+  const db = _sharedDb;
   _sharedDb = null;
+  try { db?.close(); } catch { /* ignore */ }
 }
 
 export function screenpipeDbExists(): boolean {
