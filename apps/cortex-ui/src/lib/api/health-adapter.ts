@@ -11,8 +11,7 @@ export async function fetchHealthTimeline(
 ): Promise<HealthTimelineResponse> {
   const tz = timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const params = new URLSearchParams({ timezone: tz });
-  const res = await cortexFetch<{ success: boolean; data: HealthTimelineResponse }>(
+  return await cortexFetch<HealthTimelineResponse>(
     `/api/v1/health/${period}?${params}`,
   );
-  return res.data;
 }
