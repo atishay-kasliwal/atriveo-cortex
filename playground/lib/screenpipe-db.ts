@@ -50,7 +50,29 @@ export function fetchFramesForWindow(
     )
     .all(windowStart, windowEnd) as FrameRow[];
   db.close();
-  return frames;
+  // ScreenPipe emits one frame per monitor per capture tick. Deduplicate by
+  // collapsing frames within the same 5-second bucket to a single representative,
+  // preferring monitor_1 (primary) so multi-monitor setups don't double-count time.
+  return deduplicateByMonitor(frames);
+}
+
+function deduplicateByMonitor(frames: FrameRow[]): FrameRow[] {
+  // If there are multiple monitors, keep only frames from the primary (monitor_1).
+  // Secondary monitors stay active even when the user is asleep (background browser
+  // tabs, etc.) and inflate FOCUSED/ACTIVE time if included.
+  const devices = new Set(frames.map((f) => (f as any).device_name).filter(Boolean));
+  if (devices.size > 1 && devices.has("monitor_1")) {
+    return frames.filter((f) => (f as any).device_name === "monitor_1");
+  }
+  // Single monitor or no device_name — collapse near-simultaneous duplicates.
+  const BUCKET_MS = 5_000;
+  const buckets = new Map<number, FrameRow>();
+  for (const frame of frames) {
+    const t = Date.parse(frame.timestamp);
+    const bucket = Math.floor(t / BUCKET_MS);
+    if (!buckets.has(bucket)) buckets.set(bucket, frame);
+  }
+  return [...buckets.values()].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
 }
 
 export type AnalyticsUiEvent = {

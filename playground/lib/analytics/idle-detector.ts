@@ -59,6 +59,7 @@ export type IdleFrameInput = {
 export type IdleUiEventInput = {
   timestamp: string;
   event_type: string;
+  app_name?: string | null;
 };
 
 function normalizeText(text: string | null | undefined): string {
@@ -69,6 +70,10 @@ function windowKey(frame: IdleFrameInput): string {
   return `${frame.app_name ?? ""}|${frame.window_name ?? ""}`;
 }
 
+// System apps that generate synthetic events (lock screen, login, screen saver).
+// Events from these apps don't indicate real user presence.
+const SYSTEM_APP_NAMES = new Set(["loginwindow", "ScreenSaverEngine", "Dock"]);
+
 function interactionBetween(
   uiEvents: IdleUiEventInput[],
   startMs: number,
@@ -77,7 +82,9 @@ function interactionBetween(
   for (const event of uiEvents) {
     const t = Date.parse(event.timestamp);
     if (t <= startMs || t > endMs) continue;
-    if (isInteractionEvent(event.event_type)) return true;
+    if (!isInteractionEvent(event.event_type)) continue;
+    if (event.app_name && SYSTEM_APP_NAMES.has(event.app_name)) continue;
+    return true;
   }
   return false;
 }
@@ -276,6 +283,38 @@ export function detectActivityStates(
     const msSinceLastInteraction =
       endMs - (lastInteractionMs ?? startMs);
 
+    // Find the last real (non-system) interaction timestamp within this gap.
+    let lastRealInteractionInGap: number | null = null;
+    if (interaction) {
+      for (const event of uiEvents) {
+        const t = Date.parse(event.timestamp);
+        if (t > startMs && t <= endMs && isInteractionEvent(event.event_type)) {
+          if (event.app_name && SYSTEM_APP_NAMES.has(event.app_name)) continue;
+          lastRealInteractionInGap = Math.max(lastRealInteractionInGap ?? t, t);
+          lastInteractionMs = Math.max(lastInteractionMs ?? t, t);
+        }
+      }
+    }
+
+    // If the gap is long and interaction only covers the early portion, split it:
+    // classify up to (lastInteraction + IDLE_THRESHOLD) as ACTIVE, then let the
+    // remainder decay to IDLE/SLEEPING. This prevents a burst of clicks at the
+    // start of an 8-hour gap from marking the whole night as FOCUSED.
+    const splitMs =
+      lastRealInteractionInGap !== null
+        ? lastRealInteractionInGap + IDLE_THRESHOLD_MS
+        : null;
+
+    if (splitMs !== null && splitMs < endMs - SLEEP_THRESHOLD_MS) {
+      // Active portion up to the idle cutoff
+      pushSegment(segments, startMs, splitMs, "ACTIVE", 0.95, { hadInteraction: true });
+      addTotal(totals, "ACTIVE", (splitMs - startMs) / 1000);
+      // Remainder: no interaction, long gap → SLEEPING
+      pushSegment(segments, splitMs, endMs, "SLEEPING", 0.9);
+      addTotal(totals, "SLEEPING", (endMs - splitMs) / 1000);
+      return;
+    }
+
     const { state, confidence, idleTier, hadInteraction } = classifyGap({
       gapMs,
       interaction,
@@ -284,15 +323,6 @@ export function detectActivityStates(
       windowChanged,
       hasFramesInGap,
     });
-
-    if (interaction) {
-      for (const event of uiEvents) {
-        const t = Date.parse(event.timestamp);
-        if (t > startMs && t <= endMs && isInteractionEvent(event.event_type)) {
-          lastInteractionMs = Math.max(lastInteractionMs ?? t, t);
-        }
-      }
-    }
 
     pushSegment(segments, startMs, endMs, state, confidence, {
       idleTier,

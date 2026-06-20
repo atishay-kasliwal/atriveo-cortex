@@ -26,7 +26,7 @@
     <string>__REPO_ROOT__</string>
   </dict>
   <key>StartInterval</key>
-  <integer>300</integer>
+  <integer>1800</integer>
   <key>RunAtLoad</key>
   <true/>
   <key>StandardOutPath</key>

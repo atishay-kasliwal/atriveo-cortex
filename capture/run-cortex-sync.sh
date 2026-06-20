@@ -91,14 +91,35 @@ run_with_timeout() {
   # Kill any prior sync:screenpipe process that is still running from a previous interval.
   # This prevents the SQLite busy-lock from compounding across overlapping runs.
   pkill -f "sync-screenpipe.ts" 2>/dev/null || true
+  pkill -f "sync-screenpipe.cjs" 2>/dev/null || true
+  pkill -f "pipeline-derived.ts" 2>/dev/null || true
+  pkill -f "pipeline-derived.cjs" 2>/dev/null || true
   pkill -f "capture-stall-recovery.ts" 2>/dev/null || true
 
-  run_with_timeout 60 npm run capture:recover || true
-  run_with_timeout 30 npm run capture:watermark || true
-  # Hard cap at 4 min so this exits well before the next 5-min launchd interval fires.
-  run_with_timeout 240 npm run sync:screenpipe || {
-    code=$?
-    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync FAILED or TIMED OUT (exit ${code}) ==="
-  }
+  run_with_timeout 90 npm run capture:recover || true
+
+  SYNC_BUNDLE="${REPO_ROOT}/playground/scripts/sync-screenpipe.cjs"
+  DERIVED_BUNDLE="${REPO_ROOT}/playground/scripts/pipeline-derived.cjs"
+
+  # Frame sync: reads SQLite + writes watermark to Neon. Fast — target <3 min.
+  if [[ -f "${SYNC_BUNDLE}" ]]; then
+    run_with_timeout 300 node "${SYNC_BUNDLE}" || {
+      code=$?
+      echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") sync:screenpipe FAILED or TIMED OUT (exit ${code}) ==="
+    }
+  else
+    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: no sync bundle, skipping frame sync ==="
+  fi
+
+  # Derived layers: reviews, search index, attention, project health. Slow — up to 30 min.
+  # Runs after frame sync so the watermark is always fresh even if derived work gets killed.
+  if [[ -f "${DERIVED_BUNDLE}" ]]; then
+    run_with_timeout 1500 node "${DERIVED_BUNDLE}" || {
+      code=$?
+      echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") pipeline:derived FAILED or TIMED OUT (exit ${code}) ==="
+    }
+  else
+    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: no derived bundle, skipping derived layers ==="
+  fi
   echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync done ==="
 } >> "${SYNC_LOG}" 2>&1

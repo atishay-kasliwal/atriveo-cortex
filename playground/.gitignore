@@ -25,3 +25,8 @@ npm-debug.log*
 
 # ScreenPipe capture data
 screenpipe-data/
+
+# Compiled sync bundles (built at deploy time via npm run build:sync)
+scripts/sync-screenpipe.cjs
+scripts/sync-screenpipe.mjs
+scripts/pipeline-derived.cjs
