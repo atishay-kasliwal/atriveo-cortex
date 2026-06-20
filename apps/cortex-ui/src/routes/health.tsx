@@ -55,7 +55,7 @@ function formatRange(from: string, to: string): string {
 
 function WorkoutPill({ type, duration_minutes, calories }: { type: string; duration_minutes: number; calories: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+    <div className="surface-card flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm">
       <Dumbbell className="h-4 w-4 flex-shrink-0 text-emerald-400" />
       <div className="flex-1 min-w-0">
         <div className="font-medium text-foreground truncate">{type}</div>
@@ -146,7 +146,7 @@ function HealthContent({ data }: { data: HealthTimelineResponse }) {
 
       {/* Timeline chart */}
       {data.timeline.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="surface-card rounded-xl border border-border/60 p-5">
           <div className="mb-4 flex items-center gap-2">
             <Brain className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">
@@ -159,7 +159,7 @@ function HealthContent({ data }: { data: HealthTimelineResponse }) {
 
       {/* Workouts */}
       {data.workouts.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="surface-card rounded-xl border border-border/60 p-5">
           <div className="mb-3 flex items-center gap-2">
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">
@@ -176,7 +176,7 @@ function HealthContent({ data }: { data: HealthTimelineResponse }) {
 
       {/* No data states */}
       {data.timeline.length === 0 && data.workouts.length === 0 && !data.sleep && (
-        <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center">
+        <div className="surface-card rounded-xl border border-dashed border-border/60 p-10 text-center">
           <Activity className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">No health data for this period yet.</p>
         </div>

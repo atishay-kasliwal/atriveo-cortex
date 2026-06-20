@@ -13,13 +13,13 @@ interface HealthMetricCardProps {
   footer?: ReactNode;
 }
 
-const accentClasses: Record<NonNullable<HealthMetricCardProps["accent"]>, string> = {
-  rose:    "border-rose-500/20 bg-rose-500/5 [--acc:theme(colors.rose.400)]",
-  violet:  "border-violet-500/20 bg-violet-500/5 [--acc:theme(colors.violet.400)]",
-  sky:     "border-sky-500/20 bg-sky-500/5 [--acc:theme(colors.sky.400)]",
-  emerald: "border-emerald-500/20 bg-emerald-500/5 [--acc:theme(colors.emerald.400)]",
-  amber:   "border-amber-500/20 bg-amber-500/5 [--acc:theme(colors.amber.400)]",
-  slate:   "border-border bg-surface [--acc:theme(colors.slate.400)]",
+const iconColor: Record<NonNullable<HealthMetricCardProps["accent"]>, string> = {
+  rose:    "text-rose-400",
+  violet:  "text-violet-400",
+  sky:     "text-sky-400",
+  emerald: "text-emerald-400",
+  amber:   "text-amber-400",
+  slate:   "text-muted-foreground",
 };
 
 export function HealthMetricCard({
@@ -31,16 +31,16 @@ export function HealthMetricCard({
   footer,
 }: HealthMetricCardProps) {
   return (
-    <div className={`flex flex-col gap-2 rounded-xl border p-4 ${accentClasses[accent]}`}>
+    <div className="surface-card flex flex-col gap-2 rounded-xl border border-border/60 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {label}
         </span>
-        {icon && <span className="text-[var(--acc)] opacity-70">{icon}</span>}
+        {icon && <span className={iconColor[accent]}>{icon}</span>}
       </div>
       <div className="text-2xl font-bold tracking-tight text-foreground">{value}</div>
       {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
-      {footer && <div className="mt-1 border-t border-border/50 pt-2">{footer}</div>}
+      {footer && <div className="mt-1 border-t border-border/40 pt-2">{footer}</div>}
     </div>
   );
 }
