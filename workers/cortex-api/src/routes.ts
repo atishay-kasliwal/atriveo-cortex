@@ -79,6 +79,12 @@ import {
   buildWeekScreens,
 } from "@/lib/analytics/screens-api";
 import {
+  attentionRepository,
+} from "@/lib/repositories/attention-repository";
+import {
+  screensRepository,
+} from "@/lib/repositories/screens-repository";
+import {
   buildAuditMetrics,
   buildDayAudit,
   saveAuditFeedback,
@@ -305,6 +311,70 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, data);
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load screens summary", 500);
+    }
+  });
+
+  app.get("/api/screens/pulse-timeline", async (c) => {
+    try {
+      const { localDateString } = await import("@/lib/analytics/aggregator");
+      const date = c.req.query("date") ?? localDateString();
+
+      const [stateSegments, attentionSegments, monitorSegments] = await Promise.all([
+        attentionRepository.listStateSegments(date),
+        attentionRepository.listSegments(date),
+        screensRepository.listTimelineSegments(date),
+      ]);
+
+      const dayStart = new Date(date + "T00:00:00").getTime();
+
+      const activitySegments = stateSegments.map((s) => ({
+        startMin: Math.round((Date.parse(s.start_time) - dayStart) / 60000),
+        endMin: Math.round((Date.parse(s.end_time) - dayStart) / 60000),
+        state: s.state,
+        durationMin: Math.round(s.duration_minutes),
+      }));
+
+      const attentionBuckets = attentionSegments
+        .filter((s) => Number.isFinite(Date.parse(s.startTime)))
+        .map((s) => ({
+          startMin: Math.round((Date.parse(s.startTime) - dayStart) / 60000),
+          endMin: Math.round((Date.parse(s.endTime) - dayStart) / 60000),
+          score: Math.min(100, Math.max(0, Math.round((s.attentionScore ?? 0) * 10) / 10)),
+          state: s.state,
+        }));
+
+      const monitorLanes: Record<string, Array<{ startMin: number; endMin: number; category: string; app: string }>> = {};
+      for (const seg of monitorSegments) {
+        const key = `monitor_${seg.monitor_id}`;
+        const startMs = Date.parse(seg.start_time);
+        const endMs = Date.parse(seg.end_time);
+        if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue;
+        if (!monitorLanes[key]) monitorLanes[key] = [];
+        monitorLanes[key].push({
+          startMin: Math.round((startMs - dayStart) / 60000),
+          endMin: Math.round((endMs - dayStart) / 60000),
+          category: seg.category ?? "other",
+          app: seg.primary_app ?? "",
+        });
+      }
+
+      // Health data — optional
+      let heartRate: Array<{ hour: number; value: number }> = [];
+      try {
+        const health = await buildHealthTimeline("today");
+        heartRate = health.timeline
+          .filter((b) => b.heart_rate != null)
+          .map((b) => ({
+            hour: parseInt(b.bucket.split(":")[0]!, 10),
+            value: b.heart_rate!,
+          }));
+      } catch {
+        // HEALTH_DATABASE_URL not set — skip
+      }
+
+      return apiSuccess(c, { date, activitySegments, attentionBuckets, monitorLanes, heartRate, hrv: [] });
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load pulse timeline", 500);
     }
   });
 
