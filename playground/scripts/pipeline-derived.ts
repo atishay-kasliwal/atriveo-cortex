@@ -89,7 +89,9 @@ async function main() {
 
   for (const date of targetDates) {
     console.log(ts(), "step: computeAndPersistDayAttention", date);
-    await computeAndPersistDayAttention(date);
+    await computeAndPersistDayAttention(date).catch((err: unknown) => {
+      console.error(ts(), "attention failed:", date, err instanceof Error ? err.message : err);
+    });
     console.log(ts(), "done attention:", date);
   }
   await touch(SYNC_KEYS.lastAttentionComputed);
