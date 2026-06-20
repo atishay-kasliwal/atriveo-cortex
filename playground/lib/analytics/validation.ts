@@ -141,6 +141,7 @@ function countScreenpipe(
 ): number {
   if (!screenpipeDbExists()) return 0;
   const db = new Database(SCREENPIPE_DB, { readonly: true });
+  db.pragma("busy_timeout = 10000");
   const row = db
     .prepare(
       `SELECT COUNT(*) as c FROM ${table} WHERE timestamp >= ? AND timestamp < ?`,

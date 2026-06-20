@@ -6,7 +6,11 @@ import { bucketCountForWindow } from "./time-bucket-sample";
 import type { AudioRow, FrameRow, RawEvidence, UiEventRow } from "./types";
 
 function openScreenpipe(): Database.Database {
-  return new Database(SCREENPIPE_DB, { readonly: true, fileMustExist: true });
+  const db = new Database(SCREENPIPE_DB, { readonly: true, fileMustExist: true });
+  // ScreenPipe holds long WAL write locks; retry for up to 10s instead of
+  // failing immediately with SQLITE_BUSY when the WAL is being checkpointed.
+  db.pragma("busy_timeout = 10000");
+  return db;
 }
 
 export function screenpipeDbExists(): boolean {

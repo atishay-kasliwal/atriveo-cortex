@@ -47,6 +47,7 @@ export async function getAnalyticsDebug(): Promise<AnalyticsDebugInfo> {
 
   if (screenpipeDbExists()) {
     const sp = new Database(SCREENPIPE_DB, { readonly: true });
+    sp.pragma("busy_timeout = 10000");
     const latest = sp
       .prepare(`SELECT timestamp FROM frames ORDER BY timestamp DESC LIMIT 1`)
       .get() as { timestamp: string } | undefined;

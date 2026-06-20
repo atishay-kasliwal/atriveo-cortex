@@ -71,10 +71,34 @@ if ! cd "${REPO_ROOT}/playground"; then
 fi
 sync_log "Working directory: $(pwd)"
 
+# Run a command with a wall-clock timeout using a background kill; portable, no coreutils.
+run_with_timeout() {
+  local secs="$1"; shift
+  "$@" &
+  local child=$!
+  (sleep "${secs}" && kill "${child}" 2>/dev/null) &
+  local killer=$!
+  wait "${child}" 2>/dev/null
+  local code=$?
+  kill "${killer}" 2>/dev/null
+  wait "${killer}" 2>/dev/null
+  return "${code}"
+}
+
 {
   echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync start ==="
-  npm run capture:recover || true
-  npm run capture:watermark || true
-  npm run sync:screenpipe
-  echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync done (exit $?) ==="
+
+  # Kill any prior sync:screenpipe process that is still running from a previous interval.
+  # This prevents the SQLite busy-lock from compounding across overlapping runs.
+  pkill -f "sync-screenpipe.ts" 2>/dev/null || true
+  pkill -f "capture-stall-recovery.ts" 2>/dev/null || true
+
+  run_with_timeout 60 npm run capture:recover || true
+  run_with_timeout 30 npm run capture:watermark || true
+  # Hard cap at 4 min so this exits well before the next 5-min launchd interval fires.
+  run_with_timeout 240 npm run sync:screenpipe || {
+    code=$?
+    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync FAILED or TIMED OUT (exit ${code}) ==="
+  }
+  echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync done ==="
 } >> "${SYNC_LOG}" 2>&1

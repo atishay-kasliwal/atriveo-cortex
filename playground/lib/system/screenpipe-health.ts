@@ -116,6 +116,7 @@ export function getCaptureHealthMetrics(
   }
 
   const db = new Database(SCREENPIPE_DB, { readonly: true });
+  db.pragma("busy_timeout = 10000");
   const bounds = localDayBounds(localDateString(now));
 
   const latestFrame = (
