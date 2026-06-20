@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ScreensSnapshotPanel } from "@/components/screens/screens-snapshot-panel";
 import { ScreensPageHeader } from "@/components/screens/screens-page-header";
 import { MultiMonitorTimeline } from "@/components/screens/multi-monitor-timeline";
+import { PulseTimelineChart } from "@/components/screens/pulse-timeline";
 import { MonitorNameEditor } from "@/components/screens/monitor-name-editor";
 import {
   Sheet,
@@ -30,7 +31,7 @@ import {
   shiftDate,
   yesterdayDate,
 } from "@/lib/activity/date-nav";
-import { screensDayQuery } from "@/lib/api/queries";
+import { pulseTimelineQuery, screensDayQuery } from "@/lib/api/queries";
 import type {
   DayScreens,
   MonitorTimelineBlock,
@@ -314,9 +315,11 @@ function DayScreensContent({
     [data.monitors, detailsMonitorId],
   );
   const detailsBlocks = detailsMonitorId ? (data.timelines[detailsMonitorId] ?? []) : [];
+  const { data: pulseData } = useQuery({ ...pulseTimelineQuery(viewDate), retry: false });
 
   return (
     <div className="space-y-6">
+      {pulseData && <PulseTimelineChart data={pulseData} />}
       <MultiMonitorTimeline data={data} />
       <CategoryComparisonSection rows={data.decision.categoryComparison} />
       <SnapshotSection decision={data.decision} />

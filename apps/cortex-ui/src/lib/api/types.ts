@@ -1031,6 +1031,38 @@ export type HeatmapDay = {
 
 export type WeekProjects = { weekStart: ISODate; projects: ProjectTime[] };
 
+export type PulseTimelineSegment = {
+  startMin: number;
+  endMin: number;
+  state: string;
+  durationMin: number;
+};
+
+export type PulseAttentionBucket = {
+  startMin: number;
+  endMin: number;
+  score: number;
+  state: string;
+};
+
+export type PulseMonitorSlot = {
+  startMin: number;
+  endMin: number;
+  category: string;
+  app: string;
+};
+
+export type PulseHealthPoint = { hour: number; value: number };
+
+export type PulseTimeline = {
+  date: string;
+  activitySegments: PulseTimelineSegment[];
+  attentionBuckets: PulseAttentionBucket[];
+  monitorLanes: Record<string, PulseMonitorSlot[]>;
+  heartRate: PulseHealthPoint[];
+  hrv: PulseHealthPoint[];
+};
+
 export type MonthActivity = {
   startDate: ISODate;
   endDate: ISODate;

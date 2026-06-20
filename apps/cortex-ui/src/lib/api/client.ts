@@ -34,6 +34,7 @@ import {
 } from "./attention-adapter";
 import {
   fetchDayScreens,
+  fetchPulseTimeline,
   fetchScreensSummary,
   fetchWeekScreens,
 } from "./screens-adapter";
@@ -133,6 +134,7 @@ export const api = {
     day: (date?: string) => fetchDayScreens(date),
     week: (start?: string) => fetchWeekScreens(start),
     summary: (start?: string, end?: string) => fetchScreensSummary(start, end),
+    pulseTimeline: (date?: string) => fetchPulseTimeline(date),
   },
 
   audit: {

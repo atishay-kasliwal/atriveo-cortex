@@ -41,6 +41,7 @@ export const qk = {
   screensWeek: (start: string) => ["screens", "week", start] as const,
   screensSummary: (start?: string, end?: string) =>
     ["screens", "summary", start ?? "default", end ?? "default"] as const,
+  pulseTimeline: (date: string) => ["screens", "pulse-timeline", date] as const,
   auditDay: (date: string) => ["audit", "day", date] as const,
   auditMetrics: (start?: string, end?: string) =>
     ["audit", "metrics", start ?? "default", end ?? "default"] as const,
@@ -270,6 +271,13 @@ export const screensSummaryQuery = (start?: string, end?: string) =>
   queryOptions({
     queryKey: qk.screensSummary(start, end),
     queryFn: () => api.screens.summary(start, end),
+    staleTime: STALE,
+  });
+
+export const pulseTimelineQuery = (date: string) =>
+  queryOptions({
+    queryKey: qk.pulseTimeline(date),
+    queryFn: () => api.screens.pulseTimeline(date),
     staleTime: STALE,
   });
 
