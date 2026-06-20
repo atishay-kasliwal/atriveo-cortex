@@ -20,9 +20,14 @@ config({ path: captureEnv });
 
 async function main() {
   const { syncScreenpipeToCortex } = await import("../lib/sync/screenpipe-sync");
+  const { closeScreenpipe } = await import("../lib/screenpipe-db");
 
-  const result = await syncScreenpipeToCortex();
-  console.log(JSON.stringify({ ok: true, ...result }, null, 2));
+  try {
+    const result = await syncScreenpipeToCortex();
+    console.log(JSON.stringify({ ok: true, ...result }, null, 2));
+  } finally {
+    closeScreenpipe();
+  }
 }
 
 main().catch((e) => {

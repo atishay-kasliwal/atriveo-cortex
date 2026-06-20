@@ -5,12 +5,22 @@ import { EVIDENCE_LIMITS, SCREENPIPE_DB, type EvidenceLimits } from "./paths";
 import { bucketCountForWindow } from "./time-bucket-sample";
 import type { AudioRow, FrameRow, RawEvidence, UiEventRow } from "./types";
 
+// Single shared handle — opening multiple connections to a WAL-mode SQLite on
+// an external drive causes indefinite stalls when ScreenPipe holds write locks.
+let _sharedDb: Database.Database | null = null;
+
 function openScreenpipe(): Database.Database {
+  if (_sharedDb) return _sharedDb;
   const db = new Database(SCREENPIPE_DB, { readonly: true, fileMustExist: true });
-  // ScreenPipe holds long WAL write locks; retry for up to 10s instead of
-  // failing immediately with SQLITE_BUSY when the WAL is being checkpointed.
-  db.pragma("busy_timeout = 10000");
+  // ScreenPipe holds long WAL write locks; retry for up to 30s before giving up.
+  db.pragma("busy_timeout = 30000");
+  _sharedDb = db;
   return db;
+}
+
+export function closeScreenpipe(): void {
+  try { _sharedDb?.close(); } catch { /* ignore */ }
+  _sharedDb = null;
 }
 
 export function screenpipeDbExists(): boolean {
