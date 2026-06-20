@@ -12,7 +12,7 @@ import {
   screensRepository,
   type StoredScreensPayload,
 } from "@/lib/repositories/screens-repository";
-import { fetchFramesForWindow } from "@/lib/screenpipe-db";
+import { fetchAllMonitorFramesForWindow } from "@/lib/screenpipe-db";
 import { refreshMonitorRoleProfiles } from "./monitor-roles-api";
 
 /** Bump when Layer B computation semantics change. */
@@ -43,7 +43,7 @@ function segmentsToTimelineDto(
 
 export async function computeAndPersistDayScreens(date: string): Promise<StoredScreensPayload> {
   const { start, end } = localDayBounds(date);
-  const frames = fetchFramesForWindow(start, end);
+  const frames = fetchAllMonitorFramesForWindow(start, end);
   const result = buildScreensIntelligence(date, frames, start, end);
   const interactionSegments = buildMonitorInteractionSegments(frames, end);
 

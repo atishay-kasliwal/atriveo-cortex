@@ -21,11 +21,7 @@ export function screenpipeDbExists(): boolean {
   }
 }
 
-/** All frames in a time window for analytics (no sampling cap). */
-export function fetchFramesForWindow(
-  windowStart: string,
-  windowEnd: string,
-): FrameRow[] {
+function fetchRawFramesForWindow(windowStart: string, windowEnd: string): FrameRow[] {
   if (!screenpipeDbExists()) return [];
   const db = openScreenpipe();
   const columns = new Set(
@@ -50,10 +46,31 @@ export function fetchFramesForWindow(
     )
     .all(windowStart, windowEnd) as FrameRow[];
   db.close();
+  return frames;
+}
+
+/** All frames in a time window for activity analytics (single-monitor deduplicated).
+ *  Returns only primary-monitor frames so multi-monitor setups don't double-count
+ *  activity time. Use fetchAllMonitorFramesForWindow for per-monitor screens analysis. */
+export function fetchFramesForWindow(
+  windowStart: string,
+  windowEnd: string,
+): FrameRow[] {
+  const frames = fetchRawFramesForWindow(windowStart, windowEnd);
   // ScreenPipe emits one frame per monitor per capture tick. Deduplicate by
   // collapsing frames within the same 5-second bucket to a single representative,
   // preferring monitor_1 (primary) so multi-monitor setups don't double-count time.
   return deduplicateByMonitor(frames);
+}
+
+/** All frames in a time window for screens analytics, retaining all monitors.
+ *  Use this when per-monitor breakdown is needed (screens page). Segment duration
+ *  is capped inside screens-intelligence to prevent last-frame-of-day inflation. */
+export function fetchAllMonitorFramesForWindow(
+  windowStart: string,
+  windowEnd: string,
+): FrameRow[] {
+  return fetchRawFramesForWindow(windowStart, windowEnd);
 }
 
 function deduplicateByMonitor(frames: FrameRow[]): FrameRow[] {

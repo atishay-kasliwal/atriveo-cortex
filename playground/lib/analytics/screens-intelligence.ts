@@ -436,6 +436,11 @@ function buildPerMonitorSegments(
   }
 
   const dayEndMs = Date.parse(windowEnd);
+  // Cap how far a segment extends when there are no subsequent frames.
+  // Without this, a monitor's last frame of the day stretches to midnight,
+  // inflating screen time by hours (e.g. background Chrome tab on monitor_3
+  // open overnight shows 19h of "usage").
+  const MAX_SEGMENT_MS = 30 * 60 * 1000; // 30 minutes
   const segments: MonitorTimelineSegment[] = [];
 
   for (const [key, deviceFrames] of byDevice) {
@@ -447,10 +452,11 @@ function buildPerMonitorSegments(
     for (let i = 0; i < sorted.length; i++) {
       const curr = sorted[i]!;
       const startMs = Date.parse(curr.timestamp);
-      const endMs =
+      const naturalEndMs =
         i < sorted.length - 1
           ? Date.parse(sorted[i + 1]!.timestamp)
           : dayEndMs;
+      const endMs = Math.min(naturalEndMs, startMs + MAX_SEGMENT_MS);
       const durationSec = Math.max(0, Math.round((endMs - startMs) / 1000));
       if (durationSec <= 0) continue;
 
