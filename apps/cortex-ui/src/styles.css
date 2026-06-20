@@ -271,3 +271,31 @@
 @utility animate-calm-pulse-slow {
   animation: calm-pulse-slow 4s ease-in-out infinite;
 }
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(1 0 0 / 12%) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 12%);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 22%);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
