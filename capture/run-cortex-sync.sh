@@ -101,6 +101,14 @@ run_with_timeout() {
   SYNC_BUNDLE="${REPO_ROOT}/playground/scripts/sync-screenpipe.cjs"
   DERIVED_BUNDLE="${REPO_ROOT}/playground/scripts/pipeline-derived.cjs"
 
+  # If bundles are missing (e.g. node_modules was wiped), reinstall and rebuild.
+  if [[ ! -f "${SYNC_BUNDLE}" ]] || [[ ! -f "${DERIVED_BUNDLE}" ]]; then
+    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") bundles missing — reinstalling and rebuilding ==="
+    (cd "${REPO_ROOT}/playground" && npm install --prefer-offline --silent 2>&1) || true
+    (cd "${REPO_ROOT}/playground" && npm run build:sync 2>&1) || true
+    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") rebuild done ==="
+  fi
+
   # Frame sync: reads SQLite + writes watermark to Neon. Fast — target <3 min.
   if [[ -f "${SYNC_BUNDLE}" ]]; then
     run_with_timeout 300 node "${SYNC_BUNDLE}" || {
