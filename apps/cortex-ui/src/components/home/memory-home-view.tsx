@@ -15,12 +15,14 @@ import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { fmtDuration } from "@/components/dashboard/time";
 import { Badge } from "@/components/ui/badge";
 import { ScreensSnapshotPanel } from "@/components/screens/screens-snapshot-panel";
+import { PulseTimelineChart } from "@/components/screens/pulse-timeline";
 import { formatDateLabel } from "@/lib/activity/date-nav";
 import { hasTodayActivity, resolveActivityPipelineState } from "@/lib/activity/activity-state";
 import { isApiNotFound } from "@/lib/api/client";
 import { fetchSyncStatus } from "@/lib/api/sync-adapter";
 import {
   attentionDayQuery,
+  pulseTimelineQuery,
   screensDayQuery,
   screenpipeHealthQuery,
   todayQuery,
@@ -38,6 +40,7 @@ export function MemoryHomeView({
   const activity = useQuery({ ...todayQuery(viewDate), retry: false });
   const screens = useQuery({ ...screensDayQuery(viewDate), retry: false });
   const attention = useQuery({ ...attentionDayQuery(viewDate), retry: false });
+  const pulse = useQuery({ ...pulseTimelineQuery(viewDate), retry: false });
   const screenpipeHealth = useQuery(screenpipeHealthQuery);
   const syncStatus = useQuery({
     queryKey: SYNC_STATUS_KEY,
@@ -68,10 +71,12 @@ export function MemoryHomeView({
         dateLabel={dateLabel}
       />
 
-      <p className="text-sm text-muted-foreground">
-        Your day in one place — activity log, screens, truth audit, and attention. No separate
-        dashboards pretending to be memory.
-      </p>
+      {/* 24-hour signal timeline */}
+      {pulse.data ? (
+        <PulseTimelineChart data={pulse.data} />
+      ) : pulse.isLoading ? (
+        <div className="h-[420px] animate-pulse rounded-2xl bg-surface-2/50" />
+      ) : null}
 
       {/* Activity log */}
       <section className="space-y-3">
