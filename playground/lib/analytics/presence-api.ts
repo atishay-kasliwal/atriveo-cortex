@@ -45,8 +45,12 @@ export function stateBreakdownSec(rows: ActivityStateSegmentRow[]) {
     idleStateSec: 0,
     sleepingStateSec: 0,
   };
+  const nowMs = Date.now();
   for (const row of rows) {
-    const sec = Math.round(row.duration_minutes * 60);
+    // Clamp end_time to now so open/future segments don't inflate totals.
+    const startMs = Date.parse(row.start_time);
+    const endMs = Math.min(Date.parse(row.end_time), nowMs);
+    const sec = Math.max(0, Math.round((endMs - startMs) / 1000));
     switch (row.state) {
       case "FOCUSED":
         totals.focusedStateSec += sec;
@@ -68,14 +72,20 @@ export function stateBreakdownSec(rows: ActivityStateSegmentRow[]) {
 }
 
 export function buildStateTimeline(rows: ActivityStateSegmentRow[]): StateTimelineBlock[] {
-  return rows.map((row, index) => ({
-    id: `state-${index}-${row.start_time}`,
-    startedAt: row.start_time,
-    endedAt: row.end_time,
-    durationSec: Math.round(row.duration_minutes * 60),
-    state: row.state.toLowerCase(),
-    label: STATE_LABELS[row.state] ?? row.state,
-  }));
+  const nowMs = Date.now();
+  return rows.map((row, index) => {
+    const startMs = Date.parse(row.start_time);
+    const endMs = Math.min(Date.parse(row.end_time), nowMs);
+    const durationSec = Math.max(0, Math.round((endMs - startMs) / 1000));
+    return {
+      id: `state-${index}-${row.start_time}`,
+      startedAt: row.start_time,
+      endedAt: new Date(endMs).toISOString(),
+      durationSec,
+      state: row.state.toLowerCase(),
+      label: STATE_LABELS[row.state] ?? row.state,
+    };
+  });
 }
 
 export function buildPresenceSummary(rows: ActivityStateSegmentRow[]) {
