@@ -153,6 +153,15 @@ function LoginPage() {
           0%   { transform: scale(1.1) rotate(0deg); }
           100% { transform: scale(1.1) rotate(360deg); }
         }
+        /* Override browser autofill white background */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 9999px rgba(40, 40, 45, 0.85) inset !important;
+          -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
+          caret-color: white;
+        }
       `}</style>
     </div>
   );
