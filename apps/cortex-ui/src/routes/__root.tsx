@@ -8,11 +8,13 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { Bell, Command, Search } from "lucide-react";
+import { isAuthenticated } from "@/lib/auth";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -162,6 +164,14 @@ function Topbar({ onOpenSearch }: { onOpenSearch: () => void }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [searchOpen, setSearchOpen] = useState(false);
+  const router = useRouter();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname !== "/login" && !isAuthenticated()) {
+      router.navigate({ to: "/login" });
+    }
+  }, [location.pathname, router]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -174,21 +184,30 @@ function RootComponent() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const isLoginPage = location.pathname === "/login";
+
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar onOpenSearch={() => setSearchOpen(true)} />
-          <div className="flex flex-1 flex-col">
-            <Topbar onOpenSearch={() => setSearchOpen(true)} />
-            <main className="flex-1">
-              <Outlet />
-            </main>
+      {isLoginPage ? (
+        <>
+          <Outlet />
+          <Toaster position="bottom-right" richColors closeButton />
+        </>
+      ) : (
+        <SidebarProvider>
+          <div className="flex min-h-screen w-full bg-background">
+            <AppSidebar onOpenSearch={() => setSearchOpen(true)} />
+            <div className="flex flex-1 flex-col">
+              <Topbar onOpenSearch={() => setSearchOpen(true)} />
+              <main className="flex-1">
+                <Outlet />
+              </main>
+            </div>
           </div>
-        </div>
-        <MemorySearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
-        <Toaster position="bottom-right" richColors closeButton />
-      </SidebarProvider>
+          <MemorySearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+          <Toaster position="bottom-right" richColors closeButton />
+        </SidebarProvider>
+      )}
     </QueryClientProvider>
   );
 }
