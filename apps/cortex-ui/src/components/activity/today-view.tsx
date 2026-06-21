@@ -18,7 +18,7 @@ import {
 } from "@/components/activity/website-categories";
 import { WebsiteCategoryTagPicker } from "@/components/activity/website-category-tag-picker";
 import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
-import { SessionList } from "@/components/activity/session-list";
+import { SessionCarousel } from "@/components/activity/session-carousel";
 import { WorkTimeline } from "@/components/activity/work-timeline";
 import { EmptyState } from "@/components/dashboard/states";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
@@ -147,7 +147,7 @@ export function TodayView({
         <WorkTimeline blocks={data.timeline} />
       </ActivityCard>
       <ActivityCard title="Sessions" subtitle="Stitched work blocks — not every app switch">
-        <SessionList blocks={data.timeline} sort="newest" compact />
+        <SessionCarousel blocks={data.timeline} sort="newest" />
       </ActivityCard>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ActivityCard title="Applications" subtitle={appsSubtitle}>
