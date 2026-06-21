@@ -27,10 +27,9 @@ trap on_err ERR
 
 sync_log "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync boot (user=${USER}, home=${HOME}) ==="
 
-# Avoid sourcing screenpipe-env.sh here: it mkdirs on the external volume and can fail
-# under launchd TCC even though sync only needs the paths below.
-export SCREENPIPE_DB="${SCREENPIPE_DB:-${DRIVE_ROOT}/screenpipe-data/db.sqlite}"
-export SCREENPIPE_DATA_DIR="${SCREENPIPE_DATA_DIR:-${DRIVE_ROOT}/screenpipe-data}"
+# Data lives on internal APFS (~/) to avoid SQLite WAL stalls on external ExFAT.
+export SCREENPIPE_DB="${SCREENPIPE_DB:-${HOME}/screenpipe-data/db.sqlite}"
+export SCREENPIPE_DATA_DIR="${SCREENPIPE_DATA_DIR:-${HOME}/screenpipe-data}"
 sync_log "Using data dir ${SCREENPIPE_DATA_DIR}"
 
 # launchd can start before the external volume is mounted
