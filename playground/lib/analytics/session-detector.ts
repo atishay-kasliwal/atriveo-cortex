@@ -208,7 +208,7 @@ export function processFrames(
       meetingSeconds += attribSec;
     }
 
-    const domain = extractDomain(prev.app_name, prev.window_name);
+    const domain = extractDomain(prev.app_name, prev.window_name, prev.browser_url);
     if (domain) {
       addSeconds(domainSeconds, domain, attribSec);
       if (

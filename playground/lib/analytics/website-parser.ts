@@ -102,6 +102,12 @@ export function extractWebsiteFromTitle(
 export function extractDomain(
   app: string | null | undefined,
   windowTitle: string | null | undefined,
+  browserUrl?: string | null,
 ): string | null {
+  // Prefer the actual URL if available — far more reliable than title parsing
+  if (browserUrl && isBrowserApp(app)) {
+    const urlResult = acceptCandidate(browserUrl, "url", 0.99);
+    if (urlResult) return urlResult.domain;
+  }
   return extractWebsiteFromTitle(app, windowTitle)?.domain ?? null;
 }
