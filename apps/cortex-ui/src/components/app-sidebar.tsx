@@ -23,6 +23,7 @@ import {
   ClipboardCheck,
   Gauge,
   Watch,
+  Settings,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import {
@@ -75,6 +76,10 @@ const nav = [
       { title: "Open Loops", url: "/open-loops", icon: CircleDashed },
       { title: "Attention", url: "/attention", icon: Brain },
     ],
+  },
+  {
+    group: "Settings",
+    items: [{ title: "Settings", url: "/settings", icon: Settings }],
   },
   {
     group: "Debug",

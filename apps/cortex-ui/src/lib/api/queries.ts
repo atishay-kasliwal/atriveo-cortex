@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, type ActionBucket } from "./client";
-import { isRetryableApiError } from "./cortex-fetch";
+import { cortexFetch, isRetryableApiError } from "./cortex-fetch";
 import type { HealthPeriod } from "./health-types";
 
 const STALE = 30_000;
@@ -51,6 +51,7 @@ export const qk = {
   analyticsValidation: (date?: string) =>
     ["analytics", "validation", date ?? "today"] as const,
   healthTimeline: (period: HealthPeriod) => ["health", "timeline", period] as const,
+  aiSettings: ["settings", "ai"] as const,
 };
 
 export const overviewQuery = queryOptions({
@@ -308,3 +309,9 @@ export const healthTimelineQuery = (period: HealthPeriod) =>
     staleTime: STALE,
     retry: defaultQueryRetry,
   });
+
+export const aiSettingsQuery = queryOptions({
+  queryKey: qk.aiSettings,
+  queryFn: () => cortexFetch<{ provider: string; model: string; ollamaUrl: string }>("/api/settings/ai"),
+  staleTime: 60_000,
+});

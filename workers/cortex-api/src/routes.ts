@@ -17,7 +17,7 @@ import {
   getIdeaDetail,
   listIdeasReport,
 } from "@/lib/action-idea-memory";
-import { actionRepository, ideaRepository } from "@/lib/repositories";
+import { actionRepository, ideaRepository, systemRepository } from "@/lib/repositories";
 import { getDashboardOverview } from "@/lib/api/dashboard";
 import { todayDateParam } from "@/lib/api/analytics-dtos";
 import {
@@ -133,6 +133,23 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, data);
     } catch (e) {
       return apiErrorFromException(c, e, "Failed to load health timeline", 500);
+    }
+  });
+
+  app.post("/api/v1/health/ingest", async (c) => {
+    try {
+      const expectedToken = c.env.HEALTH_WRITE_TOKEN ?? process.env.HEALTH_WRITE_TOKEN;
+      const provided = c.req.header("api-key");
+      if (!expectedToken || !provided || provided !== expectedToken) {
+        return apiError(c, "Unauthorized", 401);
+      }
+      const payload = await c.req.json();
+      const { ingestHealthPayload } = await import("@/lib/health/health-ingest");
+      const result = await ingestHealthPayload(payload);
+      console.log(`[health-ingest] samples=${result.samplesInserted} sleep=${result.sleepUpserted} workouts=${result.workoutsUpserted}`);
+      return apiSuccess(c, result);
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to ingest health data", 500);
     }
   });
 
@@ -1021,6 +1038,52 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, enqueued, 202);
     } catch (e) {
       return apiErrorFromException(c, e, "Couldn't retry memory job", 500);
+    }
+  });
+
+  // AI provider settings — stored in sync_state under "ai.*" keys
+  app.get("/api/settings/ai", async (c) => {
+    try {
+      const [provider, model, ollamaUrl] = await Promise.all([
+        systemRepository.getSyncState("ai.provider"),
+        systemRepository.getSyncState("ai.model"),
+        systemRepository.getSyncState("ai.ollama_url"),
+      ]);
+      return apiSuccess(c, {
+        provider: (provider ?? "none") as "none" | "ollama" | "anthropic" | "openai",
+        model: model ?? "",
+        ollamaUrl: ollamaUrl ?? "http://localhost:11434",
+      });
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load settings", 500);
+    }
+  });
+
+  app.put("/api/settings/ai", async (c) => {
+    try {
+      const body = await c.req.json<{
+        provider: "none" | "ollama" | "anthropic" | "openai";
+        model?: string;
+        apiKey?: string;
+        ollamaUrl?: string;
+      }>();
+      const allowed = ["none", "ollama", "anthropic", "openai"];
+      if (!allowed.includes(body.provider)) return apiError(c, "Invalid provider", 400);
+      await Promise.all([
+        systemRepository.setSyncState("ai.provider", body.provider),
+        body.model !== undefined
+          ? systemRepository.setSyncState("ai.model", body.model)
+          : Promise.resolve(),
+        body.apiKey !== undefined
+          ? systemRepository.setSyncState("ai.api_key", body.apiKey)
+          : Promise.resolve(),
+        body.ollamaUrl !== undefined
+          ? systemRepository.setSyncState("ai.ollama_url", body.ollamaUrl)
+          : Promise.resolve(),
+      ]);
+      return apiSuccess(c, { ok: true });
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to save settings", 500);
     }
   });
 }
