@@ -96,8 +96,8 @@ import {
 } from "@/lib/analytics/accuracy-api";
 import { runMemorySearch } from "@/lib/memory-search-api";
 import { fetchSyncStatus, fetchMemoryJob, fetchCaptureDoctor, processMemoryJob, triggerMemoryJobEnqueue, triggerMemoryJobRetry } from "@/lib/sync/sync-api";
-import { buildHealthTimeline, type HealthPeriod } from "@/lib/health/health-api";
-import { apiError, apiErrorFromException, apiSuccess } from "./env";
+import { buildHealthTimeline, buildDailyTrend, buildReadiness, type HealthPeriod } from "@/lib/health/health-api";
+import { apiError, apiErrorFromException, apiSuccess, handleLogin, requireAuth } from "./env";
 
 function parseIdParam(c: Context, name = "id"): number | null {
   const raw = c.req.query(name);
@@ -107,6 +107,20 @@ function parseIdParam(c: Context, name = "id"): number | null {
 }
 
 export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("./env").Env }>) {
+  // Auth — no token required for login endpoint
+  app.post("/api/auth/login", (c) => handleLogin(c as any));
+
+  // Auth middleware — all /api/* routes except login and health-ingest require a valid token
+  app.use("/api/*", async (c, next) => {
+    const path = new URL(c.req.url).pathname;
+    if (path === "/api/auth/login" || path === "/api/health" || path === "/api/v1/health/ingest") {
+      return next();
+    }
+    const ok = await requireAuth(c as any);
+    if (!ok) return c.json({ success: false, error: "Unauthorized" }, 401);
+    return next();
+  });
+
   app.get("/api/health", async (c) => {
     const { checkDatabaseConnection } = await import("./env");
     const dbOk = await checkDatabaseConnection();
@@ -119,6 +133,30 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       },
       dbOk ? 200 : 503,
     );
+  });
+
+  // Specific routes must be registered before the :period wildcard
+  app.get("/api/v1/health/readiness", async (c) => {
+    try {
+      const tz = c.req.query("timezone") ?? "America/Los_Angeles";
+      const data = await buildReadiness(tz);
+      c.header("Cache-Control", "no-store, max-age=0");
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to load readiness", 500);
+    }
+  });
+
+  app.get("/api/v1/health/trend/daily", async (c) => {
+    try {
+      const tz = c.req.query("timezone") ?? "America/Los_Angeles";
+      const days = Math.min(90, Math.max(7, Number(c.req.query("days") ?? 30)));
+      const data = await buildDailyTrend(tz, days);
+      c.header("Cache-Control", "no-store, max-age=0");
+      return apiSuccess(c, data);
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to load daily trend", 500);
+    }
   });
 
   app.get("/api/v1/health/:period", async (c) => {

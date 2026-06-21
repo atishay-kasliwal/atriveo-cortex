@@ -17,18 +17,17 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setTimeout(() => {
-      if (login(email, password)) {
-        navigate({ to: "/" });
-      } else {
-        setError("Invalid email or password.");
-        setLoading(false);
-      }
-    }, 400);
+    const ok = await login(email, password);
+    if (ok) {
+      navigate({ to: "/" });
+    } else {
+      setError("Invalid email or password.");
+      setLoading(false);
+    }
   }
 
   return (
