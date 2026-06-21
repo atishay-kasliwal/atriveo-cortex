@@ -159,45 +159,87 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
     samplesInserted = await batchUpsertSamples(sql, sampleRows);
 
     // ── Sleep sessions ────────────────────────────────────────────────────────
+    // HAE exports sleep_analysis as individual stage intervals, each with
+    // startDate/endDate and value = "InBed" | "Asleep" | "AsleepCore" |
+    // "AsleepDeep" | "AsleepREM" | "Awake". We group them into sessions by
+    // clustering intervals within a 90-minute gap, then sum stage minutes.
+    // Also handles the older aggregated format (sleepStart/sleepEnd fields).
     const sleepGroups = metrics.filter((g) => g.name === "sleep_analysis");
     for (const group of sleepGroups) {
       const data = (group.data ?? []) as Array<Record<string, unknown>>;
-      for (const point of data) {
-        const sleepStart = point.sleepStart ? new Date(point.sleepStart as string) : null;
-        const sleepEnd = point.sleepEnd ? new Date(point.sleepEnd as string) : null;
-        if (!sleepStart || !sleepEnd || isNaN(sleepStart.getTime()) || isNaN(sleepEnd.getTime())) continue;
+      if (data.length === 0) continue;
 
-        const coreMin = Number(point.core ?? 0);
-        const remMin = Number(point.rem ?? 0);
-        const deepMin = Number(point.deep ?? 0);
-        const awakeMin = Number(point.awake ?? 0);
-        const inBedMin = Number(point.inBed ?? coreMin + remMin + deepMin + awakeMin);
-        const asleepMin = coreMin + remMin + deepMin;
-        const efficiency = inBedMin > 0 ? Math.min(asleepMin / inBedMin, 1) : null;
-        const durationMin = asleepMin > 0 ? asleepMin : (sleepEnd.getTime() - sleepStart.getTime()) / 60000;
+      // Detect format: aggregated (has sleepStart) vs per-stage (has startDate/value)
+      const isAggregated = data[0].sleepStart != null;
 
-        await sql.unsafe(
-          `INSERT INTO sleep_sessions
-             (id, user_id, sleep_start, sleep_end, duration_minutes,
-              rem_minutes, deep_minutes, core_minutes, awake_minutes,
-              sleep_efficiency, source_device, metadata)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-           ON CONFLICT (user_id, sleep_start, sleep_end) DO UPDATE SET
-             duration_minutes   = EXCLUDED.duration_minutes,
-             rem_minutes        = EXCLUDED.rem_minutes,
-             deep_minutes       = EXCLUDED.deep_minutes,
-             core_minutes       = EXCLUDED.core_minutes,
-             awake_minutes      = EXCLUDED.awake_minutes,
-             sleep_efficiency   = EXCLUDED.sleep_efficiency,
-             source_device      = EXCLUDED.source_device`,
-          [
-            randomUUID(), USER_ID,
-            sleepStart.toISOString(), sleepEnd.toISOString(), durationMin,
-            remMin, deepMin, coreMin, awakeMin,
-            efficiency, point.source ?? null, "{}",
-          ],
-        );
-        sleepUpserted++;
+      if (isAggregated) {
+        for (const point of data) {
+          const sleepStart = point.sleepStart ? new Date(point.sleepStart as string) : null;
+          const sleepEnd = point.sleepEnd ? new Date(point.sleepEnd as string) : null;
+          if (!sleepStart || !sleepEnd || isNaN(sleepStart.getTime()) || isNaN(sleepEnd.getTime())) continue;
+
+          const coreMin = Number(point.core ?? 0);
+          const remMin = Number(point.rem ?? 0);
+          const deepMin = Number(point.deep ?? 0);
+          const awakeMin = Number(point.awake ?? 0);
+          const inBedMin = Number(point.inBed ?? coreMin + remMin + deepMin + awakeMin);
+          const asleepMin = coreMin + remMin + deepMin;
+          const efficiency = inBedMin > 0 ? Math.min(asleepMin / inBedMin, 1) : null;
+          const durationMin = asleepMin > 0 ? asleepMin : (sleepEnd.getTime() - sleepStart.getTime()) / 60000;
+
+          await upsertSleepSession(sql, sleepStart, sleepEnd, durationMin, remMin, deepMin, coreMin, awakeMin, efficiency, String(point.source ?? ""));
+          sleepUpserted++;
+        }
+      } else {
+        // Per-stage format: group into sessions, cluster by 90-min gap
+        type Stage = { start: Date; end: Date; value: string; source: string };
+        const stages: Stage[] = [];
+        for (const point of data) {
+          const start = new Date((point.startDate ?? point.date) as string);
+          const end = new Date((point.endDate ?? point.date) as string);
+          if (isNaN(start.getTime()) || isNaN(end.getTime())) continue;
+          stages.push({ start, end, value: String(point.value ?? ""), source: String(point.source ?? "") });
+        }
+        stages.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+        // Cluster into sessions: new session when gap > 90 min
+        const GAP_MS = 90 * 60 * 1000;
+        const sessions: Stage[][] = [];
+        let current: Stage[] = [];
+        for (const stage of stages) {
+          if (current.length > 0 && stage.start.getTime() - current[current.length - 1].end.getTime() > GAP_MS) {
+            sessions.push(current);
+            current = [];
+          }
+          current.push(stage);
+        }
+        if (current.length > 0) sessions.push(current);
+
+        for (const session of sessions) {
+          const sessionStart = session[0].start;
+          const sessionEnd = session[session.length - 1].end;
+          let coreMin = 0, remMin = 0, deepMin = 0, awakeMin = 0, inBedMin = 0;
+
+          for (const s of session) {
+            const durMin = (s.end.getTime() - s.start.getTime()) / 60000;
+            const v = s.value.toLowerCase();
+            if (v === "inbed") inBedMin += durMin;
+            else if (v === "asleepcore" || v === "core") coreMin += durMin;
+            else if (v === "asleepdeep" || v === "deep") deepMin += durMin;
+            else if (v === "asleeprem" || v === "rem") remMin += durMin;
+            else if (v === "awake") awakeMin += durMin;
+            else if (v === "asleep") coreMin += durMin; // fallback: treat generic Asleep as core
+          }
+
+          const asleepMin = coreMin + remMin + deepMin;
+          const durationMin = asleepMin > 0 ? asleepMin : inBedMin;
+          if (durationMin < 1) continue; // skip trivial entries
+          const efficiency = inBedMin > 0 ? Math.min(asleepMin / inBedMin, 1) : null;
+          const source = session[0].source;
+
+          await upsertSleepSession(sql, sessionStart, sessionEnd, durationMin, remMin, deepMin, coreMin, awakeMin, efficiency, source);
+          sleepUpserted++;
+        }
       }
     }
 
@@ -239,4 +281,39 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
   }
 
   return { samplesInserted, sleepUpserted, workoutsUpserted };
+}
+
+async function upsertSleepSession(
+  sql: ReturnType<typeof openHealthDb>,
+  sleepStart: Date,
+  sleepEnd: Date,
+  durationMin: number,
+  remMin: number,
+  deepMin: number,
+  coreMin: number,
+  awakeMin: number,
+  efficiency: number | null,
+  source: string,
+): Promise<void> {
+  await sql.unsafe(
+    `INSERT INTO sleep_sessions
+       (id, user_id, sleep_start, sleep_end, duration_minutes,
+        rem_minutes, deep_minutes, core_minutes, awake_minutes,
+        sleep_efficiency, source_device, metadata)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+     ON CONFLICT (user_id, sleep_start, sleep_end) DO UPDATE SET
+       duration_minutes   = EXCLUDED.duration_minutes,
+       rem_minutes        = EXCLUDED.rem_minutes,
+       deep_minutes       = EXCLUDED.deep_minutes,
+       core_minutes       = EXCLUDED.core_minutes,
+       awake_minutes      = EXCLUDED.awake_minutes,
+       sleep_efficiency   = EXCLUDED.sleep_efficiency,
+       source_device      = EXCLUDED.source_device`,
+    [
+      randomUUID(), USER_ID,
+      sleepStart.toISOString(), sleepEnd.toISOString(), durationMin,
+      remMin, deepMin, coreMin, awakeMin,
+      efficiency, source || null, "{}",
+    ],
+  );
 }

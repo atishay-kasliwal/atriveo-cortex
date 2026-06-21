@@ -188,7 +188,8 @@ export async function buildHealthTimeline(
         [USER_ID, fromIso, toIso],
       ),
 
-      // Sleep sessions
+      // Sleep sessions — match sessions whose end falls within the window
+      // (overnight sleep starts before midnight, ends in the morning)
       runHealthQuery<{
         duration_minutes: string;
         rem_minutes: string;
@@ -204,7 +205,7 @@ export async function buildHealthTimeline(
            COALESCE(SUM(awake_minutes), 0)::float AS awake_minutes
          FROM sleep_sessions
          WHERE user_id = $1
-           AND sleep_start >= $2 AND sleep_start <= $3`,
+           AND sleep_end >= $2 AND sleep_end <= $3`,
         [USER_ID, fromIso, toIso],
       ),
 
