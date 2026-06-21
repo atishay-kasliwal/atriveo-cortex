@@ -26,8 +26,8 @@ app.use(
       if (!origin || origin === allowed) return allowed;
       return origin === allowed ? origin : allowed;
     },
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Accept"],
+    allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Accept", "api-key"],
     maxAge: 86400,
   }),
 );

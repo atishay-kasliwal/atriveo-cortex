@@ -9,6 +9,7 @@ import { sanitizeApiErrorMessage } from "@/lib/api/public-errors";
 export type Env = {
   DATABASE_URL: string;
   HEALTH_DATABASE_URL?: string;
+  HEALTH_WRITE_TOKEN?: string;
   CORS_ORIGIN?: string;
 };
 
@@ -16,6 +17,9 @@ export function bindDatabase(env: Env): void {
   process.env.DATABASE_URL = env.DATABASE_URL;
   if (env.HEALTH_DATABASE_URL) {
     process.env.HEALTH_DATABASE_URL = env.HEALTH_DATABASE_URL;
+  }
+  if (env.HEALTH_WRITE_TOKEN) {
+    process.env.HEALTH_WRITE_TOKEN = env.HEALTH_WRITE_TOKEN;
   }
   process.env.CORTEX_DB_SERVERLESS = "1";
   resetDatabasePool();
