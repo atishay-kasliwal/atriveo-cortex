@@ -18,7 +18,10 @@ const DOMAIN_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
   { match: /stackoverflow|docs\.|arxiv\.org|wikipedia|medium\.com/i, category: "RESEARCH" },
   { match: /gmail\.com|mail\.google|linkedin\.com|twitter\.com|x\.com/i, category: "COMMUNICATION" },
   { match: /notion\.so|linear\.app|jira\.|asana\.com/i, category: "PLANNING" },
-  { match: /youtube\.com|netflix\.com|reddit\.com|twitch\.tv/i, category: "ENTERTAINMENT" },
+  {
+    match: /youtube\.com|netflix\.com|reddit\.com|twitch\.tv|streamfree|sextb|betonline|draftkings|fanduel|betmgm|espn\.com|nfl\.com|nba\.com|mlb\.com|cricbuzz|hotstar|primevideo|disneyplus|hulu|peacocktv|paramountplus|crunchyroll|pornhub|xvideos|onlyfans/i,
+    category: "ENTERTAINMENT",
+  },
   { match: /chatgpt\.com|openai\.com|claude\.ai|anthropic\.com/i, category: "RESEARCH" },
 ];
 
@@ -43,7 +46,9 @@ export function categorizeDomain(domain: string | null | undefined): SessionType
   for (const rule of DOMAIN_CATEGORIES) {
     if (rule.match.test(domain)) return rule.category;
   }
-  return "RESEARCH";
+  // Unknown domains default to OTHER, not RESEARCH, so they don't
+  // pollute work sessions or prevent entertainment session breaks
+  return "OTHER";
 }
 
 export function resolveSessionType(
