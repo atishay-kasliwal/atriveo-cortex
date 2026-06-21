@@ -44,13 +44,13 @@ function LoginPage() {
       {/* Subtle vignette */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/35" />
 
-      {/* User block — centered vertically */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-3">
-        <p className="text-[22px] font-semibold text-white drop-shadow-lg tracking-tight">
+      {/* User block — bottom center */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-end pb-20 gap-2">
+        <p className="text-[15px] font-medium text-white/90 tracking-wide" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>
           Atishay Kasliwal
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col items-center gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col items-center gap-1.5">
           <div className="relative">
             <input
               type="password"
@@ -59,28 +59,28 @@ function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter Password"
-              className="w-56 rounded-full px-4 py-2 text-[14px] text-white/90 placeholder:text-white/50 outline-none text-center"
+              className="w-48 rounded-full px-4 py-1.5 text-[13px] text-white/90 placeholder:text-white/40 outline-none text-center"
               style={{
-                background: "rgba(255,255,255,0.18)",
-                backdropFilter: "blur(20px)",
-                WebkitBackdropFilter: "blur(20px)",
-                border: "1px solid rgba(255,255,255,0.30)",
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                border: "1px solid rgba(255,255,255,0.22)",
               }}
             />
             <button
               type="submit"
               disabled={loading || !password}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-black/70 transition disabled:opacity-40 hover:bg-white"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-white/70 text-black/60 transition disabled:opacity-0 hover:bg-white"
               aria-label="Sign in"
             >
-              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3}>
+              <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </div>
 
           {error && (
-            <p className="text-[12px] text-white/80 drop-shadow">{error}</p>
+            <p className="text-[11px] text-white/70" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{error}</p>
           )}
         </form>
       </div>
