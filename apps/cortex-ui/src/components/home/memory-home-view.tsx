@@ -74,10 +74,8 @@ export function MemoryHomeView({
         dateLabel={dateLabel}
       />
 
-      {/* Calendar */}
-      <section>
-        <CalendarUpcoming />
-      </section>
+      {/* Calendar — compact pill row */}
+      <CalendarUpcoming />
 
       {/* Activity log */}
       <section className="space-y-3">
