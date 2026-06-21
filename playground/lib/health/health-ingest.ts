@@ -58,6 +58,40 @@ function canonicalMetricType(name: string): string {
   return METRIC_ALIASES[name.toLowerCase()] ?? name.toLowerCase();
 }
 
+type SampleRow = [string, string, string, number, string | null, string, string | null, string];
+
+/** Batch insert health_samples rows in chunks to stay under query size limits. */
+async function batchUpsertSamples(
+  sql: ReturnType<typeof openHealthDb>,
+  rows: SampleRow[],
+): Promise<number> {
+  if (rows.length === 0) return 0;
+  const CHUNK = 500;
+  let inserted = 0;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    // Build VALUES ($1,$2,...,$8), ($9,...) etc.
+    const placeholders = chunk
+      .map((_, idx) => {
+        const base = idx * 8;
+        return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8})`;
+      })
+      .join(",");
+    const params = chunk.flat();
+    await sql.unsafe(
+      `INSERT INTO health_samples
+         (id, user_id, metric_type, value, unit, start_time, source_device, metadata)
+       VALUES ${placeholders}
+       ON CONFLICT (user_id, metric_type, start_time,
+                    COALESCE(source_device, ''), COALESCE(metric_subtype, ''))
+       DO NOTHING`,
+      params,
+    );
+    inserted += chunk.length;
+  }
+  return inserted;
+}
+
 export type IngestResult = {
   samplesInserted: number;
   sleepUpserted: number;
@@ -77,11 +111,13 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
 
   const sql = openHealthDb();
   try {
-    // ── Health samples ────────────────────────────────────────────────────────
+    // ── Health samples — collect all rows then batch insert ───────────────────
+    const sampleRows: SampleRow[] = [];
+
     for (const group of metrics) {
       const name = String(group.name ?? "");
       const data = (group.data ?? []) as Array<Record<string, unknown>>;
-      const units = group.units as string | null ?? null;
+      const units = (group.units as string | null) ?? null;
 
       if (name === "sleep_analysis") continue;
 
@@ -90,12 +126,10 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
           const ts = new Date(point.date as string);
           if (isNaN(ts.getTime())) continue;
           if (point.systolic != null) {
-            await upsertSample(sql, "blood_pressure_systolic", Number(point.systolic), "mmHg", ts, point.source as string);
-            samplesInserted++;
+            sampleRows.push([randomUUID(), USER_ID, "blood_pressure_systolic", Number(point.systolic), "mmHg", ts.toISOString(), (point.source as string) ?? null, "{}"]);
           }
           if (point.diastolic != null) {
-            await upsertSample(sql, "blood_pressure_diastolic", Number(point.diastolic), "mmHg", ts, point.source as string);
-            samplesInserted++;
+            sampleRows.push([randomUUID(), USER_ID, "blood_pressure_diastolic", Number(point.diastolic), "mmHg", ts.toISOString(), (point.source as string) ?? null, "{}"]);
           }
         }
         continue;
@@ -105,8 +139,11 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
         for (const point of data) {
           const ts = new Date(point.date as string);
           if (isNaN(ts.getTime()) || point.Avg == null) continue;
-          await upsertSample(sql, "heart_rate", Number(point.Avg), units, ts, point.source as string, { min: point.Min, max: point.Max });
-          samplesInserted++;
+          sampleRows.push([
+            randomUUID(), USER_ID, "heart_rate", Number(point.Avg), units, ts.toISOString(),
+            (point.source as string) ?? null,
+            JSON.stringify({ min: point.Min, max: point.Max }),
+          ]);
         }
         continue;
       }
@@ -115,10 +152,11 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
       for (const point of data) {
         const ts = new Date(point.date as string);
         if (isNaN(ts.getTime()) || point.qty == null) continue;
-        await upsertSample(sql, metricType, Number(point.qty), units, ts, point.source as string);
-        samplesInserted++;
+        sampleRows.push([randomUUID(), USER_ID, metricType, Number(point.qty), units, ts.toISOString(), (point.source as string) ?? null, "{}"]);
       }
     }
+
+    samplesInserted = await batchUpsertSamples(sql, sampleRows);
 
     // ── Sleep sessions ────────────────────────────────────────────────────────
     const sleepGroups = metrics.filter((g) => g.name === "sleep_analysis");
@@ -201,28 +239,4 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
   }
 
   return { samplesInserted, sleepUpserted, workoutsUpserted };
-}
-
-async function upsertSample(
-  sql: ReturnType<typeof openHealthDb>,
-  metricType: string,
-  value: number,
-  unit: string | null,
-  startTime: Date,
-  source: string | null,
-  metadata: Record<string, unknown> = {},
-): Promise<void> {
-  await sql.unsafe(
-    `INSERT INTO health_samples
-       (id, user_id, metric_type, value, unit, start_time, source_device, metadata)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-     ON CONFLICT (user_id, metric_type, start_time,
-                  COALESCE(source_device, ''), COALESCE(metric_subtype, ''))
-     DO NOTHING`,
-    [
-      randomUUID(), USER_ID, metricType, value,
-      unit ?? null, startTime.toISOString(), source ?? null,
-      JSON.stringify(metadata),
-    ],
-  );
 }
