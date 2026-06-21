@@ -39,8 +39,10 @@ function pct(min: number) {
 
 function nowMin(): number | null {
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  const m = (now.getTime() - start.getTime()) / 60000;
+  // Segments are stored with UTC timestamps and plotted from UTC midnight,
+  // so NOW must also be minutes since UTC midnight to stay aligned.
+  const utcMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const m = (now.getTime() - utcMidnight) / 60000;
   return m >= 0 && m <= DAY_MINS ? m : null;
 }
 

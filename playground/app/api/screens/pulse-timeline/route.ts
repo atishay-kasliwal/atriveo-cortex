@@ -38,7 +38,9 @@ export async function GET(request: Request) {
 
     // Group monitor segments by monitor_id
     const monitorLanes: Record<string, Array<{ startMin: number; endMin: number; category: string; app: string }>> = {};
-    const dayStart = new Date(date + "T00:00:00").getTime();
+    // Use UTC midnight — all timestamps in DB are UTC ISO strings, so dayStart
+    // must also be UTC midnight to get correct minute-of-day offsets.
+    const dayStart = Date.parse(date + "T00:00:00Z");
     for (const seg of monitorSegments) {
       const key = `monitor_${seg.monitor_id}`;
       const startMs = Date.parse(seg.start_time);
