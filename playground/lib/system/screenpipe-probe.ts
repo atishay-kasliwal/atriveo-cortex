@@ -48,6 +48,10 @@ export async function probeScreenpipeApi(
 export async function probeScreenpipe(
   port: number = SCREENPIPE_PORT,
 ): Promise<ScreenpipeProbe> {
+  // net.connect is unavailable in Cloudflare Workers — skip TCP probe.
+  if (process.env.CORTEX_DB_SERVERLESS === "1") {
+    return { portOpen: false, apiReachable: false, apiStatus: null };
+  }
   const portOpen = await probeTcp(port, "127.0.0.1", 2000);
   if (!portOpen) {
     return { portOpen: false, apiReachable: false, apiStatus: null };

@@ -30,6 +30,7 @@ export function closeScreenpipe(): void {
 }
 
 export function screenpipeDbExists(): boolean {
+  if (process.env.CORTEX_DB_SERVERLESS === "1") return false;
   try {
     return fs.existsSync(SCREENPIPE_DB);
   } catch {

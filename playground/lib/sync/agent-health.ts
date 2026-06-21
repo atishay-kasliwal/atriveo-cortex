@@ -219,6 +219,86 @@ export async function buildAgentHealthView(): Promise<AgentHealthView> {
   };
 }
 
+/** Read-only version for serverless — skips the heartbeat DB write. */
+export async function buildAgentHealthViewReadOnly(): Promise<AgentHealthView> {
+  const [sync, agent, latestActivityAt, activeJob, todaySummary] =
+    await Promise.all([
+      getSyncStatus(),
+      agentHeartbeatRepository.get(MAC_CAPTURE_AGENT_ID),
+      analyticsRepository.getLatestActivityEndTime(),
+      memoryJobRepository.getActive(),
+      analyticsRepository.getDailySummary(localDateString()),
+    ]);
+
+  const lastCaptureAt =
+    agent?.latestCaptureTime ??
+    sync.lastFrameTimestamp ??
+    sync.lastObservedFrameTimestamp;
+  const lastSyncAt =
+    agent?.latestSyncTime ??
+    sync.captureAgentHeartbeat ??
+    sync.lastSyncCompletedAt ??
+    sync.lastProcessedTimestamp;
+  const agentOnline =
+    Boolean(agent) &&
+    minutesSinceLocal(agent?.lastSeenAt ?? null) != null &&
+    minutesSinceLocal(agent!.lastSeenAt)! * 60_000 <= SYNC_STALE_MS;
+
+  const captureSla = classifyFreshnessSla(lastCaptureAt);
+  const syncSla = classifyFreshnessSla(lastSyncAt);
+  const captureStatus = captureSignal(lastCaptureAt, agentOnline);
+  const syncStatus = syncSignal(lastSyncAt);
+  const todayDate = localDateString();
+  const hasDataForToday = Boolean(
+    todaySummary &&
+      (todaySummary.active_minutes > 0 ||
+        todaySummary.focused_minutes > 0 ||
+        todaySummary.meeting_minutes > 0),
+  );
+  const emptyTodayMessage =
+    !hasDataForToday && lastCaptureAt
+      ? `No activity synced for today yet. Latest capture: ${relativeLabel(lastCaptureAt)}.`
+      : null;
+
+  return {
+    capture: {
+      status: captureStatus,
+      label:
+        captureStatus === "online"
+          ? "Capture agent online"
+          : captureStatus === "degraded"
+            ? `Last capture ${relativeLabel(lastCaptureAt)}`
+            : "Capture unavailable",
+      lastCaptureAt,
+      agentOnline,
+      slaLevel: captureSla,
+      slaLabel: freshnessSlaLabel(lastCaptureAt),
+    },
+    sync: {
+      status: syncStatus,
+      label:
+        syncStatus === "online"
+          ? `Synced ${relativeLabel(lastSyncAt)}`
+          : syncStatus === "degraded"
+            ? `Last sync ${relativeLabel(lastSyncAt)}`
+            : "Sync unavailable",
+      lastSyncAt,
+      slaLevel: syncSla,
+      slaLabel: freshnessSlaLabel(lastSyncAt),
+    },
+    data: {
+      latestActivityAt,
+      latestActivityLabel: latestActivityAt
+        ? `Latest activity ${relativeLabel(latestActivityAt)}`
+        : "No activity indexed yet",
+      hasDataForToday,
+      todayDate,
+      emptyTodayMessage,
+    },
+    activeJob,
+  };
+}
+
 /** Estimate refresh cost for budget protection / UI copy. */
 export async function estimateRefreshWorkUnits(): Promise<number> {
   const lastFrame = await systemRepository.getSyncState(SYNC_KEYS.lastFrame);
