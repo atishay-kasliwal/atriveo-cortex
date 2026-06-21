@@ -32,27 +32,73 @@ export function extractMeetingUrl(text: string | null | undefined): string | nul
   );
 }
 
+const CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID ?? "";
+const CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET ?? "";
+const TOKEN_PATH = `${process.env.HOME}/.config/cortex/calendar-token.json`;
+
+async function getAccessToken(): Promise<string | null> {
+  const { readFileSync, writeFileSync } = await import("fs");
+  let stored: {
+    access_token?: string;
+    refresh_token?: string;
+    expiry_date?: number;
+    client_id?: string;
+    client_secret?: string;
+  };
+  try {
+    stored = JSON.parse(readFileSync(TOKEN_PATH, "utf8"));
+  } catch {
+    console.warn("calendar-sync: no token file at", TOKEN_PATH, "— run: node capture/auth-calendar.mjs");
+    return null;
+  }
+
+  // Check if access token is still valid (with 60s buffer)
+  if (stored.access_token && stored.expiry_date && Date.now() < stored.expiry_date - 60_000) {
+    return stored.access_token;
+  }
+
+  // Refresh the token
+  if (!stored.refresh_token) {
+    console.warn("calendar-sync: no refresh_token, re-run auth-calendar.mjs");
+    return null;
+  }
+
+  const body = new URLSearchParams({
+    client_id: stored.client_id ?? CLIENT_ID,
+    client_secret: stored.client_secret ?? CLIENT_SECRET,
+    refresh_token: stored.refresh_token,
+    grant_type: "refresh_token",
+  }).toString();
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  const data = (await res.json()) as { access_token?: string; expires_in?: number; error?: string };
+
+  if (!data.access_token) {
+    console.warn("calendar-sync: token refresh failed:", data.error);
+    return null;
+  }
+
+  // Persist updated token
+  const updated = {
+    ...stored,
+    access_token: data.access_token,
+    expiry_date: Date.now() + (data.expires_in ?? 3600) * 1000,
+  };
+  writeFileSync(TOKEN_PATH, JSON.stringify(updated, null, 2));
+  return data.access_token;
+}
+
 /** Fetch events from Google Calendar API for a window around today. */
 export async function fetchGoogleCalendarEvents(
   daysBack = 1,
   daysFwd = 14,
 ): Promise<CalendarEvent[]> {
-  // Get ADC token via gcloud
-  const { execSync } = await import("child_process");
-  let token: string;
-  try {
-    token = execSync(
-      "gcloud auth application-default print-access-token 2>/dev/null",
-      { encoding: "utf8" },
-    ).trim();
-  } catch {
-    console.warn("calendar-sync: could not get ADC token, skipping");
-    return [];
-  }
-  if (!token) {
-    console.warn("calendar-sync: empty token, skipping");
-    return [];
-  }
+  const token = await getAccessToken();
+  if (!token) return [];
 
   const now = new Date();
   const timeMin = new Date(now.getTime() - daysBack * 86400_000).toISOString();
