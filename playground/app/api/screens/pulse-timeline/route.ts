@@ -29,8 +29,8 @@ export async function GET(request: Request) {
       heartRate = hrRows
         .filter((r) => r.heart_rate != null && r.startMin <= nowMin)
         .map((r) => ({ startMin: r.startMin, value: r.heart_rate! }));
-    } catch {
-      // HEALTH_DATABASE_URL not configured — skip health signals
+    } catch (e) {
+      console.error("pulse-timeline: health fetch failed:", e instanceof Error ? e.message : e);
     }
 
     // Group monitor segments by monitor_id

@@ -340,7 +340,7 @@ export async function buildHealthTimelineRaw(
 ): Promise<Array<{ startMin: number; heart_rate: number | null }>> {
   const dayStartMs = Date.parse(date + "T00:00:00Z");
   const dayEndMs = dayStartMs + 24 * 60 * 60 * 1000;
-  const rows = await runHealthQuery<{ bucket: string; val: string }>(
+  const rows = await runHealthQuery<{ bucket: Date | string; val: string }>(
     `SELECT
        date_trunc('hour', start_time) AS bucket,
        AVG(value)::float AS val
@@ -352,8 +352,11 @@ export async function buildHealthTimelineRaw(
      ORDER BY 1`,
     [USER_ID, new Date(dayStartMs).toISOString(), new Date(dayEndMs).toISOString()],
   );
-  return rows.map((r) => ({
-    startMin: Math.round((Date.parse(String(r.bucket)) - dayStartMs) / 60000),
-    heart_rate: Math.round(parseFloat(r.val)),
-  }));
+  return rows.map((r) => {
+    const bucketMs = r.bucket instanceof Date ? r.bucket.getTime() : Date.parse(String(r.bucket));
+    return {
+      startMin: Math.round((bucketMs - dayStartMs) / 60000),
+      heart_rate: Math.round(parseFloat(r.val)),
+    };
+  });
 }
