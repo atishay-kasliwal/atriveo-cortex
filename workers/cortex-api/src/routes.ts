@@ -98,6 +98,7 @@ import { runMemorySearch } from "@/lib/memory-search-api";
 import { fetchSyncStatus, fetchMemoryJob, fetchCaptureDoctor, processMemoryJob, triggerMemoryJobEnqueue, triggerMemoryJobRetry } from "@/lib/sync/sync-api";
 import { buildHealthTimeline, buildDailyTrend, buildReadiness, type HealthPeriod } from "@/lib/health/health-api";
 import { apiError, apiErrorFromException, apiSuccess, handleLogin, requireAuth } from "./env";
+import { runUnsafe } from "@/lib/db/client";
 
 function parseIdParam(c: Context, name = "id"): number | null {
   const raw = c.req.query(name);
@@ -1135,6 +1136,81 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, { ok: true });
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to save settings", 500);
+    }
+  });
+
+  // ── Calendar ─────────────────────────────────────────────────────────────────
+
+  app.get("/api/calendar/upcoming", async (c) => {
+    try {
+      const days = Math.min(Number(c.req.query("days") ?? "7"), 30);
+      const now = new Date();
+      const windowEnd = new Date(now.getTime() + days * 86400_000).toISOString();
+      const rows = await runUnsafe<{
+        id: string; title: string; start_time: string; end_time: string;
+        is_all_day: number; calendar_name: string; calendar_color: string;
+        location: string | null; meeting_url: string | null; status: string;
+      }>(
+        `SELECT id, title, start_time, end_time, is_all_day, calendar_name,
+                calendar_color, location, meeting_url, status
+         FROM calendar_events
+         WHERE end_time > $1 AND start_time < $2
+         ORDER BY start_time ASC`,
+        [now.toISOString(), windowEnd],
+      );
+      return apiSuccess(c, rows.map((r) => ({
+        id: r.id,
+        title: r.title,
+        startTime: r.start_time,
+        endTime: r.end_time,
+        isAllDay: r.is_all_day === 1,
+        calendarName: r.calendar_name,
+        calendarColor: r.calendar_color,
+        location: r.location,
+        meetingUrl: r.meeting_url,
+        status: r.status,
+      })));
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to fetch upcoming events");
+    }
+  });
+
+  app.get("/api/calendar/day", async (c) => {
+    try {
+      const date = c.req.query("date");
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return apiError(c, "date param required (YYYY-MM-DD)", 400);
+      }
+      const dayStart = `${date}T00:00:00.000Z`;
+      const dayEnd   = `${date}T23:59:59.999Z`;
+      const rows = await runUnsafe<{
+        id: string; title: string; start_time: string; end_time: string;
+        is_all_day: number; calendar_name: string; calendar_color: string;
+        location: string | null; description: string | null;
+        meeting_url: string | null; status: string;
+      }>(
+        `SELECT id, title, start_time, end_time, is_all_day, calendar_name,
+                calendar_color, location, description, meeting_url, status
+         FROM calendar_events
+         WHERE end_time >= $1 AND start_time <= $2
+         ORDER BY start_time ASC`,
+        [dayStart, dayEnd],
+      );
+      return apiSuccess(c, rows.map((r) => ({
+        id: r.id,
+        title: r.title,
+        startTime: r.start_time,
+        endTime: r.end_time,
+        isAllDay: r.is_all_day === 1,
+        calendarName: r.calendar_name,
+        calendarColor: r.calendar_color,
+        location: r.location,
+        description: r.description,
+        meetingUrl: r.meeting_url,
+        status: r.status,
+      })));
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to fetch day events");
     }
   });
 }

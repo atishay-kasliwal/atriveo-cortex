@@ -106,10 +106,19 @@ async function main() {
     await touch(SYNC_KEYS.lastProjectHealthComputed);
   }
 
+  console.log(ts(), "step: runCalendarSync");
+  const { runCalendarSync } = await import("../lib/calendar/calendar-sync");
+  const calResult = await runCalendarSync().catch((err: Error) => {
+    console.error(ts(), "calendar sync failed:", err.message);
+    return { synced: 0 };
+  });
+  console.log(ts(), "done calendar sync:", calResult.synced, "events");
+
   console.log(ts(), "pipeline:derived complete", {
     loopsUpdated,
     reviewsUpdated,
     indexed,
+    calendarEvents: calResult.synced,
     dates: targetDates.length,
   });
 

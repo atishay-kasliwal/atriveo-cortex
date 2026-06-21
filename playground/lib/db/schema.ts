@@ -395,6 +395,28 @@ export const syncState = pgTable("sync_state", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const calendarEvents = pgTable(
+  "calendar_events",
+  {
+    id: text("id").primaryKey(),           // Google event ID
+    title: text("title").notNull(),
+    startTime: text("start_time").notNull(), // ISO8601
+    endTime: text("end_time").notNull(),
+    isAllDay: integer("is_all_day").notNull().default(0),
+    calendarName: text("calendar_name").notNull(),
+    calendarColor: text("calendar_color").notNull().default("#888888"),
+    location: text("location"),
+    description: text("description"),
+    meetingUrl: text("meeting_url"),       // extracted Meet/Zoom/Teams link
+    status: text("status").notNull().default("accepted"), // accepted|tentative|pending
+    syncedAt: text("synced_at").notNull(),
+  },
+  (t) => [
+    index("idx_calendar_events_start").on(t.startTime),
+    index("idx_calendar_events_end").on(t.endTime),
+  ],
+);
+
 export const projectHealthScores = pgTable(
   "project_health_scores",
   {
