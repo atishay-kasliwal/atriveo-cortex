@@ -129,6 +129,43 @@ export class IdeaRepository {
     );
   }
 
+  async createUserEntry(
+    text: string,
+    project: string | null,
+    timestamp: string,
+  ): Promise<number> {
+    const normalized = text.trim().toLowerCase();
+    return withTransaction(async (tx) => {
+      await tx.unsafe(
+        `INSERT INTO ideas (normalized_text, text, first_seen, last_seen, mention_count)
+         VALUES ($1, $2, $3, $3, 0)
+         ON CONFLICT (normalized_text) DO NOTHING`,
+        [normalized, text.trim(), timestamp],
+      );
+      const idRow = (await tx.unsafe(
+        `SELECT id FROM ideas WHERE normalized_text = $1`,
+        [normalized],
+      )) as Array<{ id: number }>;
+      const ideaId = idRow[0]?.id;
+      if (!ideaId) throw new Error("Failed to create idea");
+      await tx.unsafe(
+        `INSERT INTO idea_mentions
+         (idea_id, extraction_id, observed_text, confidence, canonical_project, timestamp)
+         VALUES ($1, NULL, $2, 1.0, $3, $4)
+         ON CONFLICT DO NOTHING`,
+        [ideaId, text.trim(), project, timestamp],
+      );
+      await tx.unsafe(
+        `UPDATE ideas SET
+           mention_count = mention_count + 1,
+           last_seen = CASE WHEN $1 > last_seen THEN $1 ELSE last_seen END
+         WHERE id = $2`,
+        [timestamp, ideaId],
+      );
+      return ideaId;
+    });
+  }
+
   async upsertWithId(row: Record<string, unknown>): Promise<void> {
     await runUnsafe(
       `INSERT INTO ideas

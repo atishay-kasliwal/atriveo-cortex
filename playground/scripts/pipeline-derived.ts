@@ -36,7 +36,6 @@ function uniqueWeekStarts(dates: string[]): string[] {
 
 async function main() {
   const { localDateString } = await import("../lib/analytics/aggregator");
-  const { backfillAllActionIdeaMemory } = await import("../lib/action-idea-memory");
   const { syncOpenLoopIntelligence } = await import("../lib/open-loop-intelligence");
   const { getDailyReview } = await import("../lib/review/daily-review-service");
   const { getWeeklyReview } = await import("../lib/review/weekly-review-service");
@@ -53,13 +52,6 @@ async function main() {
   const dates = process.argv.slice(2).filter(Boolean);
   const targetDates = dates.length > 0 ? dates : [localDateString()];
   console.log(ts(), "starting pipeline:derived for dates:", targetDates);
-
-  console.log(ts(), "step: backfillAllActionIdeaMemory");
-  const backfilled = await backfillAllActionIdeaMemory().catch((err) => {
-    console.error(ts(), "backfill failed:", err.message);
-    return 0;
-  });
-  console.log(ts(), "done backfill:", backfilled);
 
   console.log(ts(), "step: syncOpenLoopIntelligence");
   const loopsUpdated = await syncOpenLoopIntelligence();
@@ -120,6 +112,7 @@ async function main() {
     indexed,
     dates: targetDates.length,
   });
+
 }
 
 main().catch((e) => {

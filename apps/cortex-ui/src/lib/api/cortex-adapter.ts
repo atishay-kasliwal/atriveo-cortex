@@ -534,3 +534,19 @@ export async function fetchRecurrence(): Promise<RecurrencePattern[]> {
 
   return patterns.sort((a, b) => b.occurrences - a.occurrences);
 }
+
+export async function createAction(text: string, project?: string): Promise<{ id: number; text: string; timestamp: string }> {
+  return cortexFetch("/api/actions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, project }),
+  });
+}
+
+export async function createIdea(text: string, project?: string): Promise<{ id: number; text: string; timestamp: string }> {
+  return cortexFetch("/api/ideas", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, project }),
+  });
+}

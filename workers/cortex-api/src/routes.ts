@@ -17,6 +17,7 @@ import {
   getIdeaDetail,
   listIdeasReport,
 } from "@/lib/action-idea-memory";
+import { actionRepository, ideaRepository } from "@/lib/repositories";
 import { getDashboardOverview } from "@/lib/api/dashboard";
 import { todayDateParam } from "@/lib/api/analytics-dtos";
 import {
@@ -638,6 +639,30 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       return apiSuccess(c, toIdeasListDTO(report, page, limit));
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load ideas", 500);
+    }
+  });
+
+  app.post("/api/actions", async (c) => {
+    try {
+      const body = await c.req.json<{ text: string; project?: string }>();
+      if (!body?.text?.trim()) return apiError(c, "text is required", 400);
+      const timestamp = new Date().toISOString();
+      const id = await actionRepository.createUserEntry(body.text, body.project ?? null, timestamp);
+      return apiSuccess(c, { id, text: body.text.trim(), timestamp });
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to create action", 500);
+    }
+  });
+
+  app.post("/api/ideas", async (c) => {
+    try {
+      const body = await c.req.json<{ text: string; project?: string }>();
+      if (!body?.text?.trim()) return apiError(c, "text is required", 400);
+      const timestamp = new Date().toISOString();
+      const id = await ideaRepository.createUserEntry(body.text, body.project ?? null, timestamp);
+      return apiSuccess(c, { id, text: body.text.trim(), timestamp });
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to create idea", 500);
     }
   });
 

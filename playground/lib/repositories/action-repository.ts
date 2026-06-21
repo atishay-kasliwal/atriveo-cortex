@@ -148,6 +148,43 @@ export class ActionRepository {
     );
   }
 
+  async createUserEntry(
+    text: string,
+    project: string | null,
+    timestamp: string,
+  ): Promise<number> {
+    const normalized = text.trim().toLowerCase();
+    return withTransaction(async (tx) => {
+      await tx.unsafe(
+        `INSERT INTO actions (normalized_text, text, first_seen, last_seen, mention_count, status)
+         VALUES ($1, $2, $3, $3, 0, 'open')
+         ON CONFLICT (normalized_text) DO NOTHING`,
+        [normalized, text.trim(), timestamp],
+      );
+      const idRow = (await tx.unsafe(
+        `SELECT id FROM actions WHERE normalized_text = $1`,
+        [normalized],
+      )) as Array<{ id: number }>;
+      const actionId = idRow[0]?.id;
+      if (!actionId) throw new Error("Failed to create action");
+      await tx.unsafe(
+        `INSERT INTO action_mentions
+         (action_id, extraction_id, observed_text, confidence, canonical_project, timestamp)
+         VALUES ($1, NULL, $2, 1.0, $3, $4)
+         ON CONFLICT DO NOTHING`,
+        [actionId, text.trim(), project, timestamp],
+      );
+      await tx.unsafe(
+        `UPDATE actions SET
+           mention_count = mention_count + 1,
+           last_seen = CASE WHEN $1 > last_seen THEN $1 ELSE last_seen END
+         WHERE id = $2`,
+        [timestamp, actionId],
+      );
+      return actionId;
+    });
+  }
+
   async upsertWithId(row: Record<string, unknown>): Promise<void> {
     await runUnsafe(
       `INSERT INTO actions
