@@ -14,6 +14,7 @@ import {
   Home,
   BookOpen,
   CalendarRange,
+  CalendarDays,
   MessageSquare,
   Brain,
   Activity,
@@ -46,7 +47,21 @@ import {
 const nav = [
   {
     group: "Home",
-    items: [{ title: "Home", url: "/", icon: Home }],
+    items: [
+      { title: "Home", url: "/", icon: Home },
+      { title: "Calendar", url: "/calendar", icon: CalendarDays },
+    ],
+  },
+  {
+    group: "Debug",
+    items: [
+      { title: "Activity Log", url: "/activity", icon: Activity },
+      { title: "Screens", url: "/screens", icon: Monitor },
+      { title: "Truth Audit", url: "/audit", icon: ClipboardCheck },
+      { title: "Accuracy", url: "/accuracy", icon: Gauge },
+      { title: "Telemetry", url: "/debug/telemetry", icon: Activity },
+      { title: "Platform Health", url: "/platform-health", icon: HeartPulse },
+    ],
   },
   {
     group: "Bio",
@@ -91,17 +106,6 @@ const nav = [
   {
     group: "Settings",
     items: [{ title: "Settings", url: "/settings", icon: Settings }],
-  },
-  {
-    group: "Debug",
-    items: [
-      { title: "Activity Log", url: "/activity", icon: Activity },
-      { title: "Screens", url: "/screens", icon: Monitor },
-      { title: "Truth Audit", url: "/audit", icon: ClipboardCheck },
-      { title: "Accuracy", url: "/accuracy", icon: Gauge },
-      { title: "Telemetry", url: "/debug/telemetry", icon: Activity },
-      { title: "Platform Health", url: "/platform-health", icon: HeartPulse },
-    ],
   },
 ];
 
