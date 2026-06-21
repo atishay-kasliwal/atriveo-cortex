@@ -92,6 +92,16 @@ async function batchUpsertSamples(
   return inserted;
 }
 
+export async function clearSleepSessions(): Promise<number> {
+  const sql = openHealthDb();
+  try {
+    const result = await sql.unsafe(`DELETE FROM sleep_sessions WHERE user_id = $1`, [USER_ID]);
+    return (result as unknown as { count: number }).count ?? 0;
+  } finally {
+    await sql.end({ timeout: 0 }).catch(() => {});
+  }
+}
+
 export type IngestResult = {
   samplesInserted: number;
   sleepUpserted: number;
@@ -168,7 +178,6 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
     for (const group of sleepGroups) {
       const data = (group.data ?? []) as Array<Record<string, unknown>>;
       if (data.length === 0) continue;
-
       // Detect format: aggregated (has sleepStart) vs per-stage (has startDate/value)
       const isAggregated = data[0].sleepStart != null;
 
@@ -178,12 +187,12 @@ export async function ingestHealthPayload(payload: unknown): Promise<IngestResul
           const sleepEnd = point.sleepEnd ? new Date(point.sleepEnd as string) : null;
           if (!sleepStart || !sleepEnd || isNaN(sleepStart.getTime()) || isNaN(sleepEnd.getTime())) continue;
 
-          const coreMin = Number(point.core ?? 0);
-          const remMin = Number(point.rem ?? 0);
-          const deepMin = Number(point.deep ?? 0);
-          const awakeMin = Number(point.awake ?? 0);
-          const inBedMin = Number(point.inBed ?? coreMin + remMin + deepMin + awakeMin);
-          const asleepMin = coreMin + remMin + deepMin;
+          const coreMin = Number(point.core ?? 0) * 60;
+          const remMin = Number(point.rem ?? 0) * 60;
+          const deepMin = Number(point.deep ?? 0) * 60;
+          const awakeMin = Number(point.awake ?? 0) * 60;
+          const inBedMin = Number(point.inBed ?? 0) > 0 ? Number(point.inBed) * 60 : coreMin + remMin + deepMin + awakeMin;
+          const asleepMin = Number(point.totalSleep ?? 0) > 0 ? Number(point.totalSleep) * 60 : coreMin + remMin + deepMin;
           const efficiency = inBedMin > 0 ? Math.min(asleepMin / inBedMin, 1) : null;
           const durationMin = asleepMin > 0 ? asleepMin : (sleepEnd.getTime() - sleepStart.getTime()) / 60000;
 

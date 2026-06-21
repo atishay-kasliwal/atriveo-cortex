@@ -153,6 +153,19 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.delete("/api/v1/health/sleep", async (c) => {
+    try {
+      const expectedToken = c.env.HEALTH_WRITE_TOKEN ?? process.env.HEALTH_WRITE_TOKEN;
+      const provided = c.req.header("api-key");
+      if (!expectedToken || !provided || provided !== expectedToken) return apiError(c, "Unauthorized", 401);
+      const { clearSleepSessions } = await import("@/lib/health/health-ingest");
+      const deleted = await clearSleepSessions();
+      return apiSuccess(c, { deleted });
+    } catch (e) {
+      return apiErrorFromException(c, e, "Failed to delete sleep sessions", 500);
+    }
+  });
+
   app.get("/api/dashboard/overview", async (c) => {
     try {
       return apiSuccess(c, await getDashboardOverview());
