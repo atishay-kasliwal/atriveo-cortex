@@ -105,10 +105,11 @@ export async function cortexFetch<T>(path: string, init?: RequestInit): Promise<
   }
 
   if (json && "success" in json) {
-    if (!json.success) {
-      throw new ApiError(res.status, json.error || `Request failed (${res.status})`);
+    const typed = json as ApiSuccessResponse<T> | ApiErrorResponse;
+    if (!typed.success) {
+      throw new ApiError(res.status, (typed as ApiErrorResponse).error || `Request failed (${res.status})`);
     }
-    return json.data;
+    return (typed as ApiSuccessResponse<T>).data;
   }
 
   if (!res.ok) {
