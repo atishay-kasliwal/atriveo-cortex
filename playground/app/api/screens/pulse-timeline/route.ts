@@ -41,6 +41,9 @@ export async function GET(request: Request) {
     // Use UTC midnight — all timestamps in DB are UTC ISO strings, so dayStart
     // must also be UTC midnight to get correct minute-of-day offsets.
     const dayStart = Date.parse(date + "T00:00:00Z");
+    // Clamp segment end times to now so open/in-progress segments (e.g. SLEEPING)
+    // don't extend into the future on the timeline.
+    const nowMin = Math.round((Date.now() - dayStart) / 60000);
     for (const seg of monitorSegments) {
       const key = `monitor_${seg.monitor_id}`;
       const startMs = Date.parse(seg.start_time);
@@ -49,7 +52,7 @@ export async function GET(request: Request) {
       if (!monitorLanes[key]) monitorLanes[key] = [];
       monitorLanes[key].push({
         startMin: Math.round((startMs - dayStart) / 60000),
-        endMin: Math.round((endMs - dayStart) / 60000),
+        endMin: Math.min(nowMin, Math.round((endMs - dayStart) / 60000)),
         category: seg.category ?? "other",
         app: seg.primary_app ?? "",
       });
@@ -63,19 +66,24 @@ export async function GET(request: Request) {
       if (!Number.isFinite(startMs)) continue;
       attentionBuckets.push({
         startMin: Math.round((startMs - dayStart) / 60000),
-        endMin: Math.round((endMs - dayStart) / 60000),
+        endMin: Math.min(nowMin, Math.round((endMs - dayStart) / 60000)),
         score: Math.min(100, Math.max(0, Math.round((seg.attentionScore ?? 0) * 10) / 10)),
         state: seg.state,
       });
     }
 
-    // Activity state as simple segments
-    const activitySegments = stateSegments.map((s) => ({
-      startMin: Math.round((Date.parse(s.start_time) - dayStart) / 60000),
-      endMin: Math.round((Date.parse(s.end_time) - dayStart) / 60000),
-      state: s.state,
-      durationMin: Math.round(s.duration_minutes),
-    }));
+    // Activity state as simple segments — endMin clamped to now so open
+    // segments (SLEEPING, IDLE) don't extend into the future.
+    const activitySegments = stateSegments.map((s) => {
+      const startMin = Math.round((Date.parse(s.start_time) - dayStart) / 60000);
+      const endMin = Math.min(nowMin, Math.round((Date.parse(s.end_time) - dayStart) / 60000));
+      return {
+        startMin,
+        endMin,
+        state: s.state,
+        durationMin: Math.max(0, endMin - startMin),
+      };
+    });
 
     return apiSuccess({
       date,
