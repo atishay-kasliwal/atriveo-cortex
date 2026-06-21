@@ -21,17 +21,14 @@ export async function GET(request: Request) {
     ]);
 
     // Health data — optional, requires HEALTH_DATABASE_URL
-    let heartRate: Array<{ hour: number; value: number }> = [];
-    let hrv: Array<{ hour: number; value: number }> = [];
+    let heartRate: Array<{ startMin: number; value: number }> = [];
+    let hrv: Array<{ startMin: number; value: number }> = [];
     try {
-      const { buildHealthTimeline } = await import("@/lib/health/health-api");
-      const health = await buildHealthTimeline("today");
-      heartRate = health.timeline
-        .filter((b) => b.heart_rate != null)
-        .map((b) => ({
-          hour: parseInt(b.bucket.split(":")[0]!, 10),
-          value: b.heart_rate!,
-        }));
+      const { buildHealthTimelineRaw } = await import("@/lib/health/health-api");
+      const hrRows = await buildHealthTimelineRaw(date);
+      heartRate = hrRows
+        .filter((r) => r.heart_rate != null && r.startMin <= nowMin)
+        .map((r) => ({ startMin: r.startMin, value: r.heart_rate! }));
     } catch {
       // HEALTH_DATABASE_URL not configured — skip health signals
     }

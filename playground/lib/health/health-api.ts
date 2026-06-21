@@ -329,3 +329,31 @@ export async function buildHealthTimeline(
     timeline,
   };
 }
+
+/**
+ * Lean query for the pulse-timeline route. Returns heart rate samples bucketed
+ * by UTC hour as minutes-since-UTC-midnight, so the caller can plot them
+ * directly against the UTC-based x-axis without any timezone conversion.
+ */
+export async function buildHealthTimelineRaw(
+  date: string,
+): Promise<Array<{ startMin: number; heart_rate: number | null }>> {
+  const dayStartMs = Date.parse(date + "T00:00:00Z");
+  const dayEndMs = dayStartMs + 24 * 60 * 60 * 1000;
+  const rows = await runHealthQuery<{ bucket: string; val: string }>(
+    `SELECT
+       date_trunc('hour', start_time) AS bucket,
+       AVG(value)::float AS val
+     FROM health_samples
+     WHERE user_id = $1
+       AND metric_type = 'heart_rate'
+       AND start_time >= $2 AND start_time < $3
+     GROUP BY 1
+     ORDER BY 1`,
+    [USER_ID, new Date(dayStartMs).toISOString(), new Date(dayEndMs).toISOString()],
+  );
+  return rows.map((r) => ({
+    startMin: Math.round((Date.parse(String(r.bucket)) - dayStartMs) / 60000),
+    heart_rate: Math.round(parseFloat(r.val)),
+  }));
+}

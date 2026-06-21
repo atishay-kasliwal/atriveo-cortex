@@ -430,7 +430,7 @@ function HeartRateLane({
     const yMax = Math.ceil(Math.max(...vals) / 5) * 5;
     const range = yMax - yMin || 1;
     const pts = points.map((p) => ({
-      x: (p.hour / 24) * SVG_W,
+      x: (p.startMin / DAY_MINS) * SVG_W,
       y: SVG_H - ((p.value - yMin) / range) * (SVG_H - 6),
     }));
     let d = `M ${pts[0]!.x} ${pts[0]!.y}`;

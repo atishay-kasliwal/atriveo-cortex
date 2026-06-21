@@ -1052,7 +1052,7 @@ export type PulseMonitorSlot = {
   app: string;
 };
 
-export type PulseHealthPoint = { hour: number; value: number };
+export type PulseHealthPoint = { startMin: number; value: number };
 
 export type PulseTimeline = {
   date: string;
