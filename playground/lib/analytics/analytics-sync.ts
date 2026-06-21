@@ -39,7 +39,10 @@ export type SyncResult = {
 };
 
 export async function syncDay(date: string): Promise<SyncResult> {
-  const { start, end } = localDayBounds(date);
+  const { start, end: dayEnd } = localDayBounds(date);
+  // For today, cap the window at now so the idle-detector doesn't fill the
+  // remaining hours of the day as SLEEPING before they've actually happened.
+  const end = new Date() < new Date(dayEnd) ? new Date().toISOString() : dayEnd;
   const runId = await startAnalyticsRun(start, end);
   let recordsProcessed = 0;
 
