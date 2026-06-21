@@ -272,11 +272,13 @@ export function detectActivityStates(
       prev && curr ? meaningfulOcrChange(prev.text, curr.text) : false;
     const windowChanged =
       prev && curr ? windowKey(prev) !== windowKey(curr) : false;
+    // Only count frames from real user apps — lock screen / login window frames
+    // don't indicate actual computer use and should not prevent SLEEPING classification.
     const hasFramesInGap =
       prev && curr
         ? sorted.some((f) => {
             const t = Date.parse(f.timestamp);
-            return t > startMs && t < endMs;
+            return t > startMs && t < endMs && !SYSTEM_APP_NAMES.has(f.app_name ?? "");
           })
         : false;
 
