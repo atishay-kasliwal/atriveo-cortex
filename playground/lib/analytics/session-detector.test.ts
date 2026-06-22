@@ -38,13 +38,28 @@ describe("session-detector v2 stitching", () => {
   it("counts gaps over 10 minutes as idle and splits sessions", () => {
     const start = "2026-06-17T09:00:00.000Z";
     const gapMinutes = INACTIVITY_MS / 60_000 + 1;
+    // Two clusters of frames with real active time, separated by an idle gap.
+    const frames = [
+      frame(start, "Cursor"),
+      frame(addMinutes(start, 3), "Cursor"),
+      frame(addMinutes(start, gapMinutes + 3), "Cursor"),
+      frame(addMinutes(start, gapMinutes + 6), "Cursor"),
+    ];
+    const result = processFrames(frames);
+    expect(result.idleSeconds).toBeGreaterThan(INACTIVITY_MS / 1000);
+    expect(result.sessions.length).toBe(2);
+  });
+
+  it("drops zero-active session stubs (isolated frames with no neighbour)", () => {
+    const start = "2026-06-17T09:00:00.000Z";
+    const gapMinutes = INACTIVITY_MS / 60_000 + 1;
     const frames = [
       frame(start, "Cursor"),
       frame(addMinutes(start, gapMinutes), "Cursor"),
     ];
     const result = processFrames(frames);
-    expect(result.idleSeconds).toBeGreaterThan(INACTIVITY_MS / 1000);
-    expect(result.sessions.length).toBe(2);
+    // Both frames are isolated — no active seconds accrued, so no real sessions.
+    expect(result.sessions.length).toBe(0);
   });
 
   it("stitches alternating apps into one work session", () => {

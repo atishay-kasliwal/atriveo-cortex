@@ -14,6 +14,7 @@ import {
   topKeysByValue,
 } from "./session-stitching";
 import { extractDomain, extractRepoPath } from "./website-parser";
+import { isIdleAt, type IdleInterval } from "./idle-presence";
 import type {
   AttributionResult,
   DetectedSession,
@@ -157,6 +158,7 @@ function attributeGap(
 export function processFrames(
   frames: FrameInput[],
   projectNames: string[] = [],
+  idleIntervals: IdleInterval[] = [],
 ): AttributionResult {
   const appSeconds = new Map<string, number>();
   const domainSeconds = new Map<string, number>();
@@ -191,9 +193,17 @@ export function processFrames(
     const currMs = Date.parse(curr.timestamp);
     const gapMs = currMs - prevMs;
 
-    if (gapMs > INACTIVITY_MS) {
+    // Idle-detector is the authority on presence: if this frame falls inside an
+    // IDLE/SLEEPING window, the user was away. Break the session and do NOT count
+    // the gap as active work — even though frames kept being captured.
+    const inIdleWindow = isIdleAt(idleIntervals, currMs);
+
+    if (gapMs > INACTIVITY_MS || inIdleWindow) {
       idleSeconds += gapMs / 1000;
-      sessions.push(finalizeSession(acc, projectNames));
+      // Only keep sessions that captured real active time.
+      if (acc.activeSeconds > 0) {
+        sessions.push(finalizeSession(acc, projectNames));
+      }
       acc = emptyAccumulator(curr);
       accStartMs = currMs;
       lastDomain = null;
@@ -242,7 +252,7 @@ export function processFrames(
     }
   }
 
-  if (acc.frames.length > 0) {
+  if (acc.frames.length > 0 && acc.activeSeconds > 0) {
     sessions.push(finalizeSession(acc, projectNames));
   }
 
@@ -268,6 +278,29 @@ export function computeFocusedMinutes(sessions: DetectedSession[]): number {
     }
   }
   return longest / 60;
+}
+
+/** Total active seconds across all detected sessions — single source of truth for "Active". */
+export function sessionsActiveSeconds(sessions: DetectedSession[]): number {
+  let total = 0;
+  for (const s of sessions) total += s.activeSeconds;
+  return total;
+}
+
+/**
+ * Total focused seconds — sum of all qualifying focus sessions (BUILD/PLANNING ≥ 15min),
+ * not just the longest. Used so focus reconciles with the timeline instead of double-counting.
+ */
+export function sessionsFocusedSeconds(sessions: DetectedSession[]): number {
+  const FOCUS_TYPES = new Set<SessionType>(["BUILD", "PLANNING"]);
+  const MIN_FOCUS_SEC = 15 * 60;
+  let total = 0;
+  for (const s of sessions) {
+    if (FOCUS_TYPES.has(s.sessionType) && s.activeSeconds >= MIN_FOCUS_SEC) {
+      total += s.activeSeconds;
+    }
+  }
+  return total;
 }
 
 export function totalActiveSeconds(appSeconds: Map<string, number>): number {

@@ -69,6 +69,42 @@ export function extractIdleSegments(
   return rows;
 }
 
+/** Non-productive states: time in these windows must not be counted as active work. */
+const NON_PRODUCTIVE_STATES = new Set<ActivityState>(["IDLE", "SLEEPING"]);
+
+export type IdleInterval = { startMs: number; endMs: number };
+
+/**
+ * Collapse the idle-detector segments into sorted IDLE/SLEEPING intervals.
+ * The session detector uses these to avoid counting away-from-keyboard time as work.
+ */
+export function buildIdleIntervals(
+  segments: ActivityStateSegment[],
+): IdleInterval[] {
+  const intervals: IdleInterval[] = [];
+  for (const seg of segments) {
+    if (!NON_PRODUCTIVE_STATES.has(seg.state)) continue;
+    intervals.push({
+      startMs: Date.parse(seg.startTime),
+      endMs: Date.parse(seg.endTime),
+    });
+  }
+  return intervals.sort((a, b) => a.startMs - b.startMs);
+}
+
+/**
+ * True when a timestamp falls inside an IDLE/SLEEPING window.
+ * Intervals must be pre-sorted (see buildIdleIntervals).
+ */
+export function isIdleAt(intervals: IdleInterval[], ms: number): boolean {
+  // Linear scan is fine — idle intervals per day are few (tens, not thousands).
+  for (const iv of intervals) {
+    if (ms < iv.startMs) return false; // sorted: nothing after can match
+    if (ms <= iv.endMs) return true;
+  }
+  return false;
+}
+
 export function computePresenceMetrics(
   segments: ActivityStateSegment[],
 ): PresenceMetrics {

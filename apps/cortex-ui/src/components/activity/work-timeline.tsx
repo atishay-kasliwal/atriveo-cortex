@@ -109,8 +109,11 @@ function HourCard({ group, onSelect }: { group: HourGroup; onSelect: (b: Timelin
                 </div>
               </div>
               <div className="shrink-0 flex flex-col items-end gap-1 pt-0.5">
-                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {fmtDuration(block.durationSec)}
+                <span
+                  className="font-mono text-[11px] tabular-nums text-muted-foreground"
+                  title="Active work time (idle excluded)"
+                >
+                  {fmtDuration(block.durationSec)} <span className="text-muted-foreground/40">active</span>
                 </span>
                 <span className={"rounded px-1.5 py-0.5 text-[9px] font-semibold " + style?.chip}>
                   {style?.label}

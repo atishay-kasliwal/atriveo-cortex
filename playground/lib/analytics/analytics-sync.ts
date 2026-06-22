@@ -25,7 +25,7 @@ import {
   startAnalyticsRun,
 } from "./analytics-db";
 import { detectActivityStates } from "./idle-detector";
-import { extractIdleSegments } from "./idle-presence";
+import { buildIdleIntervals, extractIdleSegments } from "./idle-presence";
 import { persistDayAuditEvidence } from "./audit-db";
 import { buildProjectSignalIndex } from "./project-signals";
 import { loadExtendedSessionEvidence } from "./session-evidence";
@@ -50,11 +50,15 @@ export async function syncDay(date: string): Promise<SyncResult> {
     const frames = fetchFramesForWindow(start, end);
     const uiEvents = fetchUiEventsForWindow(start, end);
     const projectNames = (await listProjectSummaries()).map((p) => p.canonical_project);
-    const attribution = processFrames(frames, projectNames);
+    // Compute presence states first — the idle detector is the authority on whether
+    // the user was actually present, and the session detector consults it so that
+    // frames captured while away from the keyboard aren't counted as active work.
+    const stateResult = detectActivityStates(date, frames, uiEvents, start, end);
+    const idleIntervals = buildIdleIntervals(stateResult.segments);
+    const attribution = processFrames(frames, projectNames, idleIntervals);
     const evidence = await loadExtendedSessionEvidence(start, end);
     const signalIndex = await buildProjectSignalIndex();
     const enrichedSessions = enrichSessions(attribution.sessions, evidence, signalIndex);
-    const stateResult = detectActivityStates(date, frames, uiEvents, start, end);
     recordsProcessed = attribution.recordsProcessed + uiEvents.length;
 
     await clearAnalyticsForDate(date);

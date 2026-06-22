@@ -164,8 +164,11 @@ function SessionCard({ block, onSelect }: { block: TimelineBlock; onSelect: () =
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${style.chip}`}>
           {style.label}
         </span>
-        <span className="font-mono text-[12px] tabular-nums text-muted-foreground">
-          {fmtDuration(block.durationSec)}
+        <span
+          className="font-mono text-[12px] tabular-nums text-muted-foreground"
+          title="Active work time (idle excluded)"
+        >
+          {fmtDuration(block.durationSec)} <span className="text-muted-foreground/40">active</span>
         </span>
       </div>
 

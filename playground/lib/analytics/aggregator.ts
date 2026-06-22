@@ -5,10 +5,18 @@
 import type { AttributionResult, DailySummaryRow } from "./types";
 import type { ActivityStateTotals } from "./idle-detector";
 import {
-  computeFocusedMinutes,
-  totalActiveSeconds,
+  sessionsActiveSeconds,
+  sessionsFocusedSeconds,
 } from "./session-detector";
 
+/**
+ * Build the daily summary with sessions as the single source of truth for work time.
+ *
+ * - active_minutes / focused_minutes are derived from the detected sessions, so the
+ *   hero "Active" stat always equals the sum of the timeline (no two-algorithm drift).
+ * - idle / sleeping / background come from the idle-detector state machine, which is
+ *   the authority for presence (these are not session-derived).
+ */
 export function buildDailySummary(
   date: string,
   attribution: AttributionResult,
@@ -16,28 +24,26 @@ export function buildDailySummary(
   stateTotals?: ActivityStateTotals,
 ): DailySummaryRow {
   const meetingMinutes = attribution.meetingSeconds / 60;
-  const focusedMinutes = computeFocusedMinutes(attribution.sessions);
   const projectCount = attribution.projectSeconds.size;
+
+  // Single source of truth: sum the sessions themselves.
+  const activeMinutes = sessionsActiveSeconds(attribution.sessions) / 60;
+  const focusedMinutes = sessionsFocusedSeconds(attribution.sessions) / 60;
 
   if (stateTotals) {
     return {
       date,
-      active_minutes: roundMinutes(
-        (stateTotals.focusedSeconds +
-          stateTotals.activeSeconds) /
-          60,
-      ),
+      active_minutes: roundMinutes(activeMinutes),
       background_minutes: roundMinutes(stateTotals.backgroundSeconds / 60),
       idle_minutes: roundMinutes(stateTotals.idleSeconds / 60),
       sleeping_minutes: roundMinutes(stateTotals.sleepingSeconds / 60),
-      focused_minutes: roundMinutes(focusedMinutes + stateTotals.focusedSeconds / 60),
+      focused_minutes: roundMinutes(focusedMinutes),
       meeting_minutes: roundMinutes(meetingMinutes),
       project_count: projectCount,
       open_loop_count: openLoopCount,
     };
   }
 
-  const activeMinutes = totalActiveSeconds(attribution.appSeconds) / 60;
   const idleMinutes = attribution.idleSeconds / 60;
 
   return {
