@@ -124,6 +124,7 @@ function finalizeSession(
     repoPathsUsed: topKeysByValue(acc.repoPathSeconds),
     windowSnippets: [...acc.windowSnippets].slice(0, 6),
     sessionType: dominantType,
+    // Provisional label; enrichSessions derives the real title from window snippets.
     sessionLabel: sessionLabelForType(dominantType),
     applicationsUsed: topKeysByValue(acc.appSeconds),
     websitesUsed: topKeysByValue(acc.domainSeconds),

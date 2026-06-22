@@ -180,6 +180,8 @@ export function deriveSessionTitle(input: {
   websitesUsed: string[];
   actions: MentionEvidence[];
   ideas: MentionEvidence[];
+  /** Window titles seen during the session — the actual file/task you were on. */
+  windowSnippets?: string[];
 }): string {
   const meeting = meetingTitle(input.applicationsUsed);
   if (meeting && input.sessionType === "COMMUNICATION") return meeting;
@@ -187,6 +189,20 @@ export function deriveSessionTitle(input: {
   for (const action of input.actions) {
     const fromAction = actionToTitle(action.text, input.primaryProject);
     if (fromAction) return fromAction;
+  }
+
+  // The specific file/task from the window titles is more useful than a generic
+  // "<Project> Development" label. Prefer it for work sessions, pairing with the
+  // project for context. (titleFromWindows returns null when only chrome was seen.)
+  const fromWindow = titleFromWindows(input.windowSnippets ?? []);
+  if (fromWindow && input.sessionType !== "COMMUNICATION") {
+    if (
+      input.primaryProject &&
+      !fromWindow.toLowerCase().includes(input.primaryProject.toLowerCase())
+    ) {
+      return `${fromWindow} · ${input.primaryProject}`;
+    }
+    return fromWindow;
   }
 
   const fromDomain = domainTitle(input.websitesUsed);
@@ -212,6 +228,42 @@ export function deriveSessionTitle(input: {
   return CATEGORY_FALLBACK[input.sessionType];
 }
 
+/** App/system chrome that is never a useful session title on its own. */
+const WINDOW_CHROME =
+  /^(new tab|untitled|inbox|home|dashboard|settings|explorer|outline|timeline|test explorer|visual studio code|google chrome|brave|safari|terminal|finder|menubar|notification|loading|no problems|claude code)\b/i;
+
+/** Trim to a clean word boundary at ~40 chars (titles came pre-truncated mid-word). */
+function tidyTitle(s: string): string {
+  const t = s.trim();
+  if (t.length <= 40) return t;
+  const cut = t.slice(0, 40);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut).trim() + "…";
+}
+
+/** Extract the most informative file/task from window titles, or null if only chrome. */
+function titleFromWindows(snippets: string[]): string | null {
+  const cleaned = snippets
+    .map((raw) => {
+      const t = raw.trim().replace(/\s+[—-]\s*\d+\s*[x×]\s*\d+\s*$/i, "");
+      const head = t.split(/\s+[—–|]\s+|\s+-\s+/)[0]?.trim() ?? t;
+      const url = head.match(/^(?:https?:\/\/)?([a-z0-9.-]+\.[a-z]{2,})(?:\/|$)/i);
+      return (url ? url[1] : head).replace(/[.…]+$/, "").trim();
+    })
+    .filter((s) => s.length >= 4 && !WINDOW_CHROME.test(s));
+
+  if (cleaned.length === 0) return null;
+
+  const freq = new Map<string, number>();
+  for (const c of cleaned) freq.set(c, (freq.get(c) ?? 0) + 1);
+  const best = [...freq.entries()].sort((a, b) => {
+    const fileA = /\.\w{2,4}$/.test(a[0]) ? 1 : 0;
+    const fileB = /\.\w{2,4}$/.test(b[0]) ? 1 : 0;
+    return b[1] - a[1] || fileB - fileA || b[0].length - a[0].length;
+  })[0][0];
+  return tidyTitle(best);
+}
+
 export function enrichSession(
   session: DetectedSession,
   evidence: ExtendedSessionEvidence,
@@ -233,6 +285,7 @@ export function enrichSession(
     websitesUsed: session.websitesUsed,
     actions,
     ideas,
+    windowSnippets: session.windowSnippets ?? [],
   });
 
   const sessionConfidence = computeConfidence({

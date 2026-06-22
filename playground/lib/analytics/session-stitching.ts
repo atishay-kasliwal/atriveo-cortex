@@ -31,6 +31,7 @@ export function sessionLabelForType(sessionType: SessionType): string {
   }
 }
 
+
 export function topKeysByValue(
   totals: Map<string, number>,
   limit = 8,
