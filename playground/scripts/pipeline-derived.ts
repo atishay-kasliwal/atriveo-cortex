@@ -114,11 +114,20 @@ async function main() {
   });
   console.log(ts(), "done calendar sync:", calResult.synced, "events");
 
+  console.log(ts(), "step: runAnalyticsSync");
+  const { runAnalyticsSync } = await import("../lib/google/analytics-sync");
+  const gaResult = await runAnalyticsSync().catch((err: Error) => {
+    console.error(ts(), "analytics sync failed:", err.message);
+    return { ok: false, properties: [] as Array<{ key: string; daysUpserted: number }> };
+  });
+  console.log(ts(), "done analytics sync:", gaResult.properties);
+
   console.log(ts(), "pipeline:derived complete", {
     loopsUpdated,
     reviewsUpdated,
     indexed,
     calendarEvents: calResult.synced,
+    analytics: gaResult.properties,
     dates: targetDates.length,
   });
 

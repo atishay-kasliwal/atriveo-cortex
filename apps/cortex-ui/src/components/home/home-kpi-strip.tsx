@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fmtDuration } from "@/components/dashboard/time";
 import { fetchUpcomingEvents } from "@/lib/api/calendar-adapter";
-import { weekQuery } from "@/lib/api/queries";
+import { siteAnalyticsQuery, weekQuery } from "@/lib/api/queries";
 import type { TodayActivity } from "@/lib/api/types";
 import { KpiTile, type KpiTileProps } from "@/components/home/kpi-tile";
 
@@ -46,6 +46,24 @@ export function HomeKpiStrip({
     ...weekQuery(weekStart),
     enabled: period === "week",
   });
+
+  // Site analytics (GA) — degrades to "unconnected" if the sync hasn't run yet
+  const sites = useQuery(siteAnalyticsQuery);
+
+  function siteTile(key: string, label: string): KpiTileProps {
+    const s = (sites.data ?? []).find((x) => x.propertyKey === key);
+    if (sites.isLoading) return { label, sub: "visitors", state: "loading" };
+    if (!s) return { label, sub: "visitors", state: "unconnected" };
+    const v = period === "today" ? s.today : s.week;
+    return {
+      label,
+      value: String(v.activeUsers),
+      sub: `${v.sessions} sessions`,
+      trendPct: period === "week" ? (s.weekTrendPct ?? undefined) : undefined,
+      higherIsBetter: true,
+      state: "live",
+    };
+  }
 
   const meetingsToday = useMemo(
     () => events.filter((e) => isToday(e.startTime)).length,
@@ -98,20 +116,8 @@ export function HomeKpiStrip({
           : "this week",
       state: period === "week" ? "empty" : "live",
     },
-    {
-      // Wires up once the GA sync lands (see ANALYTICS_DESIGN.md). Property G-8LNKTSL8MF.
-      label: "atriveo.com",
-      sub: "visitors",
-      higherIsBetter: true,
-      state: "unconnected",
-    },
-    {
-      // GA property G-RX5HTCRR3X.
-      label: "atishaykasliwal",
-      sub: "visitors",
-      higherIsBetter: true,
-      state: "unconnected",
-    },
+    siteTile("atriveo", "atriveo.com"),
+    siteTile("atishaykasliwal", "atishaykasliwal"),
   ];
 
   return (

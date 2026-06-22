@@ -249,6 +249,15 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/analytics/sites", async (c) => {
+    try {
+      const { getSiteAnalyticsSummaries } = await import("@/lib/google/analytics-sync");
+      return apiSuccess(c, await getSiteAnalyticsSummaries());
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load site analytics", 500);
+    }
+  });
+
   app.put("/api/analytics/domain-tags", async (c) => {
     try {
       const body = await c.req.json<{ domain?: string; category?: string }>();

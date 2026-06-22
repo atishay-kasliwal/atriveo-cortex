@@ -331,3 +331,18 @@ export const aiSettingsQuery = queryOptions({
   queryFn: () => cortexFetch<{ provider: string; model: string; ollamaUrl: string }>("/api/settings/ai"),
   staleTime: 60_000,
 });
+
+export type SiteAnalyticsSummary = {
+  propertyKey: string;
+  label: string;
+  today: { activeUsers: number; sessions: number };
+  week: { activeUsers: number; sessions: number };
+  weekTrendPct: number | null;
+};
+
+export const siteAnalyticsQuery = queryOptions({
+  queryKey: ["analytics", "sites"] as const,
+  queryFn: () => cortexFetch<SiteAnalyticsSummary[]>("/api/analytics/sites"),
+  staleTime: 5 * 60_000,
+  retry: false,
+});
