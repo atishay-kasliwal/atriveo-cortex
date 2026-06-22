@@ -9,6 +9,7 @@ import type { DayScreens } from "@/lib/api/types";
 type TimelineBlock = DayScreens["timelines"][string][number];
 
 const HOURS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function dayStartMs(date: string): number {
   const [y, m, d] = date.split("-").map(Number);
@@ -16,7 +17,6 @@ function dayStartMs(date: string): number {
 }
 
 function blockPos(block: TimelineBlock, dayStart: number): { left: string; width: string } {
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const start = Date.parse(block.startedAt);
   const end = Date.parse(block.endedAt);
   const left = Math.max(0, ((start - dayStart) / DAY_MS) * 100);
@@ -27,60 +27,69 @@ function blockPos(block: TimelineBlock, dayStart: number): { left: string; width
 function nowPercent(date: string): number | null {
   const dayStart = dayStartMs(date);
   const now = Date.now();
-  const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+  const dayEnd = dayStart + DAY_MS;
   if (now < dayStart || now > dayEnd) return null;
-  return ((now - dayStart) / (dayEnd - dayStart)) * 100;
+  return ((now - dayStart) / DAY_MS) * 100;
 }
 
-function Tooltip({ block }: { block: TimelineBlock }) {
-  const cat = categoryStyle[block.category as keyof typeof categoryStyle] ?? categoryStyle.other;
-  return (
-    <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 rounded-lg border border-border/70 bg-surface-1 px-3 py-2.5 text-[11px] shadow-xl">
-      <div className="mb-1 flex items-center gap-1.5">
-        <span className={`h-2 w-2 flex-shrink-0 rounded-sm ${cat.bar}`} />
-        <span className="font-semibold text-foreground truncate">{block.primaryApp}</span>
-      </div>
-      {block.label && block.label !== block.primaryApp && (
-        <div className="mb-1 truncate text-muted-foreground">{block.label}</div>
-      )}
-      <div className="font-mono tabular-nums text-muted-foreground">
-        {fmtClock(block.startedAt)} – {fmtClock(block.endedAt)}
-        <span className="ml-2 text-foreground/70">{fmtDuration(block.durationSec)}</span>
-      </div>
-    </div>
-  );
+/** The block active at a given fraction-of-day, if any. */
+function blockAt(blocks: TimelineBlock[], dayStart: number, pct: number): TimelineBlock | null {
+  const ms = dayStart + (pct / 100) * DAY_MS;
+  for (const b of blocks) {
+    if (Date.parse(b.startedAt) <= ms && ms < Date.parse(b.endedAt)) return b;
+  }
+  return null;
+}
+
+function pctToClock(date: string, pct: number): string {
+  const ms = dayStartMs(date) + (pct / 100) * DAY_MS;
+  return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
 function TimelineLane({
   label,
   sublabel,
+  accent,
   blocks,
   date,
-  accent,
+  cursorPct,
 }: {
   label: string;
   sublabel?: string;
+  accent?: string;
   blocks: TimelineBlock[];
   date: string;
-  accent?: string;
+  cursorPct: number | null;
 }) {
-  const dayStart = dayStartMs(date);
-  const [hovered, setHovered] = useState<TimelineBlock | null>(null);
-  const nowPct = useMemo(() => nowPercent(date), [date]);
+  const dayStart = useMemo(() => dayStartMs(date), [date]);
+  const active = cursorPct != null ? blockAt(blocks, dayStart, cursorPct) : null;
 
   return (
-    <div className="group space-y-1.5">
+    <div className="space-y-1.5">
       <div className="flex items-baseline gap-2">
         <span className="text-[12px] font-medium text-foreground">{label}</span>
-        {sublabel && (
-          <span className="text-[11px] text-muted-foreground">{sublabel}</span>
-        )}
-        {accent && (
-          <span className="ml-auto text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">{accent}</span>
-        )}
+        {sublabel && <span className="text-[11px] text-muted-foreground">{sublabel}</span>}
+        {/* When scrubbing, show what was on this monitor at the cursor. */}
+        {active ? (
+          <span className="ml-auto flex items-center gap-1.5 text-[11px]">
+            <span
+              className={
+                "size-1.5 rounded-full " +
+                (categoryStyle[active.category as keyof typeof categoryStyle] ?? categoryStyle.other)
+                  .dot
+              }
+            />
+            <span className="max-w-[180px] truncate font-medium text-foreground">
+              {active.primaryApp}
+            </span>
+          </span>
+        ) : accent ? (
+          <span className="ml-auto text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+            {accent}
+          </span>
+        ) : null}
       </div>
-      <div className="relative h-9 overflow-visible rounded-md bg-surface-2/50 ring-1 ring-border/30">
-        {/* Subtle hour dividers */}
+      <div className="relative h-9 overflow-hidden rounded-md bg-surface-2/50 ring-1 ring-border/30">
         {HOURS.slice(1, -1).map((h) => (
           <div
             key={h}
@@ -88,53 +97,57 @@ function TimelineLane({
             style={{ left: `${(h / 24) * 100}%` }}
           />
         ))}
-
-        {/* Activity blocks */}
         {blocks.map((block) => {
-          const cat = categoryStyle[block.category as keyof typeof categoryStyle] ?? categoryStyle.other;
+          const cat =
+            categoryStyle[block.category as keyof typeof categoryStyle] ?? categoryStyle.other;
           const pos = blockPos(block, dayStart);
+          const isActive = active?.id === block.id;
           return (
             <div
               key={block.id}
-              className="absolute top-1 bottom-1 rounded-[3px] cursor-pointer"
+              className={
+                "absolute top-1 bottom-1 rounded-[3px] transition-opacity " +
+                cat.bar +
+                (cursorPct == null ? " opacity-85" : isActive ? " opacity-100" : " opacity-35")
+              }
               style={pos}
-              onMouseEnter={() => setHovered(block)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className={`h-full w-full rounded-[3px] ${cat.bar} opacity-85 hover:opacity-100 transition-opacity`} />
-              {hovered === block && <Tooltip block={block} />}
-            </div>
+            />
           );
         })}
-
-        {/* Now cursor */}
-        {nowPct !== null && (
-          <div
-            className="absolute top-0 bottom-0 w-px bg-white/40 z-10"
-            style={{ left: `${nowPct}%` }}
-          >
-            <div className="absolute -top-1 -translate-x-1/2 h-2 w-2 rounded-full bg-white/60" />
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
 export function MultiMonitorTimeline({ data }: { data: DayScreens }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [cursorPct, setCursorPct] = useState<number | null>(null);
   const nowPct = useMemo(() => nowPercent(data.date), [data.date]);
+
+  function onMove(e: React.MouseEvent) {
+    const el = trackRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const pct = ((e.clientX - rect.left) / rect.width) * 100;
+    setCursorPct(Math.max(0, Math.min(100, pct)));
+  }
 
   return (
     <section className="surface-card overflow-hidden rounded-xl border border-border/60">
       <header className="border-b border-border/60 px-5 py-4">
-        <h2 className="font-display text-base font-normal">Hour by hour</h2>
+        <h2 className="font-display text-base font-medium">Your day across every screen</h2>
         <p className="mt-0.5 text-[12px] text-muted-foreground">
-          Display-visible activity per monitor · shared 24h axis
+          Hover to scrub — see what each monitor showed at any moment
         </p>
       </header>
 
-      <div className="px-5 py-4 space-y-5">
-        {/* Hour axis */}
+      <div
+        ref={trackRef}
+        className="relative space-y-5 px-5 py-4"
+        onMouseMove={onMove}
+        onMouseLeave={() => setCursorPct(null)}
+      >
+        {/* Hour axis + scrub readout */}
         <div className="relative">
           <div className="flex justify-between text-[10px] tabular-nums text-muted-foreground/60 select-none">
             {HOURS.map((h) => (
@@ -143,13 +156,6 @@ export function MultiMonitorTimeline({ data }: { data: DayScreens }) {
               </span>
             ))}
           </div>
-          {/* Vertical guideline for "now" on axis */}
-          {nowPct !== null && (
-            <div
-              className="absolute -bottom-1 h-1.5 w-0.5 rounded-full bg-white/30"
-              style={{ left: `${nowPct}%`, transform: "translateX(-50%)" }}
-            />
-          )}
         </div>
 
         {/* Monitor lanes */}
@@ -157,11 +163,13 @@ export function MultiMonitorTimeline({ data }: { data: DayScreens }) {
           const blocks = data.timelines[monitor.monitorId] ?? [];
           const role = data.monitorRoles?.find((r) => r.monitorId === monitor.monitorId);
           const summary = data.dailySummary.find((s) => s.monitorId === monitor.monitorId);
-          const interaction = data.interactionSummary?.find((r) => r.monitorId === monitor.monitorId);
-
-          const sublabelParts = [];
+          const interaction = data.interactionSummary?.find(
+            (r) => r.monitorId === monitor.monitorId,
+          );
+          const sublabelParts: string[] = [];
           if (summary?.totalSec) sublabelParts.push(fmtDuration(summary.totalSec) + " visible");
-          if (interaction?.interactionSec) sublabelParts.push(fmtDuration(interaction.interactionSec) + " active");
+          if (interaction?.interactionSec)
+            sublabelParts.push(fmtDuration(interaction.interactionSec) + " active");
 
           return (
             <TimelineLane
@@ -171,6 +179,7 @@ export function MultiMonitorTimeline({ data }: { data: DayScreens }) {
               accent={role?.roleLabel}
               blocks={blocks}
               date={data.date}
+              cursorPct={cursorPct}
             />
           );
         })}
@@ -179,24 +188,51 @@ export function MultiMonitorTimeline({ data }: { data: DayScreens }) {
         {data.interactionTimelines && Object.keys(data.interactionTimelines).length > 0 && (
           <TimelineLane
             label="Your focus"
-            sublabel="keyboard & mouse interaction per display"
+            sublabel="keyboard & mouse — where your attention actually was"
             blocks={Object.values(data.interactionTimelines).flat()}
             date={data.date}
+            cursorPct={cursorPct}
           />
+        )}
+
+        {/* Shared cursor across all lanes */}
+        {(cursorPct != null || nowPct != null) && (
+          <div className="pointer-events-none absolute inset-x-5 top-4 bottom-4">
+            {nowPct != null && cursorPct == null && (
+              <div
+                className="absolute top-0 bottom-0 w-px bg-white/30"
+                style={{ left: `${nowPct}%` }}
+              >
+                <div className="absolute -top-1 -translate-x-1/2 size-1.5 rounded-full bg-white/50" />
+              </div>
+            )}
+            {cursorPct != null && (
+              <div
+                className="absolute top-0 bottom-0 w-px bg-white/60"
+                style={{ left: `${cursorPct}%` }}
+              >
+                <div className="absolute -top-5 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-background">
+                  {pctToClock(data.date, cursorPct)}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Category legend */}
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-border/30 pt-3">
-          {(["build", "research", "communication", "planning", "entertainment", "other"] as const).map((cat) => {
-            const s = categoryStyle[cat];
-            if (!s) return null;
-            return (
-              <div key={cat} className="flex items-center gap-1.5">
-                <span className={`h-2 w-2 flex-shrink-0 rounded-sm ${s.bar}`} />
-                <span className="text-[10px] capitalize text-muted-foreground">{cat}</span>
-              </div>
-            );
-          })}
+          {(["build", "research", "communication", "planning", "entertainment", "other"] as const).map(
+            (cat) => {
+              const s = categoryStyle[cat];
+              if (!s) return null;
+              return (
+                <div key={cat} className="flex items-center gap-1.5">
+                  <span className={`size-2 flex-shrink-0 rounded-sm ${s.bar}`} />
+                  <span className="text-[10px] capitalize text-muted-foreground">{cat}</span>
+                </div>
+              );
+            },
+          )}
         </div>
       </div>
     </section>

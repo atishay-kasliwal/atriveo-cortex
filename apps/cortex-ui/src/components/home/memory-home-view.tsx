@@ -13,6 +13,7 @@ import { MemoryStatusRibbon } from "@/components/home/memory-status-ribbon";
 import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
 import { WorkTimeline } from "@/components/activity/work-timeline";
 import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
+import { MultiMonitorTimeline } from "@/components/screens/multi-monitor-timeline";
 import { ActivityCard } from "@/components/activity/shared";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { fmtDuration } from "@/components/dashboard/time";
@@ -209,6 +210,8 @@ export function MemoryHomeView({
                 </Badge>
               ))}
             </div>
+
+            <MultiMonitorTimeline data={screens.data} />
 
             {screens.data.decision.categoryComparison.length > 0 ? (
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

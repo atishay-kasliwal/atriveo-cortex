@@ -319,10 +319,10 @@ function DayScreensContent({
 
   return (
     <div className="space-y-6">
-      {pulseData && <PulseTimelineChart data={pulseData} />}
       <MultiMonitorTimeline data={data} />
       <CategoryComparisonSection rows={data.decision.categoryComparison} />
       <SnapshotSection decision={data.decision} />
+      {pulseData && <PulseTimelineChart data={pulseData} />}
       <div className="grid gap-4 lg:grid-cols-2">
         {data.decision.monitorCards.map((card) => (
           <MonitorCard
@@ -347,7 +347,7 @@ function DayScreensContent({
 
 export function ScreensView({ date: dateParam }: { date?: string }) {
   const calendarToday = useMemo(() => localDateString(), []);
-  const [viewDate, setViewDate] = useState(dateParam ?? yesterdayDate(calendarToday));
+  const [viewDate, setViewDate] = useState(dateParam ?? calendarToday);
 
   useEffect(() => {
     if (dateParam) setViewDate(dateParam);
