@@ -65,6 +65,8 @@ export function WebsiteCategoryTagPicker({
           className="inline-flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           aria-label={`Set category for ${domain}`}
           disabled={saveMutation.isPending}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         >
           <WebsiteCategoryBadge category={displayCategory} />
           <Tag

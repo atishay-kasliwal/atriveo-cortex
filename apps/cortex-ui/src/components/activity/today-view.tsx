@@ -249,7 +249,7 @@ function WebsiteList({
           const barClass =
             websiteCategoryStyle[w.category]?.bar ?? "bg-gradient-brand";
           return (
-          <li key={w.domain}>
+            <li key={w.domain}>
             <div className="group flex items-center gap-3 px-5 py-2.5 transition hover:bg-surface-2/30">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -276,7 +276,7 @@ function WebsiteList({
                 </div>
               </div>
             </div>
-          </li>
+            </li>
         );
         })}
       </ul>
