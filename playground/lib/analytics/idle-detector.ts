@@ -142,26 +142,34 @@ function classifyGap(opts: {
     hasFramesInGap,
   } = opts;
 
-  if (!interaction) {
-    if (gapMs >= SLEEP_THRESHOLD_MS && !hasFramesInGap) {
-      return { state: "SLEEPING", confidence: 0.92 };
-    }
-    const tier = classifyIdleTier(msSinceLastInteraction);
-    if (tier) {
-      return { state: "IDLE", confidence: 0.88, idleTier: tier };
-    }
-  }
-
   if (interaction) {
     return { state: "ACTIVE", confidence: 0.95, hadInteraction: true };
   }
 
-  if (
-    ocrChanged &&
-    gapMs < 60_000 &&
-    msSinceLastInteraction < IDLE_THRESHOLD_MS
-  ) {
-    return { state: "ACTIVE", confidence: 0.78, hadInteraction: false };
+  if (!interaction) {
+    if (gapMs >= SLEEP_THRESHOLD_MS && !hasFramesInGap) {
+      return { state: "SLEEPING", confidence: 0.92 };
+    }
+
+    // Screen actively changing without input. Two cases, distinguished by how
+    // recently the user interacted:
+    //   • Recent interaction (<5min): user is actively working and the screen
+    //     reflects it (e.g. typing pauses while code recompiles) → ACTIVE.
+    //   • No recent interaction (≥5min) but the screen keeps changing: passive
+    //     presence — watching a video, a screencast, reading auto-scrolling
+    //     content → BACKGROUND. This must NOT become IDLE, or entertainment and
+    //     video time would be dropped from sessions entirely.
+    if (ocrChanged && gapMs < 60_000) {
+      if (msSinceLastInteraction < IDLE_THRESHOLD_MS) {
+        return { state: "ACTIVE", confidence: 0.78, hadInteraction: false };
+      }
+      return { state: "BACKGROUND", confidence: 0.72, hadInteraction: false };
+    }
+
+    const tier = classifyIdleTier(msSinceLastInteraction);
+    if (tier) {
+      return { state: "IDLE", confidence: 0.88, idleTier: tier };
+    }
   }
 
   if (gapMs >= BACKGROUND_MIN_MS) {
