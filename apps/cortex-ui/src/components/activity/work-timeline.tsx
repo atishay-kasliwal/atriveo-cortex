@@ -153,33 +153,29 @@ export function WorkTimeline({ blocks }: { blocks: TimelineBlock[] }) {
 
   return (
     <>
-      <div className="px-5 pb-5">
+      <div className="px-5 py-4">
         {/* Top bar */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] text-muted-foreground/50">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="text-[11px] text-muted-foreground/60">
             One card per hour · scroll inside cards to see more
           </span>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground/50">
+            <span className="hidden text-[11px] text-muted-foreground/60 sm:inline">
               {groups.length} active {groups.length === 1 ? "hour" : "hours"} · {fmtDuration(totalSec)} total
             </span>
             {(["left", "right"] as const).map((dir) => (
               <button
                 key={dir}
                 type="button"
+                aria-label={dir === "left" ? "Scroll left" : "Scroll right"}
                 onClick={() => scroll(dir)}
-                style={{
-                  width: 26, height: 26, borderRadius: "50%",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: "rgba(255,255,255,0.06)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "rgba(232,237,245,0.6)",
-                  outline: "none", flexShrink: 0,
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.12)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(232,237,245,0.9)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(232,237,245,0.6)"; }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2/60 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
               >
-                {dir === "left" ? <ChevronLeft style={{ width: 14, height: 14 }} /> : <ChevronRight style={{ width: 14, height: 14 }} />}
+                {dir === "left" ? (
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
               </button>
             ))}
           </div>

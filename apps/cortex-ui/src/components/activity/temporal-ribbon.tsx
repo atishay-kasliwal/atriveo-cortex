@@ -143,34 +143,31 @@ export function TemporalRibbon({
   }
 
   return (
-    <div className="space-y-10 px-5 py-6">
-      <section className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-7 px-5 py-5">
+      <section className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
               Master ribbon / 00:00 — 24:00
             </h3>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              Linear decomposition of today&apos;s activity segments
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[12px] text-muted-foreground">
+              <span>Linear decomposition of today&apos;s activity</span>
+              <span className="text-muted-foreground/40">·</span>
+              <span className="font-mono tabular-nums">
+                {fmtDuration(totalActiveSec)} <span className="text-muted-foreground/60">active</span>
+              </span>
             </p>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-2">
+          <div className="flex flex-wrap gap-x-3 gap-y-1.5">
             {ribbonCategories.map((key) => (
-              <div key={key} className="flex items-center gap-2">
+              <div key={key} className="flex items-center gap-1.5">
                 <span className={"size-1.5 rounded-full " + categoryStyle[key].dot} />
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {categoryStyle[key].short}
                 </span>
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="flex items-center justify-end">
-          <span className="font-mono text-xs tabular-nums text-muted-foreground">
-            Total active:{" "}
-            <span className="text-foreground">{fmtDuration(totalActiveSec)}</span>
-          </span>
         </div>
 
         <div
@@ -253,13 +250,25 @@ export function TemporalRibbon({
 
       {stateSegments.length > 0 ? (
         <section className="space-y-3">
-          <div>
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Presence / idle blocks
-            </h3>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              Idle and sleeping time is shown explicitly — not counted as work
-            </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                Presence / idle blocks
+              </h3>
+              <p className="mt-1 text-[12px] text-muted-foreground">
+                Idle and sleeping time is shown explicitly — not counted as work
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              {(["focused", "active", "background", "idle", "sleeping"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-1.5">
+                  <span className={"size-1.5 rounded-full " + stateBarClass[k]} />
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {k}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="relative h-8 w-full overflow-hidden rounded-lg bg-surface-2/40 ring-1 ring-border/60">
             {stateSegments.map((s) => {
@@ -275,6 +284,13 @@ export function TemporalRibbon({
                 />
               );
             })}
+          </div>
+          <div className="flex justify-between px-1 font-mono text-[10px] tabular-nums text-muted-foreground">
+            <span>00:00</span>
+            <span>06:00</span>
+            <span>12:00</span>
+            <span>18:00</span>
+            <span>24:00</span>
           </div>
         </section>
       ) : null}

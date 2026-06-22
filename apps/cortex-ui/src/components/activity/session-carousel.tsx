@@ -72,38 +72,59 @@ export function SessionCarousel({
 
   return (
     <>
-      {/* Tag filter pills */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-2 mt-0">
-        {ALL_TAGS.map((tag) => {
-          const count = tag === "All"
-            ? collapseMicroEntertainment(blocks).length
-            : (tagCounts[tag] ?? 0);
-          if (tag !== "All" && count === 0) return null;
-          const active = activeTag === tag;
-          return (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(tag)}
-              className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
-                active
-                  ? "bg-foreground text-background"
-                  : "bg-surface-2 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tag}
-              <span className={`ml-1.5 tabular-nums ${active ? "opacity-70" : "opacity-50"}`}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <div className="px-5 py-4">
+        {/* Top bar: tag filters + scroll arrows */}
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {ALL_TAGS.map((tag) => {
+              const count = tag === "All"
+                ? collapseMicroEntertainment(blocks).length
+                : (tagCounts[tag] ?? 0);
+              if (tag !== "All" && count === 0) return null;
+              const active = activeTag === tag;
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setActiveTag(tag)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "bg-surface-2 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tag}
+                  <span className={`ml-1.5 tabular-nums ${active ? "opacity-70" : "opacity-50"}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {sorted.length > 0 ? (
+            <div className="flex shrink-0 items-center gap-2">
+              {(["left", "right"] as const).map((dir) => (
+                <button
+                  key={dir}
+                  type="button"
+                  aria-label={dir === "left" ? "Scroll left" : "Scroll right"}
+                  onClick={() => scroll(dir)}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2/60 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+                >
+                  {dir === "left" ? (
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
 
-      {sorted.length === 0 ? (
-        <p className="px-1 py-4 text-[13px] text-muted-foreground">No {activeTag} sessions today.</p>
-      ) : (
-        <div className="relative">
-          {/* Carousel track */}
+        {sorted.length === 0 ? (
+          <p className="py-4 text-[13px] text-muted-foreground">No {activeTag} sessions today.</p>
+        ) : (
           <div
             ref={scrollRef}
             className="flex gap-3 overflow-x-auto scroll-smooth"
@@ -117,24 +138,8 @@ export function SessionCarousel({
               />
             ))}
           </div>
-
-          {/* Left arrow */}
-          <button
-            onClick={() => scroll("left")}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 hover:bg-background shadow-sm"
-          >
-            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-          </button>
-
-          {/* Right arrow */}
-          <button
-            onClick={() => scroll("right")}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 hover:bg-background shadow-sm"
-          >
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <SessionDetailPanel
         block={selected}

@@ -117,7 +117,7 @@ export function TodayView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <TodayHero data={data} heading={heading} />
       <ActivityBreakdown
         focusedStateSec={data.focusedStateSec}
@@ -149,7 +149,7 @@ export function TodayView({
       <ActivityCard title="Sessions" subtitle="Stitched work blocks — not every app switch">
         <SessionCarousel blocks={data.timeline} sort="newest" />
       </ActivityCard>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <ActivityCard title="Applications" subtitle={appsSubtitle}>
           <AppList items={data.apps} />
         </ActivityCard>
@@ -161,7 +161,7 @@ export function TodayView({
           />
         </ActivityCard>
       </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <ActivityCard title="Projects" subtitle="Where project time went">
           <ProjectList items={data.projects} />
         </ActivityCard>
@@ -220,7 +220,7 @@ function AppList({ items }: { items: TodayActivity["apps"] }) {
   if (items.length === 0) return <MiniEmpty icon={AppWindow} label="No apps yet" />;
   const max = Math.max(...items.map((i) => i.durationSec), 1);
   return (
-    <ul className="divide-y divide-border/40">
+    <ul className="divide-y divide-border/40 py-1">
       {items.slice(0, 8).map((a) => (
         <li key={a.app}>
           <AllocationRow label={a.app} durationSec={a.durationSec} max={max} category={a.category} />
@@ -250,28 +250,28 @@ function WebsiteList({
             websiteCategoryStyle[w.category]?.bar ?? "bg-gradient-brand";
           return (
             <li key={w.domain}>
-            <div className="group flex items-center gap-3 px-5 py-2.5 transition hover:bg-surface-2/30">
+            <div className="group flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-surface-2/30">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-[13px]">{w.domain}</span>
+                  <span className="truncate text-[13px] leading-tight">{w.domain}</span>
                   <WebsiteCategoryTagPicker
                     domain={w.domain}
                     category={w.category}
                     viewDate={viewDate}
                   />
                 </div>
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2/60">
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2/60">
                   <div
                     className={"h-full rounded-full " + barClass}
                     style={{ width: `${Math.max(2, (w.durationSec / max) * 100)}%` }}
                   />
                 </div>
               </div>
-              <div className="text-right">
-                <div className="font-mono text-[12px] tabular-nums text-muted-foreground group-hover:text-foreground">
+              <div className="w-16 shrink-0 text-right">
+                <div className="font-mono text-[12px] tabular-nums text-muted-foreground transition-colors group-hover:text-foreground">
                   {fmtDuration(w.durationSec)}
                 </div>
-                <div className="font-mono text-[10px] text-muted-foreground">
+                <div className="font-mono text-[10px] text-muted-foreground/70">
                   {w.visits} visits
                 </div>
               </div>
@@ -288,7 +288,7 @@ function ProjectList({ items }: { items: TodayActivity["projects"] }) {
   if (items.length === 0) return <MiniEmpty icon={Target} label="No projects detected" />;
   const max = Math.max(...items.map((i) => i.durationSec), 1);
   return (
-    <ul className="divide-y divide-border/40">
+    <ul className="divide-y divide-border/40 py-1">
       {items.map((p) => (
         <li key={p.projectId}>
           <AllocationRow
@@ -306,13 +306,13 @@ function ProjectList({ items }: { items: TodayActivity["projects"] }) {
 function OpenLoopList({ items }: { items: TodayActivity["openLoops"] }) {
   if (items.length === 0) return <MiniEmpty icon={CircleDashed} label="No open loops" />;
   return (
-    <ul className="divide-y divide-border/40">
+    <ul className="divide-y divide-border/40 py-1">
       {items.slice(0, 6).map((l) => (
         <li key={l.id}>
           <Link
             to="/open-loops/$id"
             params={{ id: l.id }}
-            className="flex items-center gap-2 px-5 py-2.5 text-[13px] hover:bg-surface-2/30"
+            className="flex items-center gap-2 px-5 py-2.5 text-[13px] transition-colors hover:bg-surface-2/30"
           >
             <CircleDashed className="h-3.5 w-3.5 text-[color:var(--color-warning)]" />
             <span className="min-w-0 flex-1 truncate">{l.title}</span>

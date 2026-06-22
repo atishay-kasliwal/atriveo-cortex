@@ -19,14 +19,14 @@ export function ActivityCard({
 }) {
   return (
     <section className="surface-card overflow-hidden rounded-xl">
-      <header className="flex items-start justify-between gap-3 border-b border-border/60 px-5 py-3">
-        <div>
-          <h2 className="font-display text-sm font-normal tracking-tight">{title}</h2>
+      <header className="flex items-start justify-between gap-3 border-b border-border/60 px-5 py-3.5">
+        <div className="min-w-0">
+          <h2 className="font-display text-sm font-medium tracking-tight">{title}</h2>
           {subtitle ? (
-            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
-        {action}
+        {action ? <div className="shrink-0">{action}</div> : null}
       </header>
       {children}
     </section>
@@ -71,19 +71,19 @@ export function AllocationRow({
   const pct = Math.max(2, (durationSec / max) * 100);
   const bar = category ? categoryStyle[category].bar : "bg-gradient-brand";
   const content = (
-    <div className="group flex items-center gap-3 px-5 py-2.5 transition hover:bg-surface-2/30">
+    <div className="group flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-surface-2/30">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-[13px]">{label}</span>
+          <span className="truncate text-[13px] leading-tight">{label}</span>
           {sub ? (
-            <span className="font-mono text-[10px] text-muted-foreground">{sub}</span>
+            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{sub}</span>
           ) : null}
         </div>
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2/60">
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2/60">
           <div className={"h-full rounded-full " + bar} style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div className="w-16 text-right font-mono text-[12px] tabular-nums text-muted-foreground group-hover:text-foreground">
+      <div className="w-16 shrink-0 text-right font-mono text-[12px] tabular-nums text-muted-foreground transition-colors group-hover:text-foreground">
         {fmtDuration(durationSec)}
       </div>
     </div>
