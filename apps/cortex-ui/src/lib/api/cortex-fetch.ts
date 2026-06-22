@@ -99,12 +99,12 @@ export async function cortexFetch<T>(path: string, init?: RequestInit): Promise<
 
   if (res.status === 401 && path !== "/api/auth/login") {
     // Token expired or invalid — clear it and redirect to login
-    const errorMsg = `[cortexFetch] 401 on ${path} | token: ${!!token} | response: ${text.slice(0, 200)}`;
-    console.error(errorMsg);
-    alert(errorMsg);
-    try { localStorage.removeItem("cortex_token"); } catch {}
-    if (typeof window !== "undefined") setTimeout(() => { window.location.href = "/login"; }, 500);
-    throw new ApiError(401, "Session expired. Please sign in again.");
+    const errorMsg = `401 on ${path} | token: ${!!token} | response: ${text.slice(0, 300)}`;
+    console.error("[cortexFetch]", errorMsg);
+    // Temporarily don't redirect — debug first
+    // try { localStorage.removeItem("cortex_token"); } catch {}
+    // if (typeof window !== "undefined") window.location.href = "/login";
+    throw new ApiError(401, errorMsg);
   }
 
   if (json && "success" in json) {
