@@ -88,6 +88,7 @@ export function TodayView({
     return (
       <div className="space-y-4">
         <TodayHero data={data} heading={heading} />
+        <CategoryBreakdown data={data} />
         <ActivityBreakdown
           focusedStateSec={data.focusedStateSec}
           activeStateSec={data.activeStateSec}
@@ -109,8 +110,11 @@ export function TodayView({
             viewDate={viewDate ?? data.date}
           />
         </ActivityCard>
-        <ActivityCard title="Timeline of work" subtitle="Top sessions — full log on Activity page">
-          <WorkTimeline blocks={data.timeline.slice(0, 6)} />
+        <ActivityCard
+          title="Timeline of work"
+          subtitle="What you worked on, hour by hour — scroll through the day"
+        >
+          <WorkTimeline blocks={data.timeline} />
         </ActivityCard>
       </div>
     );
@@ -178,6 +182,72 @@ export function TodayView({
         </ActivityCard>
       </div>
     </div>
+  );
+}
+
+const BREAKDOWN_CATEGORIES = [
+  "build",
+  "research",
+  "communication",
+  "planning",
+  "entertainment",
+  "other",
+] as const;
+
+/** Where the day's active time actually went — derived straight from the timeline. */
+function CategoryBreakdown({ data }: { data: TodayActivity }) {
+  const totals = new Map<string, number>();
+  for (const b of data.timeline) {
+    totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
+  }
+  const rows = BREAKDOWN_CATEGORIES.map((c) => ({
+    category: c,
+    sec: totals.get(c) ?? 0,
+  })).filter((r) => r.sec > 0);
+
+  if (rows.length === 0) return null;
+
+  const total = rows.reduce((n, r) => n + r.sec, 0) || 1;
+  rows.sort((a, b) => b.sec - a.sec);
+
+  return (
+    <ActivityCard
+      title="Where your time went"
+      subtitle="Active time by category — attributed to the screen you were actually on"
+    >
+      <div className="px-5 py-4">
+        {/* Stacked proportional bar */}
+        <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+          {rows.map((r) => (
+            <div
+              key={r.category}
+              className={categoryStyle[r.category].bar}
+              style={{ width: `${(r.sec / total) * 100}%` }}
+              title={`${categoryStyle[r.category].label}: ${fmtDuration(r.sec)}`}
+            />
+          ))}
+        </div>
+        {/* Legend with durations + share */}
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
+          {rows.map((r) => (
+            <div key={r.category} className="flex items-center gap-2">
+              <span className={"size-2.5 shrink-0 rounded-full " + categoryStyle[r.category].dot} />
+              <div className="min-w-0">
+                <div className="truncate text-[11px] text-muted-foreground">
+                  {categoryStyle[r.category].label}
+                </div>
+                <div className="font-mono text-[13px] font-semibold tabular-nums">
+                  {fmtDuration(r.sec)}
+                  <span className="ml-1.5 text-[10px] font-normal text-muted-foreground/60">
+                    {Math.round((r.sec / total) * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </ActivityCard>
   );
 }
 
