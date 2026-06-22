@@ -79,12 +79,16 @@ export async function cortexFetch<T>(path: string, init?: RequestInit): Promise<
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
   const token = getToken();
   const res = await fetch(url, {
+    // Spread init FIRST so its `headers` key can't clobber the merged headers
+    // below. (Previously `...init` came last and overwrote Authorization on any
+    // request that passed its own headers — e.g. PUT with Content-Type — causing
+    // a spurious 401. GETs were unaffected because they pass no init.headers.)
+    ...init,
     headers: {
       Accept: "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
-    ...init,
   });
 
   const text = await res.text();
@@ -98,13 +102,16 @@ export async function cortexFetch<T>(path: string, init?: RequestInit): Promise<
   }
 
   if (res.status === 401 && path !== "/api/auth/login") {
-    // Token expired or invalid — clear it and redirect to login
-    const errorMsg = `401 on ${path} | token: ${!!token} | response: ${text.slice(0, 300)}`;
-    console.error("[cortexFetch]", errorMsg);
-    // Temporarily don't redirect — debug first
-    // try { localStorage.removeItem("cortex_token"); } catch {}
-    // if (typeof window !== "undefined") window.location.href = "/login";
-    throw new ApiError(401, errorMsg);
+    // Token genuinely expired or invalid — clear it and send the user to login.
+    try {
+      localStorage.removeItem("cortex_token");
+    } catch {
+      /* non-browser context */
+    }
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new ApiError(401, "Your session expired. Please sign in again.");
   }
 
   if (json && "success" in json) {
