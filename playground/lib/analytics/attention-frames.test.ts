@@ -89,13 +89,24 @@ describe("resolveAttentionFrames", () => {
 
   it("ignores stale interactions beyond the recency window", () => {
     const frames = [
-      frame("2026-06-22T10:05:00.000Z", "Code", "monitor_1", true),
-      frame("2026-06-22T10:05:00.000Z", "Brave Browser", "monitor_3", false),
+      frame("2026-06-22T10:10:00.000Z", "Code", "monitor_1", true),
+      frame("2026-06-22T10:10:00.000Z", "Brave Browser", "monitor_3", false),
     ];
-    // Interaction was 2 minutes ago — too stale to claim attention.
-    const events: UiEventLite[] = [ev("2026-06-22T10:03:00.000Z", "Brave Browser")];
+    // Interaction was ~5 minutes ago — beyond the 2.5min recency window.
+    const events: UiEventLite[] = [ev("2026-06-22T10:05:00.000Z", "Brave Browser")];
     const out = resolveAttentionFrames(frames, events);
     // Falls back to focused frame (Code), not the stale browser interaction.
+    expect(out[0]!.app_name).toBe("Code");
+  });
+
+  it("interaction claims a quiet single-frame tick (interaction-dominant)", () => {
+    // Editor frame on primary monitor, but the user was just scrolling the browser.
+    const frames = [frame("2026-06-22T10:00:05.000Z", "Code", "monitor_1", true)];
+    const events: UiEventLite[] = [ev("2026-06-22T10:00:04.000Z", "Brave Browser", "scroll")];
+    const out = resolveAttentionFrames(frames, events);
+    // Even though only a Code frame exists this tick, the recent browser
+    // interaction should claim it — but only if a Brave frame was seen before.
+    // No prior Brave frame here, so it correctly falls back to the Code frame.
     expect(out[0]!.app_name).toBe("Code");
   });
 });

@@ -35,8 +35,13 @@ export type UiEventLite = {
 };
 
 const TICK_MS = 5_000;
-/** How recently an interaction must have occurred to claim attention for a tick. */
-const INTERACTION_RECENCY_MS = 30_000;
+/**
+ * How recently an interaction must have occurred to claim attention for a tick.
+ * Generous (2.5 min) because passive viewing (reading, watching) produces sparse
+ * input — a recent browser interaction should keep claiming subsequent quiet ticks
+ * rather than letting a frame-heavy editor on another monitor steal them.
+ */
+const INTERACTION_RECENCY_MS = 150_000;
 
 type ActiveAppPoint = { ms: number; app: string };
 
@@ -105,12 +110,18 @@ export function resolveAttentionFrames(
   }
 
   const timeline = buildInteractionTimeline(uiEvents);
+
+  // Index the most recent frame seen for each app, so an interacted-with app can
+  // claim a tick even if its frame wasn't captured in that exact tick (e.g. the
+  // editor keeps emitting frames on the primary monitor while you scroll a video).
+  const lastFrameByApp = new Map<string, FrameInput>();
+
+  const orderedBuckets = [...buckets.entries()].sort((a, b) => a[0] - b[0]);
   const result: FrameInput[] = [];
 
-  for (const [bucket, bucketFrames] of buckets) {
-    if (bucketFrames.length === 1) {
-      result.push(bucketFrames[0]!);
-      continue;
+  for (const [bucket, bucketFrames] of orderedBuckets) {
+    for (const f of bucketFrames) {
+      lastFrameByApp.set(normalizeAppName(f.app_name), f);
     }
 
     const tickMs = bucket * TICK_MS + TICK_MS / 2;
@@ -118,26 +129,28 @@ export function resolveAttentionFrames(
 
     let chosen: FrameInput | null = null;
 
-    // 1. Frame whose app matches what the user was interacting with.
+    // 1. INTERACTION-DOMINANT: the app the user actually interacted with wins,
+    //    even if its frame is on a different monitor or from a slightly earlier
+    //    tick. This is what makes browser/video time beat a frame-heavy editor.
     if (activeApp) {
       chosen =
-        bucketFrames.find(
-          (f) => normalizeAppName(f.app_name) === activeApp,
-        ) ?? null;
+        bucketFrames.find((f) => normalizeAppName(f.app_name) === activeApp) ??
+        lastFrameByApp.get(activeApp) ??
+        null;
     }
 
-    // 2. The focused frame.
+    // 2. No recent interaction (passive viewing/away). Disambiguate this tick's
+    //    frames: prefer the focused one, then the primary monitor, then first.
     if (!chosen) {
-      chosen = bucketFrames.find((f) => f.focused === true) ?? null;
+      chosen =
+        bucketFrames.find((f) => f.focused === true) ??
+        bucketFrames.find((f) => deviceOf(f) === "monitor_1") ??
+        bucketFrames[0]!;
     }
 
-    // 3. Primary monitor.
-    if (!chosen) {
-      chosen = bucketFrames.find((f) => deviceOf(f) === "monitor_1") ?? null;
-    }
-
-    // 4. First frame in the tick.
-    result.push(chosen ?? bucketFrames[0]!);
+    // Stamp the representative onto this tick's timestamp so the downstream
+    // session/gap math stays on the real tick clock.
+    result.push({ ...chosen, timestamp: bucketFrames[0]!.timestamp });
   }
 
   return result.sort(
