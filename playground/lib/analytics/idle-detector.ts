@@ -5,9 +5,19 @@
 import {
   applyFocusedPromotion,
   classifyIdleTier,
+  IDLE_TIER_MS,
   isInteractionEvent,
   type IdleTier,
 } from "./idle-presence";
+import { resolveSessionType } from "./category-map";
+import { extractDomain } from "./website-parser";
+
+/** True when a frame is on entertainment/media content (video, streaming, etc.). */
+function isEntertainmentFrame(frame: IdleFrameInput | null): boolean {
+  if (!frame) return false;
+  const domain = extractDomain(frame.app_name, frame.window_name);
+  return resolveSessionType(frame.app_name, domain) === "ENTERTAINMENT";
+}
 
 /** Gap with no interaction before classifying as idle (default 5 min). */
 export const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
@@ -127,6 +137,8 @@ function classifyGap(opts: {
   ocrChanged: boolean;
   windowChanged: boolean;
   hasFramesInGap: boolean;
+  screenStatic: boolean;
+  entertainment: boolean;
 }): {
   state: ActivityState;
   confidence: number;
@@ -140,36 +152,60 @@ function classifyGap(opts: {
     ocrChanged,
     windowChanged,
     hasFramesInGap,
+    screenStatic,
+    entertainment,
   } = opts;
 
   if (interaction) {
     return { state: "ACTIVE", confidence: 0.95, hadInteraction: true };
   }
 
-  if (!interaction) {
-    if (gapMs >= SLEEP_THRESHOLD_MS && !hasFramesInGap) {
-      return { state: "SLEEPING", confidence: 0.92 };
-    }
+  // ── No keyboard/mouse interaction in this gap ──────────────────────────────
+  // Presence model: if ScreenPipe is still capturing frames at a normal cadence,
+  // the user is PRESENT (e.g. watching a video) even without input or OCR change.
+  // ScreenPipe frequently cannot OCR video content, so we must not rely on OCR to
+  // detect passive viewing. We only fall through to IDLE/SLEEPING once frames stop
+  // or no-input persists well past the casual-pause window.
 
-    // Screen actively changing without input. Two cases, distinguished by how
-    // recently the user interacted:
-    //   • Recent interaction (<5min): user is actively working and the screen
-    //     reflects it (e.g. typing pauses while code recompiles) → ACTIVE.
-    //   • No recent interaction (≥5min) but the screen keeps changing: passive
-    //     presence — watching a video, a screencast, reading auto-scrolling
-    //     content → BACKGROUND. This must NOT become IDLE, or entertainment and
-    //     video time would be dropped from sessions entirely.
-    if (ocrChanged && gapMs < 60_000) {
-      if (msSinceLastInteraction < IDLE_THRESHOLD_MS) {
-        return { state: "ACTIVE", confidence: 0.78, hadInteraction: false };
-      }
-      return { state: "BACKGROUND", confidence: 0.72, hadInteraction: false };
-    }
+  // Frames stopped entirely for a long stretch → machine asleep.
+  if (gapMs >= SLEEP_THRESHOLD_MS && !hasFramesInGap) {
+    return { state: "SLEEPING", confidence: 0.92 };
+  }
 
-    const tier = classifyIdleTier(msSinceLastInteraction);
-    if (tier) {
-      return { state: "IDLE", confidence: 0.88, idleTier: tier };
-    }
+  // Screen actively changing shortly after interaction → still actively working
+  // (e.g. typing pauses while code recompiles / page renders).
+  if (ocrChanged && gapMs < 60_000 && msSinceLastInteraction < IDLE_THRESHOLD_MS) {
+    return { state: "ACTIVE", confidence: 0.78, hadInteraction: false };
+  }
+
+  // Frames are still flowing (short gap → ScreenPipe is actively capturing) but no
+  // input. Unless the screen is provably static (readable OCR that didn't change —
+  // the user stepped away from a still page), treat this as passive presence:
+  // watching a video, reading, a screencast. ScreenPipe usually can't OCR video,
+  // so empty/unreadable OCR with flowing frames means "watching", not "away".
+  // Counts as BACKGROUND. Only escalate to IDLE once no-input persists past the
+  // "away" tier (frames-flowing = present, so we're generous before calling it idle).
+  const framesFlowing = gapMs < SLEEP_THRESHOLD_MS;
+
+  // Watching video/streaming: frames flowing on entertainment content = present,
+  // even with no input for a long stretch. Only frames stopping (handled above as
+  // SLEEPING) ends it. This is what keeps a 1-hour movie from logging as idle.
+  if (framesFlowing && entertainment) {
+    return { state: "BACKGROUND", confidence: 0.68, hadInteraction: false };
+  }
+
+  if (
+    framesFlowing &&
+    !screenStatic &&
+    msSinceLastInteraction < IDLE_TIER_MS.away
+  ) {
+    return { state: "BACKGROUND", confidence: 0.7, hadInteraction: false };
+  }
+
+  // Sustained no-input → genuinely idle/away/absent.
+  const tier = classifyIdleTier(msSinceLastInteraction);
+  if (tier) {
+    return { state: "IDLE", confidence: 0.88, idleTier: tier };
   }
 
   if (gapMs >= BACKGROUND_MIN_MS) {
@@ -280,6 +316,18 @@ export function detectActivityStates(
       prev && curr ? meaningfulOcrChange(prev.text, curr.text) : false;
     const windowChanged =
       prev && curr ? windowKey(prev) !== windowKey(curr) : false;
+    // Screen is "static" when OCR text is readable on both frames AND identical:
+    // the user stepped away from a still page (→ idle). Distinct from video, where
+    // OCR is usually empty/unreadable even though the screen is changing (→ present).
+    const prevText = normalizeText(prev?.text);
+    const currText = normalizeText(curr?.text);
+    const screenStatic =
+      prevText.length > 0 && currText.length > 0 && prevText === currText;
+    // Entertainment context (video/streaming): ScreenPipe can't OCR video, and the
+    // user legitimately gives no input for long stretches while watching. Treat as
+    // present (BACKGROUND) as long as frames keep flowing.
+    const entertainment =
+      isEntertainmentFrame(prev) || isEntertainmentFrame(curr);
     // Only count frames from real user apps — lock screen / login window frames
     // don't indicate actual computer use and should not prevent SLEEPING classification.
     const hasFramesInGap =
@@ -332,6 +380,8 @@ export function detectActivityStates(
       ocrChanged,
       windowChanged,
       hasFramesInGap,
+      screenStatic,
+      entertainment,
     });
 
     pushSegment(segments, startMs, endMs, state, confidence, {
