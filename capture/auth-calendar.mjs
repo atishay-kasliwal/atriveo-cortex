@@ -19,6 +19,8 @@ const REDIRECT_URI = "http://localhost:9999/callback";
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/analytics.readonly",
 ].join(" ");
 
 const TOKEN_DIR = path.join(os.homedir(), ".config", "cortex");
