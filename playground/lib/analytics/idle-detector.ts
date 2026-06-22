@@ -84,17 +84,55 @@ function windowKey(frame: IdleFrameInput): string {
 // Events from these apps don't indicate real user presence.
 const SYSTEM_APP_NAMES = new Set(["loginwindow", "ScreenSaverEngine", "Dock"]);
 
+// macOS frequently misattributes the owning process of global keyboard/mouse
+// events to "loginwindow" even while the user is actively working in a real app
+// (a known accessibility/event-tap quirk). Blanket-discarding these would throw
+// away genuine interaction and mark active work as IDLE. So a system-app event is
+// only treated as synthetic when there is NO real (non-system) frame captured
+// around the same moment — a genuinely locked machine produces no real app frames
+// (it stops capturing or only shows the lock screen). When real frames are flowing,
+// the event is real interaction regardless of the app_name the OS stamped on it.
+const REAL_FRAME_PROXIMITY_MS = 30 * 1000;
+
+/** A real (non-system) frame was captured within ±proximity of t. */
+function hasRealFrameNear(
+  sortedFrames: IdleFrameInput[],
+  t: number,
+  proximityMs = REAL_FRAME_PROXIMITY_MS,
+): boolean {
+  for (const f of sortedFrames) {
+    const ft = Date.parse(f.timestamp);
+    if (ft < t - proximityMs) continue;
+    if (ft > t + proximityMs) break;
+    if (!SYSTEM_APP_NAMES.has(f.app_name ?? "")) return true;
+  }
+  return false;
+}
+
+/** True if this UI event reflects genuine user interaction (not lock-screen noise). */
+function isRealInteractionEvent(
+  event: IdleUiEventInput,
+  sortedFrames: IdleFrameInput[],
+): boolean {
+  if (!isInteractionEvent(event.event_type)) return false;
+  if (event.app_name && SYSTEM_APP_NAMES.has(event.app_name)) {
+    // Only trust a system-app event when real frames corroborate that the user
+    // was actually present and using the machine at that time.
+    return hasRealFrameNear(sortedFrames, Date.parse(event.timestamp));
+  }
+  return true;
+}
+
 function interactionBetween(
   uiEvents: IdleUiEventInput[],
   startMs: number,
   endMs: number,
+  sortedFrames: IdleFrameInput[],
 ): boolean {
   for (const event of uiEvents) {
     const t = Date.parse(event.timestamp);
     if (t <= startMs || t > endMs) continue;
-    if (!isInteractionEvent(event.event_type)) continue;
-    if (event.app_name && SYSTEM_APP_NAMES.has(event.app_name)) continue;
-    return true;
+    if (isRealInteractionEvent(event, sortedFrames)) return true;
   }
   return false;
 }
@@ -311,7 +349,7 @@ export function detectActivityStates(
       lastInteractionMs = Date.parse(prev.timestamp);
     }
 
-    const interaction = interactionBetween(uiEvents, startMs, endMs);
+    const interaction = interactionBetween(uiEvents, startMs, endMs, sorted);
     const ocrChanged =
       prev && curr ? meaningfulOcrChange(prev.text, curr.text) : false;
     const windowChanged =
@@ -346,8 +384,7 @@ export function detectActivityStates(
     if (interaction) {
       for (const event of uiEvents) {
         const t = Date.parse(event.timestamp);
-        if (t > startMs && t <= endMs && isInteractionEvent(event.event_type)) {
-          if (event.app_name && SYSTEM_APP_NAMES.has(event.app_name)) continue;
+        if (t > startMs && t <= endMs && isRealInteractionEvent(event, sorted)) {
           lastRealInteractionInGap = Math.max(lastRealInteractionInGap ?? t, t);
           lastInteractionMs = Math.max(lastInteractionMs ?? t, t);
         }

@@ -14,8 +14,8 @@ function frame(iso: string, app: string, window = "", text = "") {
   return { timestamp: iso, app_name: app, window_name: window, text };
 }
 
-function ui(iso: string) {
-  return { timestamp: iso, event_type: "click" };
+function ui(iso: string, app?: string) {
+  return { timestamp: iso, event_type: "click", app_name: app };
 }
 
 function addMin(iso: string, min: number) {
@@ -135,6 +135,49 @@ describe("detectActivityStates", () => {
       DAY_END,
     );
     expect(result.totals.activeSeconds).toBeGreaterThan(200);
+  });
+
+  it("counts loginwindow-misattributed events as ACTIVE when real frames flow", () => {
+    // macOS often stamps genuine keyboard/mouse events with app_name "loginwindow"
+    // even while the user is actively working. As long as real (non-system) frames
+    // are being captured, those events are real interaction — not lock-screen noise.
+    const start = "2026-06-17T10:00:00.000Z";
+    const frames: ReturnType<typeof frame>[] = [];
+    const events: ReturnType<typeof ui>[] = [];
+    for (let i = 0; i <= 20; i++) {
+      frames.push(frame(addSec(start, i * 30), "Code", "file.ts", `code v${i}`));
+      events.push(ui(addSec(start, i * 30 + 5), "loginwindow"));
+    }
+    const result = detectActivityStates(
+      "2026-06-17",
+      frames,
+      events,
+      DAY_START,
+      DAY_END,
+    );
+    // Continuous interaction over 10 min reads as real work (ACTIVE, possibly
+    // promoted to FOCUSED) — never IDLE.
+    expect(result.totals.activeSeconds + result.totals.focusedSeconds).toBeGreaterThan(500);
+    expect(result.totals.idleSeconds).toBe(0);
+  });
+
+  it("ignores loginwindow events when no real frames are present (genuine lock)", () => {
+    // Machine actually locked: only loginwindow frames + loginwindow events.
+    // These must NOT count as interaction.
+    const start = "2026-06-17T10:00:00.000Z";
+    const frames = [
+      frame(start, "loginwindow", "lock", ""),
+      frame(addMin(start, 6), "loginwindow", "lock", ""),
+    ];
+    const events = [ui(addMin(start, 3), "loginwindow")];
+    const result = detectActivityStates(
+      "2026-06-17",
+      frames,
+      events,
+      DAY_START,
+      DAY_END,
+    );
+    expect(result.totals.activeSeconds).toBeLessThan(60);
   });
 
   it("detects meaningful OCR change within 60s as ACTIVE", () => {
