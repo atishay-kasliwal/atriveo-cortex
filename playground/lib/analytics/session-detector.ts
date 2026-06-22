@@ -24,6 +24,8 @@ import type {
 export const INACTIVITY_MS = 10 * 60 * 1000;
 export const MAX_ATTRIBUTION_MS = 10 * 60 * 1000;
 export const VISIT_GAP_MS = 5 * 60 * 1000;
+// Sessions longer than this are split so the carousel doesn't show multi-hour single blocks.
+export const MAX_SESSION_MS = 60 * 60 * 1000;
 
 type SessionAccumulator = {
   frames: FrameInput[];
@@ -178,6 +180,7 @@ export function processFrames(
   }
 
   let acc = emptyAccumulator(frames[0]!);
+  let accStartMs = Date.parse(frames[0]!.timestamp);
   let lastDomain: string | null = null;
   let lastDomainMs: number | null = null;
 
@@ -192,6 +195,7 @@ export function processFrames(
       idleSeconds += gapMs / 1000;
       sessions.push(finalizeSession(acc, projectNames));
       acc = emptyAccumulator(curr);
+      accStartMs = currMs;
       lastDomain = null;
       lastDomainMs = null;
       continue;
@@ -227,10 +231,12 @@ export function processFrames(
     const currDomain = extractDomain(curr.app_name, curr.window_name);
     const currType = resolveSessionType(curr.app_name, currDomain);
     const currBucket = sessionCategoryBucket(currType);
+    const sessionDurationMs = currMs - accStartMs;
 
-    if (currBucket !== acc.bucket) {
+    if (currBucket !== acc.bucket || sessionDurationMs >= MAX_SESSION_MS) {
       sessions.push(finalizeSession(acc, projectNames));
       acc = emptyAccumulator(curr);
+      accStartMs = currMs;
     } else {
       acc.frames.push(curr);
     }

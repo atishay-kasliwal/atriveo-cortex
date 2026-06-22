@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, type ActionBucket } from "./client";
 import { cortexFetch, isRetryableApiError } from "./cortex-fetch";
+import { fetchDailyTrend, fetchReadiness } from "./health-adapter";
 import type { HealthPeriod } from "./health-types";
 
 const STALE = 30_000;
@@ -309,6 +310,21 @@ export const healthTimelineQuery = (period: HealthPeriod) =>
     staleTime: STALE,
     retry: defaultQueryRetry,
   });
+
+export const dailyTrendQuery = (days = 30) =>
+  queryOptions({
+    queryKey: ["health", "trend", "daily", days] as const,
+    queryFn: () => fetchDailyTrend(undefined, days),
+    staleTime: 5 * 60_000,
+    retry: defaultQueryRetry,
+  });
+
+export const readinessQuery = queryOptions({
+  queryKey: ["health", "readiness"] as const,
+  queryFn: () => fetchReadiness(),
+  staleTime: 5 * 60_000,
+  retry: defaultQueryRetry,
+});
 
 export const aiSettingsQuery = queryOptions({
   queryKey: qk.aiSettings,

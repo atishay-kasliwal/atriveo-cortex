@@ -73,7 +73,7 @@ export function SessionCarousel({
   return (
     <>
       {/* Tag filter pills */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-3">
+      <div className="flex items-center gap-1.5 flex-wrap mb-2 mt-0">
         {ALL_TAGS.map((tag) => {
           const count = tag === "All"
             ? collapseMicroEntertainment(blocks).length
@@ -102,19 +102,11 @@ export function SessionCarousel({
       {sorted.length === 0 ? (
         <p className="px-1 py-4 text-[13px] text-muted-foreground">No {activeTag} sessions today.</p>
       ) : (
-        <div className="relative group">
-          {/* Left arrow */}
-          <button
-            onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background shadow-sm opacity-0 group-hover:opacity-100 transition"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-
-          {/* Carousel track — 3 cards visible */}
+        <div className="relative">
+          {/* Carousel track */}
           <div
             ref={scrollRef}
-            className="flex gap-3 overflow-x-auto scroll-smooth pb-2"
+            className="flex gap-3 overflow-x-auto scroll-smooth"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {sorted.map((block) => (
@@ -126,12 +118,20 @@ export function SessionCarousel({
             ))}
           </div>
 
+          {/* Left arrow */}
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 hover:bg-background shadow-sm"
+          >
+            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+          </button>
+
           {/* Right arrow */}
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background shadow-sm opacity-0 group-hover:opacity-100 transition"
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 hover:bg-background shadow-sm"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
       )}
@@ -156,8 +156,8 @@ function SessionCard({ block, onSelect }: { block: TimelineBlock; onSelect: () =
     <button
       type="button"
       onClick={onSelect}
-      className="flex-none w-[272px] rounded-xl border border-border bg-surface p-4 text-left transition hover:border-border/80 hover:bg-surface-2/50 hover:shadow-sm"
-      style={{ minWidth: "272px" }}
+      className="flex-shrink-0 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-border/80 hover:bg-surface-2/50 hover:shadow-sm"
+      style={{ width: "280px", minWidth: "280px", maxWidth: "280px" }}
     >
       {/* Header: tag chip + duration */}
       <div className="flex items-center justify-between mb-3">
@@ -171,8 +171,8 @@ function SessionCard({ block, onSelect }: { block: TimelineBlock; onSelect: () =
 
       {/* Color bar + title */}
       <div className="flex gap-2.5 mb-2">
-        <span className={`mt-0.5 h-full w-1 shrink-0 rounded-full self-stretch min-h-[2rem] ${style.bar}`} />
-        <div className="min-w-0">
+        <span className={`h-8 w-1 shrink-0 rounded-full ${style.bar}`} />
+        <div className="min-w-0 flex-1">
           <p className="text-[13px] font-semibold leading-snug line-clamp-2">{block.title}</p>
           {context && (
             <p className="mt-0.5 text-[11px] text-foreground/70 line-clamp-1">{context}</p>

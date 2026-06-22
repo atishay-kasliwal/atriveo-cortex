@@ -250,7 +250,14 @@ export async function processMemoryJob(jobId: string): Promise<MemoryJobDTO | nu
       }
     }
 
-    if (result.memoryRefreshed && result.syncedDates.length > 0) {
+    // Always include today so daily_memory is fresh even when screenpipe had no new frames.
+    const { localDateString } = await import("@/lib/analytics/aggregator");
+    const datesToMaterialize =
+      result.syncedDates.length > 0
+        ? result.syncedDates
+        : [localDateString()];
+
+    if (result.memoryRefreshed || datesToMaterialize.length > 0) {
       stageMetrics = await reportStage(
         jobId,
         MEMORY_JOB_STAGES.INDEX,
@@ -258,7 +265,7 @@ export async function processMemoryJob(jobId: string): Promise<MemoryJobDTO | nu
         stagesCompleted,
         result.recordsImported,
       );
-      await materializeDailyMemoryBatch(result.syncedDates, jobId);
+      await materializeDailyMemoryBatch(datesToMaterialize, jobId);
       stageMetrics = await finishReportedStage(
         jobId,
         MEMORY_JOB_STAGES.INDEX,

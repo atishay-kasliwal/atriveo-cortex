@@ -4,6 +4,37 @@
 
 export type HealthPeriod = "today" | "yesterday" | "week" | "month";
 
+export interface DailyTrendRow {
+  date: string;
+  sleep_hours: number | null;
+  deep_hours: number | null;
+  rem_hours: number | null;
+  hrv: number | null;
+  resting_hr: number | null;
+  avg_hr: number | null;
+  steps: number;
+  active_calories: number;
+}
+
+export interface ReadinessResult {
+  recovery: number;
+  energy: number;
+  focus: number;
+  stress: number;
+  overall: number;
+  headline: string;
+  narrative: string;
+  peak_window: string | null;
+  signals: {
+    sleep_hours: number | null;
+    sleep_quality: number | null;
+    hrv: number | null;
+    resting_hr: number | null;
+    avg_hr_7d: number | null;
+    hrv_7d: number | null;
+  };
+}
+
 export interface HealthTimelineResponse {
   period: HealthPeriod;
   from: string;

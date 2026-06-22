@@ -10,23 +10,28 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WeeklyReviewRouteImport } from './routes/weekly-review'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScreensRouteImport } from './routes/screens'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RecurrenceRouteImport } from './routes/recurrence'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PlatformHealthRouteImport } from './routes/platform-health'
+import { Route as PatternsRouteImport } from './routes/patterns'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as OpenLoopsRouteImport } from './routes/open-loops'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IdeasRouteImport } from './routes/ideas'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as CaptureDoctorRouteImport } from './routes/capture-doctor'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as BioRouteImport } from './routes/bio'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AttentionRouteImport } from './routes/attention'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as AccuracyRouteImport } from './routes/accuracy'
-import { Route as HealthRouteImport } from './routes/health'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsHealthRouteImport } from './routes/projects.health'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
@@ -39,6 +44,11 @@ import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 const WeeklyReviewRoute = WeeklyReviewRouteImport.update({
   id: '/weekly-review',
   path: '/weekly-review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScreensRoute = ScreensRouteImport.update({
@@ -66,6 +76,11 @@ const PlatformHealthRoute = PlatformHealthRouteImport.update({
   path: '/platform-health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatternsRoute = PatternsRouteImport.update({
+  id: '/patterns',
+  path: '/patterns',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OverviewRoute = OverviewRouteImport.update({
   id: '/overview',
   path: '/overview',
@@ -76,9 +91,19 @@ const OpenLoopsRoute = OpenLoopsRouteImport.update({
   path: '/open-loops',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IdeasRoute = IdeasRouteImport.update({
   id: '/ideas',
   path: '/ideas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DecisionsRoute = DecisionsRouteImport.update({
@@ -89,6 +114,16 @@ const DecisionsRoute = DecisionsRouteImport.update({
 const CaptureDoctorRoute = CaptureDoctorRouteImport.update({
   id: '/capture-doctor',
   path: '/capture-doctor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BioRoute = BioRouteImport.update({
+  id: '/bio',
+  path: '/bio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -119,11 +154,6 @@ const ActionsRoute = ActionsRouteImport.update({
 const AccuracyRoute = AccuracyRouteImport.update({
   id: '/accuracy',
   path: '/accuracy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HealthRoute = HealthRouteImport.update({
-  id: '/health',
-  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -170,22 +200,27 @@ const ActionsIdRoute = ActionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accuracy': typeof AccuracyRoute
-  '/health': typeof HealthRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
+  '/bio': typeof BioRoute
+  '/calendar': typeof CalendarRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
+  '/health': typeof HealthRoute
   '/ideas': typeof IdeasRouteWithChildren
+  '/login': typeof LoginRoute
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
+  '/patterns': typeof PatternsRoute
   '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
   '/screens': typeof ScreensRoute
+  '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
@@ -198,22 +233,27 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accuracy': typeof AccuracyRoute
-  '/health': typeof HealthRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
+  '/bio': typeof BioRoute
+  '/calendar': typeof CalendarRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
+  '/health': typeof HealthRoute
   '/ideas': typeof IdeasRouteWithChildren
+  '/login': typeof LoginRoute
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
+  '/patterns': typeof PatternsRoute
   '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
   '/screens': typeof ScreensRoute
+  '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
@@ -227,22 +267,27 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accuracy': typeof AccuracyRoute
-  '/health': typeof HealthRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
+  '/bio': typeof BioRoute
+  '/calendar': typeof CalendarRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
+  '/health': typeof HealthRoute
   '/ideas': typeof IdeasRouteWithChildren
+  '/login': typeof LoginRoute
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
+  '/patterns': typeof PatternsRoute
   '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
   '/review': typeof ReviewRoute
   '/screens': typeof ScreensRoute
+  '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
@@ -257,22 +302,27 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accuracy'
-    | '/health'
     | '/actions'
     | '/activity'
     | '/ask'
     | '/attention'
     | '/audit'
+    | '/bio'
+    | '/calendar'
     | '/capture-doctor'
     | '/decisions'
+    | '/health'
     | '/ideas'
+    | '/login'
     | '/open-loops'
     | '/overview'
+    | '/patterns'
     | '/platform-health'
     | '/projects'
     | '/recurrence'
     | '/review'
     | '/screens'
+    | '/settings'
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
@@ -285,22 +335,27 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accuracy'
-    | '/health'
     | '/actions'
     | '/activity'
     | '/ask'
     | '/attention'
     | '/audit'
+    | '/bio'
+    | '/calendar'
     | '/capture-doctor'
     | '/decisions'
+    | '/health'
     | '/ideas'
+    | '/login'
     | '/open-loops'
     | '/overview'
+    | '/patterns'
     | '/platform-health'
     | '/projects'
     | '/recurrence'
     | '/review'
     | '/screens'
+    | '/settings'
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
@@ -313,22 +368,27 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/accuracy'
-    | '/health'
     | '/actions'
     | '/activity'
     | '/ask'
     | '/attention'
     | '/audit'
+    | '/bio'
+    | '/calendar'
     | '/capture-doctor'
     | '/decisions'
+    | '/health'
     | '/ideas'
+    | '/login'
     | '/open-loops'
     | '/overview'
+    | '/patterns'
     | '/platform-health'
     | '/projects'
     | '/recurrence'
     | '/review'
     | '/screens'
+    | '/settings'
     | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
@@ -342,22 +402,27 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccuracyRoute: typeof AccuracyRoute
-  HealthRoute: typeof HealthRoute
   ActionsRoute: typeof ActionsRouteWithChildren
   ActivityRoute: typeof ActivityRoute
   AskRoute: typeof AskRoute
   AttentionRoute: typeof AttentionRoute
   AuditRoute: typeof AuditRoute
+  BioRoute: typeof BioRoute
+  CalendarRoute: typeof CalendarRoute
   CaptureDoctorRoute: typeof CaptureDoctorRoute
   DecisionsRoute: typeof DecisionsRoute
+  HealthRoute: typeof HealthRoute
   IdeasRoute: typeof IdeasRouteWithChildren
+  LoginRoute: typeof LoginRoute
   OpenLoopsRoute: typeof OpenLoopsRouteWithChildren
   OverviewRoute: typeof OverviewRoute
+  PatternsRoute: typeof PatternsRoute
   PlatformHealthRoute: typeof PlatformHealthRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RecurrenceRoute: typeof RecurrenceRoute
   ReviewRoute: typeof ReviewRoute
   ScreensRoute: typeof ScreensRoute
+  SettingsRoute: typeof SettingsRoute
   WeeklyReviewRoute: typeof WeeklyReviewRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
   DebugTelemetryRoute: typeof DebugTelemetryRoute
@@ -370,6 +435,13 @@ declare module '@tanstack/react-router' {
       path: '/weekly-review'
       fullPath: '/weekly-review'
       preLoaderRoute: typeof WeeklyReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/screens': {
@@ -407,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/patterns': {
+      id: '/patterns'
+      path: '/patterns'
+      fullPath: '/patterns'
+      preLoaderRoute: typeof PatternsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/overview': {
       id: '/overview'
       path: '/overview'
@@ -421,11 +500,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpenLoopsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ideas': {
       id: '/ideas'
       path: '/ideas'
       fullPath: '/ideas'
       preLoaderRoute: typeof IdeasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/decisions': {
@@ -440,6 +533,20 @@ declare module '@tanstack/react-router' {
       path: '/capture-doctor'
       fullPath: '/capture-doctor'
       preLoaderRoute: typeof CaptureDoctorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bio': {
+      id: '/bio'
+      path: '/bio'
+      fullPath: '/bio'
+      preLoaderRoute: typeof BioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -482,13 +589,6 @@ declare module '@tanstack/react-router' {
       path: '/accuracy'
       fullPath: '/accuracy'
       preLoaderRoute: typeof AccuracyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/health': {
-      id: '/health'
-      path: '/health'
-      fullPath: '/health'
-      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -600,22 +700,27 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccuracyRoute: AccuracyRoute,
-  HealthRoute: HealthRoute,
   ActionsRoute: ActionsRouteWithChildren,
   ActivityRoute: ActivityRoute,
   AskRoute: AskRoute,
   AttentionRoute: AttentionRoute,
   AuditRoute: AuditRoute,
+  BioRoute: BioRoute,
+  CalendarRoute: CalendarRoute,
   CaptureDoctorRoute: CaptureDoctorRoute,
   DecisionsRoute: DecisionsRoute,
+  HealthRoute: HealthRoute,
   IdeasRoute: IdeasRouteWithChildren,
+  LoginRoute: LoginRoute,
   OpenLoopsRoute: OpenLoopsRouteWithChildren,
   OverviewRoute: OverviewRoute,
+  PatternsRoute: PatternsRoute,
   PlatformHealthRoute: PlatformHealthRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   RecurrenceRoute: RecurrenceRoute,
   ReviewRoute: ReviewRoute,
   ScreensRoute: ScreensRoute,
+  SettingsRoute: SettingsRoute,
   WeeklyReviewRoute: WeeklyReviewRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
   DebugTelemetryRoute: DebugTelemetryRoute,

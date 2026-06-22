@@ -78,17 +78,10 @@ export function CalendarUpcoming() {
         {upcoming.map((ev) => (
           <div
             key={ev.id}
-            className="flex items-center gap-1.5 shrink-0 rounded-full px-3 py-1 text-xs"
-            style={{
-              background: ev.calendarColor + "20",
-              border: `1px solid ${ev.calendarColor}40`,
-            }}
+            className="flex items-center gap-1.5 shrink-0 rounded-full px-3 py-1 text-xs bg-surface-2 border border-border/50"
             title={ev.title}
           >
-            <span
-              className="h-1.5 w-1.5 rounded-full shrink-0"
-              style={{ background: ev.calendarColor }}
-            />
+            <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-muted-foreground" />
             <span className="font-medium truncate max-w-[140px] text-foreground">{ev.title}</span>
             <span className="text-muted-foreground shrink-0">{pillLabel(ev)}</span>
             {ev.meetingUrl && (

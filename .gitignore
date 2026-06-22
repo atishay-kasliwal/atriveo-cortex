@@ -28,3 +28,4 @@ logs/
 
 # ScreenPipe capture data (never commit)
 screenpipe-data/
+.claude/
