@@ -122,6 +122,14 @@ async function main() {
   });
   console.log(ts(), "done analytics sync:", gaResult.properties);
 
+  console.log(ts(), "step: runEmailSync");
+  const { runEmailSync } = await import("../lib/google/email-sync");
+  const emailResult = await runEmailSync().catch((err: Error) => {
+    console.error(ts(), "email sync failed:", err.message);
+    return { ok: false, scanned: 0, needsYou: 0 };
+  });
+  console.log(ts(), "done email sync:", emailResult.scanned, "scanned ->", emailResult.needsYou, "needs you");
+
   console.log(ts(), "pipeline:derived complete", {
     loopsUpdated,
     reviewsUpdated,

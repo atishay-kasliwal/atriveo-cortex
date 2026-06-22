@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fmtDuration } from "@/components/dashboard/time";
 import { fetchUpcomingEvents } from "@/lib/api/calendar-adapter";
-import { siteAnalyticsQuery, weekQuery } from "@/lib/api/queries";
+import { needsYouQuery, siteAnalyticsQuery, weekQuery } from "@/lib/api/queries";
 import type { TodayActivity } from "@/lib/api/types";
 import { KpiTile, type KpiTileProps } from "@/components/home/kpi-tile";
 
@@ -46,6 +46,9 @@ export function HomeKpiStrip({
     ...weekQuery(weekStart),
     enabled: period === "week",
   });
+
+  // Email "needs you" — degrades to "unconnected" if the sync hasn't run yet
+  const needsYou = useQuery(needsYouQuery);
 
   // Site analytics (GA) — degrades to "unconnected" if the sync hasn't run yet
   const sites = useQuery(siteAnalyticsQuery);
@@ -87,12 +90,19 @@ export function HomeKpiStrip({
       value: focusSec != null ? fmtDuration(focusSec) : undefined,
       state: period === "week" && week.isLoading ? "loading" : "live",
     },
-    {
-      // Wires up once the Gmail sync lands (see EMAIL_DESIGN.md).
-      label: "Needs you",
-      sub: "email",
-      state: "unconnected",
-    },
+    (() => {
+      if (needsYou.isLoading) return { label: "Needs you", sub: "email", state: "loading" as const };
+      if (!needsYou.data) return { label: "Needs you", sub: "email", state: "unconnected" as const };
+      const count = period === "today" ? needsYou.data.todayCount : needsYou.data.weekCount;
+      const top = needsYou.data.items[0];
+      return {
+        label: "Needs you",
+        value: String(count),
+        sub: count === 0 ? "all clear 🎉" : top ? top.fromName : "email",
+        higherIsBetter: false,
+        state: "live" as const,
+      };
+    })(),
     {
       label: period === "today" ? "Next meeting" : "Meetings",
       value:

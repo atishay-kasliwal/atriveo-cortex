@@ -346,3 +346,24 @@ export const siteAnalyticsQuery = queryOptions({
   staleTime: 5 * 60_000,
   retry: false,
 });
+
+export type NeedsYouSummary = {
+  todayCount: number;
+  weekCount: number;
+  items: Array<{
+    id: string;
+    fromName: string;
+    subject: string;
+    snippet: string;
+    reason: string;
+    receivedAt: string;
+    gmailUrl: string;
+  }>;
+};
+
+export const needsYouQuery = queryOptions({
+  queryKey: ["email", "needs-you"] as const,
+  queryFn: () => cortexFetch<NeedsYouSummary>("/api/email/needs-you"),
+  staleTime: 5 * 60_000,
+  retry: false,
+});
