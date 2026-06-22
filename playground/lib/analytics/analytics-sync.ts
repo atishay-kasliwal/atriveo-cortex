@@ -31,6 +31,7 @@ import { buildProjectSignalIndex } from "./project-signals";
 import { loadExtendedSessionEvidence } from "./session-evidence";
 import { enrichSessions } from "./session-intelligence";
 import { processFrames } from "./session-detector";
+import { resolveAttentionFrames } from "./attention-frames";
 
 export type SyncResult = {
   date: string;
@@ -47,9 +48,14 @@ export async function syncDay(date: string): Promise<SyncResult> {
   let recordsProcessed = 0;
 
   try {
-    const frames = fetchFramesForWindow(start, end);
+    const rawFrames = fetchFramesForWindow(start, end);
     const uiEvents = fetchUiEventsForWindow(start, end);
     const projectNames = (await listProjectSummaries()).map((p) => p.canonical_project);
+    // Collapse multi-monitor frames to one attention-resolved stream so every step
+    // works off a single, clean timeline that follows where the user actually was
+    // (e.g. watching video on a 2nd monitor) instead of blindly crediting the
+    // primary monitor's app. One representative frame per tick keeps time at 1×.
+    const frames = resolveAttentionFrames(rawFrames, uiEvents);
     // Compute presence states first — the idle detector is the authority on whether
     // the user was actually present, and the session detector consults it so that
     // frames captured while away from the keyboard aren't counted as active work.
