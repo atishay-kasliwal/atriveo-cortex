@@ -4,13 +4,15 @@
 
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Brain, Monitor, TrendingUp } from "lucide-react";
-import { TodayView } from "@/components/activity/today-view";
+import { ArrowUpRight, Brain, Clock, Monitor, TrendingUp } from "lucide-react";
 import { AttentionMemorySection } from "@/components/attention/visualizations/attention-memory-section";
 import { HomeAuditSection } from "@/components/home/home-audit-section";
+import { HomeHero } from "@/components/home/home-hero";
 import { ProductMomentumMap } from "@/components/home/product-momentum-map";
 import { MemoryStatusRibbon } from "@/components/home/memory-status-ribbon";
 import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
+import { WorkTimeline } from "@/components/activity/work-timeline";
+import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
 import { ActivityCard } from "@/components/activity/shared";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { fmtDuration } from "@/components/dashboard/time";
@@ -67,7 +69,7 @@ export function MemoryHomeView({
   }
 
   return (
-    <div className="mt-4 space-y-8">
+    <div className="mt-4 space-y-6">
       <MemoryStatusRibbon
         pipelineState={pipelineState}
         syncStatus={syncStatus.data}
@@ -77,36 +79,55 @@ export function MemoryHomeView({
       {/* Calendar — compact pill row */}
       <CalendarUpcoming />
 
-      {/* Activity log */}
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 className="font-display text-lg tracking-tight">Activity log</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              States, sessions, and what you worked on.
-            </p>
-          </div>
-          <Link
-            to="/activity"
-            search={{ date: viewDate }}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            Full log
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
+      {/* ── Daily command center: hero + timeline ─────────────────────────── */}
+      {activity.isError && !isApiNotFound(activity.error) ? (
+        <ErrorState error={activity.error} onRetry={activity.refetch} />
+      ) : activity.isLoading ? (
+        <div className="space-y-4">
+          <div className="h-44 animate-pulse rounded-2xl bg-surface-2/50" />
+          <div className="h-64 animate-pulse rounded-xl bg-surface-2/50" />
         </div>
-        {activity.isError && !isApiNotFound(activity.error) ? (
-          <ErrorState error={activity.error} onRetry={activity.refetch} />
-        ) : (
-          <TodayView
-            data={activity.data}
-            loading={activity.isLoading}
-            viewDate={viewDate}
-            calendarToday={calendarToday}
-            compact
-          />
-        )}
-      </section>
+      ) : activity.data && hasTodayActivity(activity.data) ? (
+        <div className="space-y-5">
+          <HomeHero data={activity.data} dateLabel={dateLabel} />
+
+          {/* Timeline of work */}
+          <ActivityCard
+            title="Timeline of work"
+            subtitle="What you worked on, hour by hour — scroll through the day"
+            action={
+              <Link
+                to="/activity"
+                search={{ date: viewDate }}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Full log
+                <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            }
+          >
+            <WorkTimeline blocks={activity.data.timeline} />
+          </ActivityCard>
+
+          {/* When it happened */}
+          <ActivityCard
+            title="When it happened"
+            subtitle="Your day on a 24-hour axis — work above, presence below"
+          >
+            <TemporalRibbon
+              blocks={activity.data.timeline}
+              stateTimeline={activity.data.stateTimeline}
+              viewDate={viewDate}
+            />
+          </ActivityCard>
+        </div>
+      ) : (
+        <EmptyState
+          icon={Clock}
+          title="Nothing synced for today yet"
+          description="Your day appears here once ScreenPipe captures and syncs new frames."
+        />
+      )}
 
       {/* Product momentum */}
       <section className="space-y-3">
@@ -216,9 +237,6 @@ export function MemoryHomeView({
         )}
       </section>
 
-      {/* Truth audit */}
-      <HomeAuditSection viewDate={viewDate} />
-
       {/* Attention */}
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
@@ -252,6 +270,9 @@ export function MemoryHomeView({
           <AttentionMemorySection visualizations={attention.data.visualizations} compact />
         )}
       </section>
+
+      {/* Truth audit — verification detail, demoted to the bottom */}
+      <HomeAuditSection viewDate={viewDate} />
     </div>
   );
 }
