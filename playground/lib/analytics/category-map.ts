@@ -19,7 +19,7 @@ const DOMAIN_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
   { match: /gmail\.com|mail\.google|linkedin\.com|twitter\.com|x\.com/i, category: "COMMUNICATION" },
   { match: /notion\.so|linear\.app|jira\.|asana\.com/i, category: "PLANNING" },
   {
-    match: /youtube\.com|netflix\.com|reddit\.com|twitch\.tv|streamfree|sextb|betonline|draftkings|fanduel|betmgm|espn\.com|nfl\.com|nba\.com|mlb\.com|cricbuzz|hotstar|primevideo|disneyplus|hulu|peacocktv|paramountplus|crunchyroll|pornhub|xvideos|onlyfans/i,
+    match: /youtube\.com|netflix\.com|reddit\.com|twitch\.tv|streamfree|powerstreams|fmhy\.net|sextb|betonline|draftkings|fanduel|betmgm|espn\.com|nfl\.com|nba\.com|mlb\.com|cricbuzz|hotstar|primevideo|disneyplus|hulu|peacocktv|paramountplus|crunchyroll|pornhub|xvideos|onlyfans/i,
     category: "ENTERTAINMENT",
   },
   { match: /chatgpt\.com|openai\.com|claude\.ai|anthropic\.com/i, category: "RESEARCH" },
@@ -27,6 +27,20 @@ const DOMAIN_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
 
 const MEETING_APPS = /zoom|meet|teams|facetime|webex|huddle/i;
 const MEETING_TITLE = /meeting|huddle|standup|call with/i;
+
+// Strong entertainment signals in a window/page title — used when the app/domain
+// would otherwise mis-attribute (e.g. a video watched in a browser on a second
+// monitor while a code editor is the "dominant" app). These titles are
+// unmistakably leisure regardless of which app reported them.
+const ENTERTAINMENT_TITLE =
+  /\bmovies?\b|\btv\b|\banime\b|\bstream(s|ing)?\b|powerstreams|freemediaheckyeah|fmhy|\bepisode\b|\bseason \d|\bwatch\b|\btrailer\b|\bporn\b|\bxxx\b|\bav (debut|idol)\b|JUR-\d|SSIS-\d|MIDV-\d|\bjavhd\b|sextb|live match|highlights?|full (movie|match|episode)/i;
+
+/** True when a window/page title clearly indicates entertainment/leisure content. */
+export function titleIsEntertainment(windowTitle: string | null | undefined): boolean {
+  const t = (windowTitle ?? "").trim();
+  if (t.length < 4) return false;
+  return ENTERTAINMENT_TITLE.test(t);
+}
 
 export function normalizeAppName(app: string | null | undefined): string {
   const trimmed = (app ?? "").trim();
@@ -54,7 +68,13 @@ export function categorizeDomain(domain: string | null | undefined): SessionType
 export function resolveSessionType(
   app: string | null | undefined,
   domain: string | null | undefined,
+  windowTitle?: string | null | undefined,
 ): SessionType {
+  // Strongest signal: an unmistakable entertainment title overrides app/domain.
+  // Catches video/streaming watched in a browser (or mis-attributed to a code
+  // editor on another monitor) that the domain list would otherwise miss.
+  if (titleIsEntertainment(windowTitle)) return "ENTERTAINMENT";
+
   if (domain) {
     const fromDomain = categorizeDomain(domain);
     if (fromDomain !== "RESEARCH" || categorizeApp(app) === "RESEARCH") {
