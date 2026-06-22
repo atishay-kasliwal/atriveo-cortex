@@ -99,6 +99,7 @@ export async function cortexFetch<T>(path: string, init?: RequestInit): Promise<
 
   if (res.status === 401 && path !== "/api/auth/login") {
     // Token expired or invalid — clear it and redirect to login
+    console.error(`[cortexFetch] 401 on ${path}`, { token: !!token, body: text.slice(0, 200) });
     try { localStorage.removeItem("cortex_token"); } catch {}
     if (typeof window !== "undefined") window.location.href = "/login";
     throw new ApiError(401, "Session expired. Please sign in again.");
