@@ -74,9 +74,22 @@ export function cortexBaseUrl(): string {
   return resolveApiBase();
 }
 
+/**
+ * When set, the next reads append ?fresh=1 to bypass the server edge cache. Used by
+ * "Refresh Memory" so an explicit refresh always pulls the latest, not a cached copy.
+ * Auto-clears after a short window so normal browsing still benefits from the cache.
+ */
+let forceFreshUntil = 0;
+export function forceFreshReads(ms = 8000): void {
+  forceFreshUntil = Date.now() + ms;
+}
+
 export async function cortexFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const base = cortexBaseUrl();
-  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  const fresh =
+    Date.now() < forceFreshUntil && (!init || (init.method ?? "GET") === "GET");
+  const sep = path.includes("?") ? "&" : "?";
+  const url = `${base}${path.startsWith("/") ? path : `/${path}`}${fresh ? `${sep}fresh=1` : ""}`;
   const token = getToken();
   const res = await fetch(url, {
     // Spread init FIRST so its `headers` key can't clobber the merged headers

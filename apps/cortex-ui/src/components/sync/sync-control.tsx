@@ -27,11 +27,14 @@ import {
 } from "@/lib/api/sync-adapter";
 import { CaptureDoctorLink } from "@/components/sync/capture-doctor-view";
 import { qk } from "@/lib/api/queries";
-import { isRetryableApiError, ApiError } from "@/lib/api/cortex-fetch";
+import { isRetryableApiError, ApiError, forceFreshReads } from "@/lib/api/cortex-fetch";
 
 const SYNC_STATUS_KEY = ["sync", "status"] as const;
 
 function invalidateAfterRefresh(queryClient: ReturnType<typeof useQueryClient>) {
+  // Bypass the server edge cache on the refetches this triggers, so an explicit
+  // refresh always pulls the freshly-synced data instead of a cached snapshot.
+  forceFreshReads();
   void queryClient.invalidateQueries({ queryKey: qk.overview });
   void queryClient.invalidateQueries({ queryKey: ["analytics"] });
   void queryClient.invalidateQueries({ queryKey: ["reviews"] });

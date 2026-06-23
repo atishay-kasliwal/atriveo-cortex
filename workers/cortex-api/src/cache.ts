@@ -26,8 +26,10 @@ type CacheEntry<T> = { data: T; cachedAt: number };
 /** Build a stable cache key from the request URL (path + query). */
 function cacheKey(c: Context): Request {
   const url = new URL(c.req.url);
-  // Strip auth/cache-busting params so the key is stable per logical resource.
+  // Strip auth/cache-busting params so the key is stable per logical resource
+  // (a ?fresh=1 bypass must write to the same key a normal read looks up).
   url.searchParams.delete("_");
+  url.searchParams.delete("fresh");
   return new Request(`https://cortex-cache${url.pathname}${url.search}`, {
     method: "GET",
   });
@@ -44,6 +46,10 @@ export async function cachedRead<T>(
   ttlSeconds: number,
   load: () => Promise<T>,
 ): Promise<Response> {
+  // Explicit refresh (?fresh=1) bypasses the edge cache READ and goes straight to
+  // the DB, then repopulates the cache — so "Refresh Memory" always shows the latest.
+  const bypass = c.req.query("fresh") === "1";
+
   // `caches.default` exists in the Workers runtime; guard for non-Worker contexts.
   const cache: Cache | undefined =
     typeof caches !== "undefined" ? (caches as unknown as { default: Cache }).default : undefined;
@@ -51,7 +57,7 @@ export async function cachedRead<T>(
   const key = cache ? cacheKey(c) : null;
   let cached: CacheEntry<T> | null = null;
 
-  if (cache && key) {
+  if (cache && key && !bypass) {
     const hit = await cache.match(key);
     if (hit) {
       try {
