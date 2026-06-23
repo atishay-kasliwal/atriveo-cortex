@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as WeeklyReviewRouteImport } from './routes/weekly-review'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScreensRouteImport } from './routes/screens'
@@ -25,7 +24,6 @@ import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as CaptureDoctorRouteImport } from './routes/capture-doctor'
-import { Route as CalendarBoardRouteImport } from './routes/calendar-board'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as BioRouteImport } from './routes/bio'
 import { Route as AuditRouteImport } from './routes/audit'
@@ -43,11 +41,6 @@ import { Route as DebugTelemetryRouteImport } from './routes/debug.telemetry'
 import { Route as DebugAnalyticsRouteImport } from './routes/debug.analytics'
 import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 
-const WorkspaceRoute = WorkspaceRouteImport.update({
-  id: '/workspace',
-  path: '/workspace',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const WeeklyReviewRoute = WeeklyReviewRouteImport.update({
   id: '/weekly-review',
   path: '/weekly-review',
@@ -121,11 +114,6 @@ const DecisionsRoute = DecisionsRouteImport.update({
 const CaptureDoctorRoute = CaptureDoctorRouteImport.update({
   id: '/capture-doctor',
   path: '/capture-doctor',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarBoardRoute = CalendarBoardRouteImport.update({
-  id: '/calendar-board',
-  path: '/calendar-board',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -219,7 +207,6 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuditRoute
   '/bio': typeof BioRoute
   '/calendar': typeof CalendarRoute
-  '/calendar-board': typeof CalendarBoardRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/health': typeof HealthRoute
@@ -235,7 +222,6 @@ export interface FileRoutesByFullPath {
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
-  '/workspace': typeof WorkspaceRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
@@ -254,7 +240,6 @@ export interface FileRoutesByTo {
   '/audit': typeof AuditRoute
   '/bio': typeof BioRoute
   '/calendar': typeof CalendarRoute
-  '/calendar-board': typeof CalendarBoardRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/health': typeof HealthRoute
@@ -270,7 +255,6 @@ export interface FileRoutesByTo {
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
-  '/workspace': typeof WorkspaceRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
@@ -290,7 +274,6 @@ export interface FileRoutesById {
   '/audit': typeof AuditRoute
   '/bio': typeof BioRoute
   '/calendar': typeof CalendarRoute
-  '/calendar-board': typeof CalendarBoardRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/health': typeof HealthRoute
@@ -306,7 +289,6 @@ export interface FileRoutesById {
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
-  '/workspace': typeof WorkspaceRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
@@ -327,7 +309,6 @@ export interface FileRouteTypes {
     | '/audit'
     | '/bio'
     | '/calendar'
-    | '/calendar-board'
     | '/capture-doctor'
     | '/decisions'
     | '/health'
@@ -343,7 +324,6 @@ export interface FileRouteTypes {
     | '/screens'
     | '/settings'
     | '/weekly-review'
-    | '/workspace'
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
@@ -362,7 +342,6 @@ export interface FileRouteTypes {
     | '/audit'
     | '/bio'
     | '/calendar'
-    | '/calendar-board'
     | '/capture-doctor'
     | '/decisions'
     | '/health'
@@ -378,7 +357,6 @@ export interface FileRouteTypes {
     | '/screens'
     | '/settings'
     | '/weekly-review'
-    | '/workspace'
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
@@ -397,7 +375,6 @@ export interface FileRouteTypes {
     | '/audit'
     | '/bio'
     | '/calendar'
-    | '/calendar-board'
     | '/capture-doctor'
     | '/decisions'
     | '/health'
@@ -413,7 +390,6 @@ export interface FileRouteTypes {
     | '/screens'
     | '/settings'
     | '/weekly-review'
-    | '/workspace'
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
@@ -433,7 +409,6 @@ export interface RootRouteChildren {
   AuditRoute: typeof AuditRoute
   BioRoute: typeof BioRoute
   CalendarRoute: typeof CalendarRoute
-  CalendarBoardRoute: typeof CalendarBoardRoute
   CaptureDoctorRoute: typeof CaptureDoctorRoute
   DecisionsRoute: typeof DecisionsRoute
   HealthRoute: typeof HealthRoute
@@ -449,20 +424,12 @@ export interface RootRouteChildren {
   ScreensRoute: typeof ScreensRoute
   SettingsRoute: typeof SettingsRoute
   WeeklyReviewRoute: typeof WeeklyReviewRoute
-  WorkspaceRoute: typeof WorkspaceRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
   DebugTelemetryRoute: typeof DebugTelemetryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/workspace': {
-      id: '/workspace'
-      path: '/workspace'
-      fullPath: '/workspace'
-      preLoaderRoute: typeof WorkspaceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/weekly-review': {
       id: '/weekly-review'
       path: '/weekly-review'
@@ -566,13 +533,6 @@ declare module '@tanstack/react-router' {
       path: '/capture-doctor'
       fullPath: '/capture-doctor'
       preLoaderRoute: typeof CaptureDoctorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar-board': {
-      id: '/calendar-board'
-      path: '/calendar-board'
-      fullPath: '/calendar-board'
-      preLoaderRoute: typeof CalendarBoardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -747,7 +707,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuditRoute: AuditRoute,
   BioRoute: BioRoute,
   CalendarRoute: CalendarRoute,
-  CalendarBoardRoute: CalendarBoardRoute,
   CaptureDoctorRoute: CaptureDoctorRoute,
   DecisionsRoute: DecisionsRoute,
   HealthRoute: HealthRoute,
@@ -763,7 +722,6 @@ const rootRouteChildren: RootRouteChildren = {
   ScreensRoute: ScreensRoute,
   SettingsRoute: SettingsRoute,
   WeeklyReviewRoute: WeeklyReviewRoute,
-  WorkspaceRoute: WorkspaceRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
   DebugTelemetryRoute: DebugTelemetryRoute,
 }
