@@ -19,7 +19,7 @@ import {
   shiftDate,
   yesterdayDate,
 } from "@/lib/activity/date-nav";
-import { reviewQuery } from "@/lib/api/queries";
+import { analyticsHistoryQuery, reviewQuery } from "@/lib/api/queries";
 
 export const Route = createFileRoute("/review")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -46,6 +46,7 @@ function ReviewPage() {
   }, [dateParam]);
 
   const review = useQuery(reviewQuery(viewDate));
+  const history = useQuery(analyticsHistoryQuery);
   const heading = dayViewHeading(viewDate, calendarToday);
   const dateLabel = formatDateLabel(viewDate);
 
@@ -70,6 +71,10 @@ function ReviewPage() {
           canNext={viewDate < calendarToday}
           onJumpToday={() => setViewDate(calendarToday)}
           onJumpYesterday={() => setViewDate(yesterdayDate(calendarToday))}
+          onPickDate={(date) =>
+            setViewDate(date > calendarToday ? calendarToday : date)
+          }
+          availableDates={history.data?.availableDates}
           showJumpToday={viewDate !== calendarToday}
           showJumpYesterday={viewDate !== yesterdayDate(calendarToday)}
         />

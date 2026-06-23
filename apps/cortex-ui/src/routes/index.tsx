@@ -4,6 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ActivityPeriodNav,
 } from "@/components/activity/activity-period-nav";
@@ -11,6 +12,7 @@ import { MemoryHomeView } from "@/components/home/memory-home-view";
 import { LandingPage } from "@/components/landing/landing-page";
 import { PageBody } from "@/components/dashboard/page-shell";
 import { isAuthenticated } from "@/lib/auth";
+import { analyticsHistoryQuery } from "@/lib/api/queries";
 import {
   localDateString,
   shiftDate,
@@ -50,6 +52,7 @@ function AppHome() {
   const calendarToday = useMemo(() => localDateString(), []);
   const { date: dateParam } = Route.useSearch();
   const [viewDate, setViewDate] = useState(dateParam ?? calendarToday);
+  const history = useQuery(analyticsHistoryQuery);
 
   useEffect(() => {
     if (dateParam) setViewDate(dateParam);
@@ -70,6 +73,10 @@ function AppHome() {
           canNext={viewDate < calendarToday}
           onJumpToday={() => setViewDate(calendarToday)}
           onJumpYesterday={() => setViewDate(yesterdayDate(calendarToday))}
+          onPickDate={(date) =>
+            setViewDate(date > calendarToday ? calendarToday : date)
+          }
+          availableDates={history.data?.availableDates}
           showJumpToday={viewDate !== calendarToday}
           showJumpYesterday={viewDate !== yesterdayDate(calendarToday)}
         />
