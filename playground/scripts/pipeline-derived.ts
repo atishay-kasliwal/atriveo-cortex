@@ -130,6 +130,23 @@ async function main() {
   });
   console.log(ts(), "done email sync:", emailResult.scanned, "scanned ->", emailResult.needsYou, "needs you");
 
+  // Refresh the daily_memory cache the cloud read path serves. Without this the
+  // local agent synced fresh sessions but the home page kept showing an old
+  // snapshot (frozen at the last cloud /api/sync). Materialize every run so the
+  // cache stays current.
+  console.log(ts(), "step: materializeDailyMemory");
+  const { materializeDailyMemory } = await import("../lib/analytics/daily-memory");
+  let materialized = 0;
+  for (const date of targetDates) {
+    try {
+      await materializeDailyMemory(date);
+      materialized++;
+    } catch (err) {
+      console.error(ts(), "materialize failed for", date, (err as Error).message);
+    }
+  }
+  console.log(ts(), "done materialize daily_memory:", materialized, "of", targetDates.length);
+
   console.log(ts(), "pipeline:derived complete", {
     loopsUpdated,
     reviewsUpdated,
