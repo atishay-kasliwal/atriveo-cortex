@@ -49,6 +49,8 @@ export interface HealthTimelineResponse {
     rem_hours: number;
     core_hours: number;
     awake_hours: number;
+    sleep_start: string | null;
+    sleep_end: string | null;
   } | null;
   workouts: { type: string; duration_minutes: number; calories: number }[];
   hrv: { avg: number | null; unit: "ms" };

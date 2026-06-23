@@ -56,6 +56,10 @@ export interface SleepStats {
   rem_hours: number;
   core_hours: number;
   awake_hours: number;
+  /** When the night's sleep began/ended (ISO). Lets the UI place the sleep
+   *  block on the 24-hour axis instead of inferring it from screen-off gaps. */
+  sleep_start: string | null;
+  sleep_end: string | null;
 }
 
 export interface WorkoutEntry {
@@ -196,13 +200,17 @@ export async function buildHealthTimeline(
         deep_minutes: string;
         core_minutes: string;
         awake_minutes: string;
+        sleep_start: string | null;
+        sleep_end: string | null;
       }>(
         `SELECT
            COALESCE(SUM(duration_minutes), 0)::float AS duration_minutes,
            COALESCE(SUM(rem_minutes), 0)::float AS rem_minutes,
            COALESCE(SUM(deep_minutes), 0)::float AS deep_minutes,
            COALESCE(SUM(core_minutes), 0)::float AS core_minutes,
-           COALESCE(SUM(awake_minutes), 0)::float AS awake_minutes
+           COALESCE(SUM(awake_minutes), 0)::float AS awake_minutes,
+           MIN(sleep_start) AS sleep_start,
+           MAX(sleep_end) AS sleep_end
          FROM sleep_sessions
          WHERE user_id = $1
            AND sleep_end >= $2 AND sleep_end <= $3`,
@@ -311,6 +319,8 @@ export async function buildHealthTimeline(
           rem_hours: round2(parseFloat(sleep.rem_minutes) / 60),
           core_hours: round2(parseFloat(sleep.core_minutes) / 60),
           awake_hours: round2(parseFloat(sleep.awake_minutes) / 60),
+          sleep_start: sleep.sleep_start ? new Date(sleep.sleep_start).toISOString() : null,
+          sleep_end: sleep.sleep_end ? new Date(sleep.sleep_end).toISOString() : null,
         }
       : null,
     workouts: workoutRows.map((w) => ({
