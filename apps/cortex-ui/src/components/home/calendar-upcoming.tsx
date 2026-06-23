@@ -49,7 +49,7 @@ export function CalendarUpcoming() {
     <div className="flex items-center gap-2 min-h-[32px]">
       {/* Label */}
       <Link
-        to="/calendar"
+        to="/glance"
         className="flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground hover:text-foreground transition"
       >
         <Calendar className="h-3.5 w-3.5" />

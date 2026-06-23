@@ -17,7 +17,7 @@ import {
   MousePointerClick,
 } from "lucide-react";
 
-export const Route = createFileRoute("/calendar")({
+export const Route = createFileRoute("/glance")({
   component: WorkspacePage,
 });
 

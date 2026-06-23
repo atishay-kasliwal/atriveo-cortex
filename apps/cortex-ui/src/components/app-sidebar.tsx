@@ -49,7 +49,7 @@ const nav = [
     group: "Home",
     items: [
       { title: "Home", url: "/", icon: Home },
-      { title: "Calendar", url: "/calendar", icon: CalendarDays },
+      { title: "Glance", url: "/glance", icon: CalendarDays },
     ],
   },
   {
