@@ -20,11 +20,17 @@ import type { MediaSessionRow } from "@/lib/media/media-sessions";
 /** A gap shorter than this isn't worth synthesizing a block for. */
 const MIN_GAP_MS = 5 * 60 * 1000;
 /** Frames closer together than this are "continuous" (no gap between them). */
-const FRAME_CONTINUITY_MS = 10 * 60 * 1000;
+const FRAME_CONTINUITY_MS = 3 * 60 * 1000;
 
 type Interval = { startMs: number; endMs: number };
 
-/** Windows within [dayStart, dayEnd] that the captured frames did NOT cover. */
+/**
+ * Windows the captured frames did NOT meaningfully cover. ScreenPipe barely emits
+ * frames during steady video (a 2h watch produced ~11 frames clustered in 7 min),
+ * so we use a TIGHT continuity threshold: any stretch with no frame for >3 min is a
+ * gap. This makes a long video — which only sprays a few frames then goes quiet —
+ * register as a fillable gap so its real duration (from the media assertion) counts.
+ */
 function captureGaps(
   frames: FrameInput[],
   dayStartMs: number,
@@ -44,7 +50,6 @@ function captureGaps(
     }
     cursor = Math.max(cursor, t);
   }
-  // Trailing gap to now/day-end.
   if (dayEndMs - cursor > FRAME_CONTINUITY_MS) {
     gaps.push({ startMs: cursor, endMs: dayEndMs });
   }
@@ -87,8 +92,8 @@ export function buildMediaGapSessions(
       const durationSec = (ov.endMs - ov.startMs) / 1000;
       const label =
         media.kind === "video"
-          ? `Watching (screen off) · ${media.app}`
-          : `Listening (screen off) · ${media.app}`;
+          ? `Watching video · ${media.app}`
+          : `Listening · ${media.app}`;
       out.push({
         startTime: new Date(ov.startMs).toISOString(),
         endTime: new Date(ov.endMs).toISOString(),

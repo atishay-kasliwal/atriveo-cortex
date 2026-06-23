@@ -60,12 +60,19 @@ export async function recordMediaSnapshot(now = new Date()): Promise<number> {
   let recorded = 0;
 
   for (const [app, { kind, heldSec }] of active) {
-    // The session began ~heldSec ago (capped to a sane max so a stale assertion
-    // doesn't claim hours that didn't happen).
-    const cappedHeld = Math.min(heldSec, 4 * 3600);
-    const observedStart = new Date(now.getTime() - cappedHeld * 1000).toISOString();
+    // macOS tells us how long this media has been playing — that is the TRUTH for
+    // duration. ScreenPipe barely captures frames during steady video (a 2h watch
+    // produced ~11 frames), so we must NOT derive duration from frames; we derive
+    // it from the assertion's held time. Capped so a stale assertion can't claim
+    // an absurd span.
+    const cappedHeld = Math.min(heldSec, 6 * 3600);
+    const observedStartMs = now.getTime() - cappedHeld * 1000;
+    const observedStart = new Date(observedStartMs).toISOString();
 
-    // Find the most recent session for this app to extend if continuous.
+    // Stitch with the most recent session for this app when continuous: the real
+    // session start is the EARLIER of (existing start, heldSec-derived start), and
+    // the end is now. This grows one session to cover the whole watch instead of
+    // leaving a trail of tiny snapshots.
     const existing = await runUnsafe<{ started_at: string; ended_at: string }>(
       `SELECT started_at::text, ended_at::text FROM media_sessions
         WHERE app = $1 ORDER BY ended_at DESC LIMIT 1`,
@@ -74,14 +81,15 @@ export async function recordMediaSnapshot(now = new Date()): Promise<number> {
     const prev = existing[0];
 
     if (prev && now.getTime() - Date.parse(prev.ended_at) <= CONTINUITY_GAP_MS) {
-      // Continuous playback → extend the existing session's end.
+      // Continuous — expand the existing session to cover the full held window.
+      const newStart = Math.min(Date.parse(prev.started_at), observedStartMs);
       await runUnsafe(
-        `UPDATE media_sessions SET ended_at = $1, kind = $2, updated_at = now()
-          WHERE app = $3 AND started_at = $4`,
-        [nowIso, kind, app, prev.started_at],
+        `UPDATE media_sessions SET started_at = $1, ended_at = $2, kind = $3, updated_at = now()
+          WHERE app = $4 AND started_at = $5`,
+        [new Date(newStart).toISOString(), nowIso, kind, app, prev.started_at],
       );
     } else {
-      // New session — start it from the reconstructed observed start.
+      // New session — full span from the heldSec-derived start to now.
       await runUnsafe(
         `INSERT INTO media_sessions (app, kind, started_at, ended_at, updated_at)
          VALUES ($1, $2, $3, $4, now())
