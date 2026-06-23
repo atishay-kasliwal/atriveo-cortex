@@ -85,6 +85,27 @@ describe("detectActivityStates", () => {
     expect(result.totals.backgroundSeconds).toBeLessThan(300);
   });
 
+  it("counts 30 min of video with no input as PRESENT, not idle (the balance)", () => {
+    // The other half of the lunch fix: a non-entertainment page left open while you
+    // eat lunch goes IDLE, but a VIDEO playing with no input stays present (watching).
+    const start = "2026-06-17T14:00:00.000Z";
+    const frames: ReturnType<typeof frame>[] = [];
+    for (let i = 0; i <= 60; i++) {
+      frames.push(
+        frame(
+          addSec(start, i * 30),
+          "Brave Browser",
+          "House of the Dragon - Brave", // genuine entertainment title
+          "",
+        ),
+      );
+    }
+    const result = detectActivityStates("2026-06-17", frames, [], DAY_START, DAY_END);
+    // Watching counts as present (background), NOT idle.
+    expect(result.totals.backgroundSeconds).toBeGreaterThan(1500);
+    expect(result.totals.idleSeconds).toBeLessThan(120);
+  });
+
   it("classifies same-window gaps without UI as BACKGROUND", () => {
     const start = "2026-06-17T10:00:00.000Z";
     const frames = [

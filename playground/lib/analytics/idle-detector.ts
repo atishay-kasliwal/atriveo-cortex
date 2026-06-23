@@ -9,13 +9,24 @@ import {
   isInteractionEvent,
   type IdleTier,
 } from "./idle-presence";
-import { resolveSessionType } from "./category-map";
+import { resolveSessionType, titleIsEntertainment } from "./category-map";
 import { extractDomain } from "./website-parser";
 
-/** True when a frame is on entertainment/media content (video, streaming, etc.). */
+/**
+ * True when a frame is on GENUINE entertainment/media content — a real media title
+ * (Netflix, "House of the Dragon", a sports matchup) or a known media domain.
+ *
+ * Deliberately does NOT use resolveSessionType's fullscreen fallback (browser +
+ * empty title => entertainment). That fallback is right for categorising a video,
+ * but here it would make any titleless browser frame — including a research page
+ * someone walked away from — look like "watching", blocking idle detection. For
+ * presence we require a positive media signal, not the absence of a title.
+ */
 function isEntertainmentFrame(frame: IdleFrameInput | null): boolean {
   if (!frame) return false;
+  if (titleIsEntertainment(frame.window_name)) return true;
   const domain = extractDomain(frame.app_name, frame.window_name);
+  if (!domain) return false; // no domain → don't infer entertainment for presence
   return resolveSessionType(frame.app_name, domain) === "ENTERTAINMENT";
 }
 
@@ -216,31 +227,29 @@ function classifyGap(opts: {
     return { state: "ACTIVE", confidence: 0.78, hadInteraction: false };
   }
 
-  // Frames are still flowing (short gap → ScreenPipe is actively capturing) but no
-  // input. Unless the screen is provably static (readable OCR that didn't change —
-  // the user stepped away from a still page), treat this as passive presence:
-  // watching a video, reading, a screencast. ScreenPipe usually can't OCR video,
-  // so empty/unreadable OCR with flowing frames means "watching", not "away".
-  // Counts as BACKGROUND. Only escalate to IDLE once no-input persists past the
-  // "away" tier (frames-flowing = present, so we're generous before calling it idle).
   const framesFlowing = gapMs < SLEEP_THRESHOLD_MS;
 
-  // Watching video/streaming: frames flowing on entertainment content = present,
-  // even with no input for a long stretch. Only frames stopping (handled above as
-  // SLEEPING) ends it. This is what keeps a 1-hour movie from logging as idle.
+  // ── Presence without input, by content type ───────────────────────────────
+  //
+  // Watching video/streaming: frames flowing on ENTERTAINMENT content = present,
+  // even with no input for a long stretch (a 1-hour movie needs no keypress).
+  // Only frames stopping (handled above as SLEEPING) ends it.
   if (framesFlowing && entertainment) {
     return { state: "BACKGROUND", confidence: 0.68, hadInteraction: false };
   }
 
-  if (
-    framesFlowing &&
-    !screenStatic &&
-    msSinceLastInteraction < IDLE_TIER_MS.away
-  ) {
+  // Everything else (research, code, docs): no input means you're probably AWAY —
+  // e.g. a research page left open while eating lunch. The only thing that keeps it
+  // "present" is the screen actively CHANGING (you're scrolling/reading) OR a very
+  // recent interaction (a natural pause). A static non-entertainment page with no
+  // input quickly becomes IDLE rather than counting as work.
+  const recentlyInteracted = msSinceLastInteraction < IDLE_THRESHOLD_MS; // < 5 min
+  const activelyReading = ocrChanged && !screenStatic;
+  if (framesFlowing && (recentlyInteracted || activelyReading)) {
     return { state: "BACKGROUND", confidence: 0.7, hadInteraction: false };
   }
 
-  // Sustained no-input → genuinely idle/away/absent.
+  // No input, not entertainment, screen not changing → genuinely idle/away.
   const tier = classifyIdleTier(msSinceLastInteraction);
   if (tier) {
     return { state: "IDLE", confidence: 0.88, idleTier: tier };
