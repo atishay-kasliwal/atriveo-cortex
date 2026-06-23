@@ -26,6 +26,7 @@ import {
   yesterdayDate,
 } from "@/lib/activity/date-nav";
 import {
+  analyticsHistoryQuery,
   attentionDayQuery,
   attentionTrendsQuery,
   attentionWeekQuery,
@@ -388,6 +389,7 @@ export function AttentionView({ date: dateParam }: { date?: string }) {
   const weekStart = weekRangeFromEnd(viewDate).start;
   const week = useQuery(attentionWeekQuery(weekStart));
   const trends = useQuery(attentionTrendsQuery(shiftDate(calendarToday, -29), calendarToday));
+  const history = useQuery(analyticsHistoryQuery);
 
   const heading = dayViewHeading(viewDate, calendarToday);
 
@@ -405,6 +407,10 @@ export function AttentionView({ date: dateParam }: { date?: string }) {
         canNext={viewDate < calendarToday}
         onJumpToday={() => setViewDate(calendarToday)}
         onJumpYesterday={() => setViewDate(yesterdayDate(calendarToday))}
+        onPickDate={(date) =>
+          setViewDate(date > calendarToday ? calendarToday : date)
+        }
+        availableDates={history.data?.availableDates}
         showJumpToday={viewDate !== calendarToday}
         showJumpYesterday={viewDate !== yesterdayDate(calendarToday)}
       />
