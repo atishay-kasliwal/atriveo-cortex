@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pulse — 24-hour Productivity & Health OS</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:      #0a0a12;
+      --bg-card:      #0f0f1e;
+      --bg-card-2:    #12122a;
+      --border:       rgba(255,255,255,0.06);
+      --border-light: rgba(255,255,255,0.10);
+
+      --focus:     #10d98a;   /* emerald */
+      --energy:    #f5a623;   /* amber */
+      --move:      #00d4ff;   /* cyan */
+      --nutrition: #ff2d78;   /* magenta */
+      --recovery:  #9f7aff;   /* violet */
+
+      --focus-dim:     rgba(16,217,138,0.15);
+      --energy-dim:    rgba(245,166,35,0.15);
+      --move-dim:      rgba(0,212,255,0.15);
+      --nutrition-dim: rgba(255,45,120,0.15);
+      --recovery-dim:  rgba(159,122,255,0.15);
+
+      --text:      #ffffff;
+      --text-sub:  rgba(255,255,255,0.55);
+      --text-dim:  rgba(255,255,255,0.30);
+    }
+
+    html, body {
+      background: var(--bg-base);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO WRAPPER ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 24px 80px;
+      overflow: hidden;
+    }
+
+    /* Radial glow behind everything */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at center,
+        rgba(16,217,138,0.07) 0%,
+        rgba(0,212,255,0.05) 30%,
+        rgba(159,122,255,0.04) 60%,
+        transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--focus) 0%, var(--move) 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(16,217,138,0.4);
+    }
+    .logo-icon svg { width: 16px; height: 16px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-sub);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border-light);
+      color: var(--text) !important;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px !important;
+      font-weight: 500;
+    }
+
+    /* ── BADGE ── */
+    .badge {
+      position: relative;
+      z-index: 10;
+      margin-top: 60px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16,217,138,0.08);
+      border: 1px solid rgba(16,217,138,0.25);
+      border-radius: 100px;
+      padding: 5px 14px 5px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--focus);
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--focus);
+      box-shadow: 0 0 8px var(--focus);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--focus); }
+      50% { opacity: 0.6; box-shadow: 0 0 3px var(--focus); }
+    }
+
+    /* ── HEADLINE ── */
+    .headline {
+      position: relative;
+      z-index: 10;
+      margin-top: 24px;
+      text-align: center;
+      max-width: 780px;
+    }
+    .headline h1 {
+      font-size: clamp(44px, 6vw, 76px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.0;
+    }
+    .headline h1 .grad {
+      background: linear-gradient(90deg, var(--focus) 0%, var(--move) 50%, var(--recovery) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .headline p {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1.65;
+      color: var(--text-sub);
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── CTA BUTTONS ── */
+    .ctas {
+      position: relative;
+      z-index: 10;
+      margin-top: 36px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 28px;
+      background: linear-gradient(135deg, var(--focus) 0%, #0bb876 100%);
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #000;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      box-shadow: 0 0 32px rgba(16,217,138,0.35);
+      transition: box-shadow 0.2s, transform 0.15s;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 48px rgba(16,217,138,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 24px;
+      background: transparent;
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text);
+    }
+
+    /* ── SIGNAL PILLS ── */
+    .signals {
+      position: relative;
+      z-index: 10;
+      margin-top: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .signal-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+    .signal-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    .pill-focus     { background: var(--focus-dim);     border-color: rgba(16,217,138,0.25);  color: var(--focus);     }
+    .pill-energy    { background: var(--energy-dim);    border-color: rgba(245,166,35,0.25);  color: var(--energy);    }
+    .pill-move      { background: var(--move-dim);      border-color: rgba(0,212,255,0.25);   color: var(--move);      }
+    .pill-nutrition { background: var(--nutrition-dim); border-color: rgba(255,45,120,0.25);  color: var(--nutrition); }
+    .pill-recovery  { background: var(--recovery-dim);  border-color: rgba(159,122,255,0.25); color: var(--recovery);  }
+
+    /* ── MAIN DASHBOARD CARD ── */
+    .dashboard-wrap {
+      position: relative;
+      z-index: 10;
+      margin-top: 56px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    /* Glow halos behind the card */
+    .dashboard-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse at 30% 60%, rgba(16,217,138,0.08), transparent 60%),
+                  radial-gradient(ellipse at 70% 40%, rgba(0,212,255,0.06), transparent 60%),
+                  radial-gradient(ellipse at 50% 90%, rgba(159,122,255,0.06), transparent 60%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .dashboard {
+      background: linear-gradient(160deg, #0f0f20 0%, #0d0d1c 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.04),
+        0 40px 80px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    /* ── DASHBOARD HEADER ── */
+    .db-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.015);
+    }
+    .db-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .db-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .db-date {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .db-live {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--focus);
+      background: rgba(16,217,138,0.08);
+      border: 1px solid rgba(16,217,138,0.2);
+      padding: 4px 10px;
+      border-radius: 100px;
+    }
+    .db-live-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--focus);
+      box-shadow: 0 0 6px var(--focus);
+      animation: pulse-dot 2s infinite;
+    }
+
+    /* ── TIME BAND ── */
+    .time-band {
+      display: flex;
+      height: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .time-band-seg {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .band-night  { background: rgba(159,122,255,0.06); }
+    .band-morn   { background: rgba(245,166,35,0.06); color: rgba(245,166,35,0.5); }
+    .band-after  { background: rgba(16,217,138,0.05); color: rgba(16,217,138,0.4); }
+    .band-eve    { background: rgba(0,212,255,0.05); color: rgba(0,212,255,0.4); }
+    .band-late   { background: rgba(159,122,255,0.06); }
+
+    /* ── TIMELINE AREA ── */
+    .timeline-area {
+      position: relative;
+      padding: 0 24px;
+    }
+
+    /* Hour axis */
+    .hour-axis {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hour-label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Signal rows */
+    .signal-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .signal-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      position: relative;
+    }
+    .signal-row:last-child { border-bottom: none; }
+
+    .signal-label {
+      width: 80px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .signal-name {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .signal-val {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .signal-unit {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+    }
+
+    /* SVG chart track */
+    .signal-track {
+      flex: 1;
+      position: relative;
+      height: 52px;
+    }
+    .signal-track svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    /* NOW line */
+    .now-line {
+      position: absolute;
+      top: -8px;
+      bottom: -8px;
+      width: 1px;
+      background: rgba(255,255,255,0.25);
+      border-left: 1px dashed rgba(255,255,255,0.3);
+      pointer-events: none;
+    }
+    .now-pill {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 100px;
+      padding: 2px 8px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    /* Callout bubble */
+    .callout {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+    .callout-bubble {
+      background: rgba(15,15,30,0.92);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 10px;
+      white-space: nowrap;
+      backdrop-filter: blur(12px);
+    }
+    .callout-val { font-weight: 700; letter-spacing: -0.02em; }
+    .callout-time { color: var(--text-dim); font-size: 9px; }
+    .callout-stem {
+      width: 1px;
+      height: 8px;
+      background: var(--border-light);
+    }
+    .callout-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      border: 1.5px solid #fff;
+      margin-top: -1px;
+    }
+
+    /* ── BOTTOM METRICS ROW ── */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border-top: 1px solid var(--border);
+    }
+    .metric-cell {
+      padding: 16px 20px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .metric-cell:last-child { border-right: none; }
+    .metric-cell-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .metric-cell-value {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .metric-cell-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .metric-bar {
+      height: 3px;
+      border-radius: 100px;
+      background: rgba(255,255,255,0.06);
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+    }
+
+    /* ── FLOATING INSIGHT CARDS ── */
+    .insight-cards {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+
+    .insight-card {
+      position: absolute;
+      background: rgba(10,10,20,0.88);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 12px 16px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      min-width: 160px;
+      pointer-events: none;
+    }
+    .insight-card-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .insight-card-value {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .insight-card-sub {
+      font-size: 10px;
+      color: var(--text-sub);
+      margin-top: 3px;
+    }
+    .insight-card-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 100px;
+    }
+
+    /* ── FOOTER TRUST LINE ── */
+    .trust {
+      position: relative;
+      z-index: 10;
+      margin-top: 40px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .trust-sep { color: rgba(255,255,255,0.1); }
+
+    /* Grid lines on tracks */
+    .grid-vline {
+      stroke: rgba(255,255,255,0.05);
+      stroke-width: 1;
+      stroke-dasharray: 2 3;
+    }
+
+  </style>
+</head>
+<body>
+
+<section class="hero">
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <path d="M2 8 Q4 3 8 5 Q12 7 14 2" stroke="#000" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+          <circle cx="8" cy="5" r="1.5" fill="#000"/>
+        </svg>
+      </div>
+      Pulse
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Features</a></li>
+      <li><a href="#">Signals</a></li>
+      <li><a href="#">Pricing</a></li>
+      <li><a href="#" class="nav-cta">Early access →</a></li>
+    </ul>
+  </nav>
+
+  <!-- BADGE -->
+  <div class="badge">
+    <div class="badge-dot"></div>
+    Now in private beta
+  </div>
+
+  <!-- HEADLINE -->
+  <div class="headline">
+    <h1>Your 24 hours,<br><span class="grad">finally working together</span></h1>
+    <p>Pulse maps focus, energy, movement, nutrition, and recovery onto a single timeline — so the best version of your day compounds into the best version of your year.</p>
+  </div>
+
+  <!-- CTAs -->
+  <div class="ctas">
+    <button class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="6" stroke="#000" stroke-width="1.5"/>
+        <path d="M5.5 7l1.5 1.5L9.5 5.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Get early access
+    </button>
+    <button class="btn-secondary">
+      Watch 90s demo →
+    </button>
+  </div>
+
+  <!-- SIGNAL PILLS -->
+  <div class="signals">
+    <div class="signal-pill pill-focus">
+      <div class="signal-dot" style="background:var(--focus); box-shadow:0 0 6px var(--focus)"></div>
+      Focus
+    </div>
+    <div class="signal-pill pill-energy">
+      <div class="signal-dot" style="background:var(--energy); box-shadow:0 0 6px var(--energy)"></div>
+      Energy
+    </div>
+    <div class="signal-pill pill-move">
+      <div class="signal-dot" style="background:var(--move); box-shadow:0 0 6px var(--move)"></div>
+      Movement
+    </div>
+    <div class="signal-pill pill-nutrition">
+      <div class="signal-dot" style="background:var(--nutrition); box-shadow:0 0 6px var(--nutrition)"></div>
+      Nutrition
+    </div>
+    <div class="signal-pill pill-recovery">
+      <div class="signal-dot" style="background:var(--recovery); box-shadow:0 0 6px var(--recovery)"></div>
+      Recovery
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD CARD -->
+  <div class="dashboard-wrap">
+    <div class="dashboard">
+
+      <!-- Header -->
+      <div class="db-header">
+        <div class="db-header-left">
+          <div>
+            <div class="db-title">Today's Timeline</div>
+            <div class="db-date">Friday, Jun 20 · Week 25</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-size:11px;color:var(--text-dim);letter-spacing:0.06em;">
+            Score <span style="color:var(--focus);font-weight:700;">84</span> / 100
+          </div>
+          <div class="db-live"><div class="db-live-dot"></div>Live</div>
+        </div>
+      </div>
+
+      <!-- Time band -->
+      <div class="time-band">
+        <div class="time-band-seg band-night">Night</div>
+        <div class="time-band-seg band-morn">Morning</div>
+        <div class="time-band-seg band-after">Afternoon</div>
+        <div class="time-band-seg band-eve">Evening</div>
+        <div class="time-band-seg band-late">Late</div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline-area">
+
+        <!-- Hour axis -->
+        <div class="hour-axis">
+          <span class="hour-label">12am</span>
+          <span class="hour-label">3</span>
+          <span class="hour-label">6</span>
+          <span class="hour-label">9</span>
+          <span class="hour-label">12pm</span>
+          <span class="hour-label">3</span>
+          <span class="hour-label">6</span>
+          <span class="hour-label">9</span>
+          <span class="hour-label">12am</span>
+        </div>
+
+        <!-- Signal rows -->
+        <div class="signal-rows" style="position:relative;">
+
+          <!-- NOW line (positioned at ~60% = 2:30pm) -->
+          <div class="now-line" style="left:60%;top:0;bottom:0;position:absolute;z-index:20;">
+            <div class="now-pill">NOW · 2:34 PM</div>
+          </div>
+
+          <!-- FOCUS ROW -->
+          <div class="signal-row">
+            <div class="signal-label">
+              <span class="signal-name" style="color:var(--focus)">Focus</span>
+              <span class="signal-val" style="color:var(--focus)">78</span>
+              <span class="signal-unit">/ 100 index</span>
+            </div>
+            <div class="signal-track">
+              <svg viewBox="0 0 800 52" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g-focus" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10d98a" stop-opacity="0.45"/>
+                    <stop offset="100%" stop-color="#10d98a" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <!-- Grid verticals at 3h intervals -->
+                <line x1="133" y1="0" x2="133" y2="52" class="grid-vline"/>
+                <line x1="266" y1="0" x2="266" y2="52" class="grid-vline"/>
+                <line x1="400" y1="0" x2="400" y2="52" class="grid-vline"/>
+                <line x1="533" y1="0" x2="533" y2="52" class="grid-vline"/>
+                <line x1="666" y1="0" x2="666" y2="52" class="grid-vline"/>
+                <!-- Area fill -->
+                <path d="M0,45 Q40,44 80,43 Q120,42 160,38 Q200,32 240,22 Q270,14 300,10 Q330,8 360,9 Q390,11 420,18 Q450,26 480,20 Q510,14 540,16 Q560,18 570,52 L0,52 Z"
+                      fill="url(#g-focus)"/>
+                <!-- Stroke -->
+                <path d="M0,45 Q40,44 80,43 Q120,42 160,38 Q200,32 240,22 Q270,14 300,10 Q330,8 360,9 Q390,11 420,18 Q450,26 480,20 Q510,14 540,16 Q560,18 570,52"
+                      fill="none" stroke="#10d98a" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- Peak dot -->
+                <circle cx="330" cy="8" r="3.5" fill="#10d98a" filter="url(#glow-focus)"/>
+                <circle cx="330" cy="8" r="6" fill="#10d98a" opacity="0.2"/>
+                <defs>
+                  <filter id="glow-focus" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+              </svg>
+              <!-- Callout at peak -->
+              <div class="callout" style="left:41%;top:-2px;">
+                <div class="callout-bubble">
+                  <span class="callout-val" style="color:var(--focus)">94</span>
+                  <span class="callout-time"> · 10:15 AM</span>
+                </div>
+                <div class="callout-stem"></div>
+                <div class="callout-dot" style="background:var(--focus);border-color:var(--focus);box-shadow:0 0 6px var(--focus)"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ENERGY ROW -->
+          <div class="signal-row">
+            <div class="signal-label">
+              <span class="signal-name" style="color:var(--energy)">Energy</span>
+              <span class="signal-val" style="color:var(--energy)">62</span>
+              <span class="signal-unit">/ 100 index</span>
+            </div>
+            <div class="signal-track">
+              <svg viewBox="0 0 800 52" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g-energy" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#f5a623" stop-opacity="0.40"/>
+                    <stop offset="100%" stop-color="#f5a623" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="133" y1="0" x2="133" y2="52" class="grid-vline"/>
+                <line x1="266" y1="0" x2="266" y2="52" class="grid-vline"/>
+                <line x1="400" y1="0" x2="400" y2="52" class="grid-vline"/>
+                <line x1="533" y1="0" x2="533" y2="52" class="grid-vline"/>
+                <line x1="666" y1="0" x2="666" y2="52" class="grid-vline"/>
+                <path d="M0,48 Q60,46 120,38 Q160,32 200,24 Q230,18 260,20 Q290,22 320,30 Q350,36 380,32 Q420,26 460,16 Q490,10 510,12 Q530,14 550,20 Q560,24 570,52 L0,52 Z"
+                      fill="url(#g-energy)"/>
+                <path d="M0,48 Q60,46 120,38 Q160,32 200,24 Q230,18 260,20 Q290,22 320,30 Q350,36 380,32 Q420,26 460,16 Q490,10 510,12 Q530,14 550,20 Q560,24 570,52"
+                      fill="none" stroke="#f5a623" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="500" cy="11" r="3.5" fill="#f5a623"/>
+                <circle cx="500" cy="11" r="6" fill="#f5a623" opacity="0.2"/>
+              </svg>
+              <div class="callout" style="left:62%;top:-2px;">
+                <div class="callout-bubble">
+                  <span class="callout-val" style="color:var(--energy)">88</span>
+                  <span class="callout-time"> · 3:00 PM</span>
+                </div>
+                <div class="callout-stem"></div>
+                <div class="callout-dot" style="background:var(--energy);border-color:var(--energy);box-shadow:0 0 6px var(--energy)"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MOVEMENT ROW -->
+          <div class="signal-row">
+            <div class="signal-label">
+              <span class="signal-name" style="color:var(--move)">Movement</span>
+              <span class="signal-val" style="color:var(--move)">8,412</span>
+              <span class="signal-unit">steps today</span>
+            </div>
+            <div class="signal-track">
+              <svg viewBox="0 0 800 52" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g-move" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#00d4ff" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="133" y1="0" x2="133" y2="52" class="grid-vline"/>
+                <line x1="266" y1="0" x2="266" y2="52" class="grid-vline"/>
+                <line x1="400" y1="0" x2="400" y2="52" class="grid-vline"/>
+                <line x1="533" y1="0" x2="533" y2="52" class="grid-vline"/>
+                <line x1="666" y1="0" x2="666" y2="52" class="grid-vline"/>
+                <!-- Steps spikes (bar-ish) -->
+                <path d="M0,52 L0,50 Q80,49 130,48 Q160,47 200,30 Q220,20 240,18 Q260,16 280,22 Q300,28 320,48 Q340,50 380,50 Q420,49 440,44 Q460,38 480,32 Q500,28 510,25 Q520,22 530,30 Q540,38 550,50 Q560,51 570,52 L0,52Z"
+                      fill="url(#g-move)"/>
+                <path d="M0,50 Q80,49 130,48 Q160,47 200,30 Q220,20 240,18 Q260,16 280,22 Q300,28 320,48 Q340,50 380,50 Q420,49 440,44 Q460,38 480,32 Q500,28 510,25 Q520,22 530,30 Q540,38 550,50 Q560,51 570,52"
+                      fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="250" cy="17" r="3.5" fill="#00d4ff"/>
+                <circle cx="250" cy="17" r="6" fill="#00d4ff" opacity="0.2"/>
+              </svg>
+              <div class="callout" style="left:30%;top:-2px;">
+                <div class="callout-bubble">
+                  <span class="callout-val" style="color:var(--move)">6.2k</span>
+                  <span class="callout-time"> · 8:40 AM</span>
+                </div>
+                <div class="callout-stem"></div>
+                <div class="callout-dot" style="background:var(--move);border-color:var(--move);box-shadow:0 0 6px var(--move)"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NUTRITION ROW -->
+          <div class="signal-row">
+            <div class="signal-label">
+              <span class="signal-name" style="color:var(--nutrition)">Nutrition</span>
+              <span class="signal-val" style="color:var(--nutrition)">1,840</span>
+              <span class="signal-unit">kcal logged</span>
+            </div>
+            <div class="signal-track">
+              <svg viewBox="0 0 800 52" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g-nutr" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ff2d78" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#ff2d78" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="133" y1="0" x2="133" y2="52" class="grid-vline"/>
+                <line x1="266" y1="0" x2="266" y2="52" class="grid-vline"/>
+                <line x1="400" y1="0" x2="400" y2="52" class="grid-vline"/>
+                <line x1="533" y1="0" x2="533" y2="52" class="grid-vline"/>
+                <line x1="666" y1="0" x2="666" y2="52" class="grid-vline"/>
+                <!-- Meal spikes -->
+                <path d="M0,52 L0,52 Q100,52 170,52 Q180,52 190,40 Q200,28 210,30 Q220,32 230,52 Q300,52 340,52 Q360,52 370,35 Q380,20 390,22 Q400,24 410,52 Q450,52 480,52 Q500,52 510,38 Q520,26 525,28 Q530,30 535,52 L570,52 L0,52Z"
+                      fill="url(#g-nutr)"/>
+                <path d="M0,52 Q170,52 190,40 Q200,28 210,30 Q220,32 230,52 Q340,52 370,35 Q380,20 390,22 Q400,24 410,52 Q480,52 510,38 Q520,26 525,28 Q530,30 535,52 L570,52"
+                      fill="none" stroke="#ff2d78" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="388" cy="21" r="3.5" fill="#ff2d78"/>
+                <circle cx="388" cy="21" r="6" fill="#ff2d78" opacity="0.2"/>
+              </svg>
+              <div class="callout" style="left:47%;top:-2px;">
+                <div class="callout-bubble">
+                  <span class="callout-val" style="color:var(--nutrition)">680</span>
+                  <span class="callout-time"> · Lunch 12:30</span>
+                </div>
+                <div class="callout-stem"></div>
+                <div class="callout-dot" style="background:var(--nutrition);border-color:var(--nutrition);box-shadow:0 0 6px var(--nutrition)"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RECOVERY ROW -->
+          <div class="signal-row">
+            <div class="signal-label">
+              <span class="signal-name" style="color:var(--recovery)">Recovery</span>
+              <span class="signal-val" style="color:var(--recovery)">91</span>
+              <span class="signal-unit">/ 100 HRV</span>
+            </div>
+            <div class="signal-track">
+              <svg viewBox="0 0 800 52" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g-rec" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#9f7aff" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#9f7aff" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="133" y1="0" x2="133" y2="52" class="grid-vline"/>
+                <line x1="266" y1="0" x2="266" y2="52" class="grid-vline"/>
+                <line x1="400" y1="0" x2="400" y2="52" class="grid-vline"/>
+                <line x1="533" y1="0" x2="533" y2="52" class="grid-vline"/>
+                <line x1="666" y1="0" x2="666" y2="52" class="grid-vline"/>
+                <!-- Sleep = high early, dips at wake -->
+                <path d="M0,8 Q30,6 80,5 Q120,4 160,6 Q200,10 240,20 Q260,28 280,38 Q300,44 320,48 Q340,50 380,50 Q420,50 460,48 Q490,46 510,44 Q530,42 550,46 Q560,48 570,52 L0,52 Z"
+                      fill="url(#g-rec)"/>
+                <path d="M0,8 Q30,6 80,5 Q120,4 160,6 Q200,10 240,20 Q260,28 280,38 Q300,44 320,48 Q340,50 380,50 Q420,50 460,48 Q490,46 510,44 Q530,42 550,46 Q560,48 570,52"
+                      fill="none" stroke="#9f7aff" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="100" cy="5" r="3.5" fill="#9f7aff"/>
+                <circle cx="100" cy="5" r="6" fill="#9f7aff" opacity="0.2"/>
+              </svg>
+              <div class="callout" style="left:11%;top:-4px;">
+                <div class="callout-bubble">
+                  <span class="callout-val" style="color:var(--recovery)">91ms</span>
+                  <span class="callout-time"> · 3:00 AM</span>
+                </div>
+                <div class="callout-stem"></div>
+                <div class="callout-dot" style="background:var(--recovery);border-color:var(--recovery);box-shadow:0 0 6px var(--recovery)"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /signal-rows -->
+      </div><!-- /timeline-area -->
+
+      <!-- Bottom metrics -->
+      <div class="metrics-row">
+        <div class="metric-cell">
+          <div class="metric-cell-label" style="color:rgba(16,217,138,0.6)">Deep Focus</div>
+          <div class="metric-cell-value" style="color:var(--focus)">4h 22m</div>
+          <div class="metric-cell-sub">↑ 38 min vs avg</div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" style="width:74%;background:var(--focus);box-shadow:0 0 6px var(--focus)"></div>
+          </div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-cell-label" style="color:rgba(245,166,35,0.6)">Peak Energy</div>
+          <div class="metric-cell-value" style="color:var(--energy)">3:00 PM</div>
+          <div class="metric-cell-sub">Index 88 · strong</div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" style="width:88%;background:var(--energy);box-shadow:0 0 6px var(--energy)"></div>
+          </div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-cell-label" style="color:rgba(0,212,255,0.6)">Steps</div>
+          <div class="metric-cell-value" style="color:var(--move)">8,412</div>
+          <div class="metric-cell-sub">67% of goal · 10k</div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" style="width:67%;background:var(--move);box-shadow:0 0 6px var(--move)"></div>
+          </div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-cell-label" style="color:rgba(255,45,120,0.6)">Calories</div>
+          <div class="metric-cell-value" style="color:var(--nutrition)">1,840</div>
+          <div class="metric-cell-sub">460 remaining</div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" style="width:80%;background:var(--nutrition);box-shadow:0 0 6px var(--nutrition)"></div>
+          </div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-cell-label" style="color:rgba(159,122,255,0.6)">HRV Score</div>
+          <div class="metric-cell-value" style="color:var(--recovery)">91ms</div>
+          <div class="metric-cell-sub">↑ 12ms · excellent</div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" style="width:91%;background:var(--recovery);box-shadow:0 0 6px var(--recovery)"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /dashboard -->
+  </div><!-- /dashboard-wrap -->
+
+  <!-- TRUST LINE -->
+  <div class="trust">
+    <div class="trust-item">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1L8.8 5.2L13 5.8L10 8.7L10.8 13L7 10.8L3.2 13L4 8.7L1 5.8L5.2 5.2L7 1Z" fill="rgba(255,255,255,0.2)"/>
+      </svg>
+      Trusted by 2,400 early users
+    </div>
+    <span class="trust-sep">·</span>
+    <div class="trust-item">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="4" width="10" height="8" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+        <path d="M5 4V3a2 2 0 014 0v1" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+      </svg>
+      End-to-end encrypted
+    </div>
+    <span class="trust-sep">·</span>
+    <div class="trust-item">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+        <path d="M7 4v3.5l2 1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      Apple Health + Oura + Whoop
+    </div>
+    <span class="trust-sep">·</span>
+    <div class="trust-item">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 7l3.5 3.5L12 3" stroke="rgba(255,255,255,0.3)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      No subscription to start
+    </div>
+  </div>
+
+</section>
+
+</body>
+</html>

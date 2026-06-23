@@ -277,10 +277,10 @@ async function main() {
   };
 
   const out = { summary, results };
-  const jsonPath = path.join(process.cwd(), "..", "CONVERSATIONAL_CORTEX_AUDIT_V2.json");
+  const jsonPath = path.join(process.cwd(), "..", "docs", "reports", "CONVERSATIONAL_CORTEX_AUDIT_V2.json");
   fs.writeFileSync(jsonPath, JSON.stringify(out, null, 2));
 
-  const mdPath = path.join(process.cwd(), "..", "CONVERSATIONAL_CORTEX_AUDIT_V2.md");
+  const mdPath = path.join(process.cwd(), "..", "docs", "reports", "CONVERSATIONAL_CORTEX_AUDIT_V2.md");
   const lines = [
     "# Conversational Cortex Audit V2",
     "",

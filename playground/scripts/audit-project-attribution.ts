@@ -94,7 +94,7 @@ ${topDomains.map(([name, count]) => `- ${name}: ${count}`).join("\n") || "- none
 Raise attribution rate above **85%** using evidence-based scoring (repos, domains, actions, ideas, open loops, recency).
 `;
 
-  const outPath = path.join(process.cwd(), "..", "PROJECT_ATTRIBUTION_BASELINE.md");
+  const outPath = path.join(process.cwd(), "..", "docs", "reports", "PROJECT_ATTRIBUTION_BASELINE.md");
   fs.writeFileSync(outPath, report);
   console.log(report);
   console.log(`\nWrote ${outPath}`);
