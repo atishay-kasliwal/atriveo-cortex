@@ -9,7 +9,7 @@ import {
 } from "@/components/activity/activity-period-nav";
 import { MemoryHomeView } from "@/components/home/memory-home-view";
 import { LandingPage } from "@/components/landing/landing-page";
-import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
+import { PageBody } from "@/components/dashboard/page-shell";
 import { isAuthenticated } from "@/lib/auth";
 import {
   localDateString,
@@ -52,7 +52,6 @@ function AppHome() {
 
   return (
     <PageBody compact>
-      <PageHeader eyebrow="Home" title="Today" />
       <div className="mt-2">
         <ActivityPeriodNav
           range="today"
