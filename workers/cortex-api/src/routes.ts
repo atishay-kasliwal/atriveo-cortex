@@ -98,6 +98,7 @@ import { runMemorySearch } from "@/lib/memory-search-api";
 import { fetchSyncStatus, fetchMemoryJob, fetchCaptureDoctor, processMemoryJob, triggerMemoryJobEnqueue, triggerMemoryJobRetry } from "@/lib/sync/sync-api";
 import { buildHealthTimeline, buildDailyTrend, buildReadiness, type HealthPeriod } from "@/lib/health/health-api";
 import { apiError, apiErrorFromException, apiSuccess, handleLogin, requireAuth } from "./env";
+import { cachedRead, ApiNotFound } from "./cache";
 import { runUnsafe } from "@/lib/db/client";
 
 function parseIdParam(c: Context, name = "id"): number | null {
@@ -207,7 +208,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
 
   app.get("/api/dashboard/overview", async (c) => {
     try {
-      return apiSuccess(c, await getDashboardOverview());
+      return await cachedRead(c, 20, () => getDashboardOverview());
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load dashboard overview", 500);
     }
@@ -216,7 +217,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
   app.get("/api/analytics/today", async (c) => {
     try {
       const date = todayDateParam(c.req.query("date") ?? null);
-      return apiSuccess(c, await buildTodayActivityFromNeon(date));
+      return await cachedRead(c, 20, () => buildTodayActivityFromNeon(date));
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load today analytics", 500);
     }
@@ -225,7 +226,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
   app.get("/api/analytics/day", async (c) => {
     try {
       const date = todayDateParam(c.req.query("date") ?? null);
-      return apiSuccess(c, await buildTodayActivityFromNeon(date));
+      return await cachedRead(c, 20, () => buildTodayActivityFromNeon(date));
     } catch (e) {
       return apiError(c, e instanceof Error ? e.message : "Failed to load day analytics", 500);
     }
@@ -318,10 +319,13 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
 
   app.get("/api/attention/day", async (c) => {
     try {
-      const data = await buildDayAttention(c.req.query("date") ?? null);
-      if (!data) return apiError(c, "No attention data for this date", 404);
-      return apiSuccess(c, data);
+      return await cachedRead(c, 20, async () => {
+        const data = await buildDayAttention(c.req.query("date") ?? null);
+        if (!data) throw new ApiNotFound("No attention data for this date");
+        return data;
+      });
     } catch (e) {
+      if (e instanceof ApiNotFound) return apiError(c, e.message, 404);
       return apiError(c, e instanceof Error ? e.message : "Failed to load day attention", 500);
     }
   });
@@ -371,10 +375,13 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
 
   app.get("/api/screens/day", async (c) => {
     try {
-      const data = await buildDayScreens(c.req.query("date") ?? null);
-      if (!data) return apiError(c, "No screens data for this date", 404);
-      return apiSuccess(c, data);
+      return await cachedRead(c, 20, async () => {
+        const data = await buildDayScreens(c.req.query("date") ?? null);
+        if (!data) throw new ApiNotFound("No screens data for this date");
+        return data;
+      });
     } catch (e) {
+      if (e instanceof ApiNotFound) return apiError(c, e.message, 404);
       return apiError(c, e instanceof Error ? e.message : "Failed to load day screens", 500);
     }
   });
