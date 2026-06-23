@@ -167,8 +167,12 @@ function RootComponent() {
   const router = useRouter();
   const location = useLocation();
 
+  // Public routes anyone can see without signing in: the landing page and login.
+  // Everything else (the app) requires auth.
+  const PUBLIC_PATHS = new Set(["/", "/login"]);
+
   useEffect(() => {
-    if (location.pathname !== "/login" && !isAuthenticated()) {
+    if (!PUBLIC_PATHS.has(location.pathname) && !isAuthenticated()) {
       router.navigate({ to: "/login" });
     }
   }, [location.pathname, router]);
@@ -184,11 +188,15 @@ function RootComponent() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const isLoginPage = location.pathname === "/login";
+  // Render the bare page (no app chrome) for login, and for the public landing at
+  // "/" when the visitor isn't signed in.
+  const chromeless =
+    location.pathname === "/login" ||
+    (location.pathname === "/" && !isAuthenticated());
 
   return (
     <QueryClientProvider client={queryClient}>
-      {isLoginPage ? (
+      {chromeless ? (
         <>
           <Outlet />
           <Toaster position="bottom-right" richColors closeButton />

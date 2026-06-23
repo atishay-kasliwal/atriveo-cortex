@@ -8,7 +8,9 @@ import {
   ActivityPeriodNav,
 } from "@/components/activity/activity-period-nav";
 import { MemoryHomeView } from "@/components/home/memory-home-view";
+import { LandingPage } from "@/components/landing/landing-page";
 import { PageBody, PageHeader } from "@/components/dashboard/page-shell";
+import { isAuthenticated } from "@/lib/auth";
 import {
   localDateString,
   shiftDate,
@@ -32,6 +34,14 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  // Public landing for signed-out visitors; the app dashboard once signed in.
+  if (!isAuthenticated()) {
+    return <LandingPage />;
+  }
+  return <AppHome />;
+}
+
+function AppHome() {
   const calendarToday = useMemo(() => localDateString(), []);
   const { date: dateParam } = Route.useSearch();
   const [viewDate, setViewDate] = useState(dateParam ?? calendarToday);
