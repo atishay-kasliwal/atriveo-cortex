@@ -166,6 +166,11 @@ function ActivityLogPage() {
     setViewDate(yesterdayDate(calendarToday));
   }
 
+  function pickDate(date: string) {
+    setRange("today");
+    setViewDate(date > calendarToday ? calendarToday : date);
+  }
+
   return (
     <PageBody>
       <PageHeader
@@ -187,6 +192,7 @@ function ActivityLogPage() {
           canNext={canGoForward}
           onJumpToday={jumpToCurrentPeriod}
           onJumpYesterday={jumpYesterday}
+          onPickDate={pickDate}
           showJumpToday={range === "today" && viewDate !== calendarToday}
           showJumpYesterday={
             range === "today" && viewDate !== yesterdayDate(calendarToday)
