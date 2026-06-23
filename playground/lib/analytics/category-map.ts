@@ -33,13 +33,30 @@ const MEETING_TITLE = /meeting|huddle|standup|call with/i;
 // monitor while a code editor is the "dominant" app). These titles are
 // unmistakably leisure regardless of which app reported them.
 const ENTERTAINMENT_TITLE =
-  /\bmovies?\b|\btv\b|\banime\b|\bstream(s|ing)?\b|powerstreams|freemediaheckyeah|fmhy|\bepisode\b|\bseason \d|\bwatch\b|\btrailer\b|\bporn\b|\bxxx\b|\bav (debut|idol)\b|JUR-\d|SSIS-\d|MIDV-\d|\bjavhd\b|sextb|live match|highlights?|full (movie|match|episode)/i;
+  /\bmovies?\b|\btv\b|\banime\b|\bstream(s|ing|free)?\b|powerstreams|freemediaheckyeah|fmhy|\bepisode\b|\bseason \d|\bwatch\b|\btrailer\b|\bporn\b|\bxxx\b|\bav (debut|idol)\b|JUR-\d|SSIS-\d|MIDV-\d|\bjavhd\b|sextb|live (match|score|stream)|\bhighlights?\b|full (movie|match|episode)|house of the dragon|game of thrones|netflix|hotstar|crunchyroll/i;
+
+/** Tech/work terms that appear in "X vs Y" comparisons — never sports. */
+const TECH_VS_TERMS =
+  /\b(typescript|javascript|js|ts|react|vue|svelte|angular|next|node|deno|bun|python|rust|go|java|kotlin|swift|c\+\+|css|sql|nosql|postgres|mysql|mongo|redis|api|rest|graphql|grpc|http|tcp|udp|aws|gcp|azure|docker|k8s|kubernetes|webpack|vite|esbuild|npm|yarn|pnpm|auth|oauth|jwt|session|token|diff|merge|branch|pr|commit|benchmark|framework|library|database|monolith|microservice)\b/i;
+
+/** Streaming/sports signal that confirms a matchup is entertainment. */
+const SPORTS_SIGNAL =
+  /stream|live|score|match|football|cricket|soccer|fifa|league|cup|highlights|\bppv\b|\bfc\b|united|city|madrid|barcelona|argentina|brazil|france|england|portugal|germany|spain|italy/i;
 
 /** True when a window/page title clearly indicates entertainment/leisure content. */
 export function titleIsEntertainment(windowTitle: string | null | undefined): boolean {
   const t = (windowTitle ?? "").trim();
   if (t.length < 4) return false;
-  return ENTERTAINMENT_TITLE.test(t);
+  if (ENTERTAINMENT_TITLE.test(t)) return true;
+
+  // "X vs Y" matchups: entertainment unless it's a tech comparison.
+  // A bare "Capitalized vs Capitalized" (e.g. "Argentina vs Austria") with no tech
+  // term is a sports matchup; or any "vs" with an explicit sports/streaming signal.
+  if (/\bvs\.?\b|\bv\/s\b/i.test(t) && !TECH_VS_TERMS.test(t)) {
+    const capMatchup = /\b[A-Z][a-z]+\s+vs\.?\s+[A-Z][a-z]+/.test(t);
+    if (capMatchup || SPORTS_SIGNAL.test(t)) return true;
+  }
+  return false;
 }
 
 export function normalizeAppName(app: string | null | undefined): string {
