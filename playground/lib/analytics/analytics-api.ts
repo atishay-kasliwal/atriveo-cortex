@@ -5,6 +5,8 @@
 import type { TodayActivityDTO } from "@/lib/api/analytics-dtos";
 import { toProjectTimeDTO } from "@/lib/api/analytics-dtos";
 import { getDailySummary } from "@/lib/analytics/analytics-db";
+import { systemRepository } from "@/lib/repositories";
+import { SYNC_KEYS } from "@/lib/sync/sync-keys";
 import {
   aggregateAppUsage,
   aggregateProjectUsage,
@@ -79,7 +81,27 @@ export async function buildTodayActivity(date: string): Promise<TodayActivityDTO
   return assembleTodayActivity(date);
 }
 
-/** Cloud Worker read path — prefers materialized daily_memory, falls back to live assembly. */
+/** Re-materialization on the read path must not blow the Worker request budget;
+ *  if it runs long we serve the cache and let the next read pick up the fresh build. */
+const MATERIALIZE_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("materialize_timeout")), ms),
+    ),
+  ]);
+}
+
+/**
+ * Cloud Worker read path — prefers materialized daily_memory, falls back to live
+ * assembly. Designed to be FAST and never 500/503 when a cache exists:
+ *   - Serve the cache immediately when it's still fresh (cheap single-query check,
+ *     not the 8-query getSyncStatus).
+ *   - When stale, re-materialize but RACE it against a timeout; if it's slow or the
+ *     DB hiccups, serve the (slightly stale) cache instead of timing out the request.
+ */
 export async function buildTodayActivityFromNeon(
   date: string,
 ): Promise<TodayActivityDTO> {
@@ -89,6 +111,7 @@ export async function buildTodayActivityFromNeon(
   const { localDateString } = await import("./aggregator");
   const cached = await loadDailyMemory(date);
 
+  // Past days never change — cache is always authoritative.
   if (date !== localDateString()) {
     if (cached) return applyWebsiteOverridesToActivity(cached);
     return materializeDailyMemory(date);
@@ -98,22 +121,25 @@ export async function buildTodayActivityFromNeon(
     const { shouldRefreshDailyMemoryForToday } = await import(
       "./daily-memory-staleness",
     );
-    const { getSyncStatus } = await import("@/lib/sync/sync-status");
-    const [summary, sync] = await Promise.all([
-      getDailySummary(date),
-      getSyncStatus(),
+    // Cheap staleness check: just the daily summary + the single last-sync
+    // watermark, instead of getSyncStatus()'s 8 round-trips on the hot path.
+    const [summary, lastSyncAt] = await Promise.all([
+      getDailySummary(date).catch(() => null),
+      systemRepository
+        .getSyncState(SYNC_KEYS.lastSyncCompleted)
+        .catch(() => null),
     ]);
-    const lastSyncAt =
-      sync.lastSyncCompletedAt ?? sync.lastProcessedTimestamp;
     if (!shouldRefreshDailyMemoryForToday(cached, summary, lastSyncAt)) {
       return applyWebsiteOverridesToActivity(cached);
     }
   }
 
+  // Stale (or no cache). Try to rebuild, but never let a slow rebuild time out the
+  // request — fall back to whatever cache we have.
   try {
-    return await materializeDailyMemory(date);
+    return await withTimeout(materializeDailyMemory(date), MATERIALIZE_TIMEOUT_MS);
   } catch (err) {
-    console.error("[analytics] failed to materialize daily_memory for today:", err);
+    console.error("[analytics] daily_memory rebuild slow/failed for today:", err);
     if (cached) return applyWebsiteOverridesToActivity(cached);
     throw err;
   }

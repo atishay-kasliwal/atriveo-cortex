@@ -18,7 +18,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { saveDomainCategoryTag } from "@/lib/api/domain-tags-adapter";
-import { qk } from "@/lib/api/queries";
 import type { WebsiteCategory } from "@/lib/api/types";
 
 const CATEGORY_OPTIONS = Object.keys(websiteCategoryStyle) as WebsiteCategory[];
@@ -39,15 +38,20 @@ export function WebsiteCategoryTagPicker({
   const saveMutation = useMutation({
     mutationFn: (next: WebsiteCategory) => saveDomainCategoryTag(domain, next),
     onMutate: (next) => {
+      // Optimistic: show the new category immediately so the UI never looks stuck.
       setPendingCategory(next);
     },
-    onSuccess: (saved) => {
-      void queryClient.invalidateQueries({ queryKey: ["analytics"] });
-      void queryClient.invalidateQueries({ queryKey: qk.today(viewDate) });
+    onSuccess: async (saved) => {
       toast.success(`Tagged ${saved.domain} as ${websiteCategoryStyle[saved.category].label}`);
       setOpen(false);
+      // Force an immediate refetch (not just mark-stale) and AWAIT it, so the row
+      // reflects the new tag without manual refreshes. The server applies domain
+      // overrides on read, so a fresh fetch returns corrected categories.
+      await queryClient.refetchQueries({ queryKey: ["analytics"], type: "active" });
     },
     onError: () => {
+      // Roll back the optimistic category.
+      setPendingCategory(null);
       toast.error("Couldn't save tag. Try again.");
     },
     onSettled: () => {
