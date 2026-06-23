@@ -31,7 +31,7 @@ import {
   shiftDate,
   yesterdayDate,
 } from "@/lib/activity/date-nav";
-import { pulseTimelineQuery, screensDayQuery } from "@/lib/api/queries";
+import { analyticsHistoryQuery, pulseTimelineQuery, screensDayQuery } from "@/lib/api/queries";
 import type {
   DayScreens,
   MonitorTimelineBlock,
@@ -353,6 +353,7 @@ export function ScreensView({ date: dateParam }: { date?: string }) {
     if (dateParam) setViewDate(dateParam);
   }, [dateParam]);
   const { data, isLoading, isError, error, refetch } = useQuery(screensDayQuery(viewDate));
+  const history = useQuery(analyticsHistoryQuery);
   const heading = dayViewHeading(viewDate, calendarToday);
 
   return (
@@ -370,6 +371,10 @@ export function ScreensView({ date: dateParam }: { date?: string }) {
         canNext={viewDate < calendarToday}
         onJumpToday={() => setViewDate(calendarToday)}
         onJumpYesterday={() => setViewDate(yesterdayDate(calendarToday))}
+        onPickDate={(date) =>
+          setViewDate(date > calendarToday ? calendarToday : date)
+        }
+        availableDates={history.data?.availableDates}
         showJumpToday={viewDate !== calendarToday}
         showJumpYesterday={viewDate !== yesterdayDate(calendarToday)}
       />

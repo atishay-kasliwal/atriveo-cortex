@@ -20,7 +20,7 @@ import {
   yesterdayDate,
 } from "@/lib/activity/date-nav";
 import { api } from "@/lib/api/client";
-import { auditDayQuery, qk } from "@/lib/api/queries";
+import { analyticsHistoryQuery, auditDayQuery, qk } from "@/lib/api/queries";
 import type { DayAudit, SegmentAudit } from "@/lib/api/types";
 
 const stateBadgeClass: Record<string, string> = {
@@ -200,6 +200,7 @@ export function AuditView({ date: dateParam }: { date?: string }) {
     if (dateParam) setViewDate(dateParam);
   }, [dateParam]);
   const day = useQuery(auditDayQuery(viewDate));
+  const history = useQuery(analyticsHistoryQuery);
   const heading = dayViewHeading(viewDate, calendarToday);
 
   const feedbackMutation = useMutation({
@@ -234,6 +235,10 @@ export function AuditView({ date: dateParam }: { date?: string }) {
         canNext={viewDate < calendarToday}
         onJumpToday={() => setViewDate(calendarToday)}
         onJumpYesterday={() => setViewDate(yesterdayDate(calendarToday))}
+        onPickDate={(date) =>
+          setViewDate(date > calendarToday ? calendarToday : date)
+        }
+        availableDates={history.data?.availableDates}
         showJumpToday={viewDate !== calendarToday}
         showJumpYesterday={viewDate !== yesterdayDate(calendarToday)}
       />
