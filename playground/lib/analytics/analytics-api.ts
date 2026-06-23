@@ -117,31 +117,48 @@ export async function buildTodayActivityFromNeon(
     return materializeDailyMemory(date);
   }
 
+  // The SYNC PIPELINE owns materialization (memory-job-service materializes
+  // daily_memory every run). The read path must NOT do a heavy rebuild on the
+  // Worker — that's what was 500ing: assembleTodayActivity's multi-query rebuild
+  // failing on the Worker's single transient connection.
+  //
+  // So: if we have ANY cache, serve it. It's at most one sync cycle old (~30min),
+  // and the next sync refreshes it. A possibly-slightly-stale page beats a 500.
   if (cached) {
+    // Best-effort staleness check; if it says "stale" we still serve cache (the
+    // sync will refresh), we just kick a non-blocking rebuild so the next read is
+    // fresh. Never block or fail the request on it.
+    void maybeRefreshInBackground(date, cached);
+    return applyWebsiteOverridesToActivity(cached);
+  }
+
+  // No cache at all (cold day) — we must build once. Guard with a timeout; if it
+  // fails, surface the error (there's genuinely nothing to show).
+  return withTimeout(materializeDailyMemory(date), MATERIALIZE_TIMEOUT_MS);
+}
+
+/**
+ * Fire-and-forget: if today's cache looks stale, rebuild it so the NEXT read is
+ * fresh — without blocking or failing the current request. Swallows all errors.
+ */
+async function maybeRefreshInBackground(
+  date: string,
+  cached: TodayActivityDTO,
+): Promise<void> {
+  try {
     const { shouldRefreshDailyMemoryForToday } = await import(
       "./daily-memory-staleness",
     );
-    // Cheap staleness check: just the daily summary + the single last-sync
-    // watermark, instead of getSyncStatus()'s 8 round-trips on the hot path.
+    const { materializeDailyMemory } = await import("./daily-memory");
     const [summary, lastSyncAt] = await Promise.all([
       getDailySummary(date).catch(() => null),
-      systemRepository
-        .getSyncState(SYNC_KEYS.lastSyncCompleted)
-        .catch(() => null),
+      systemRepository.getSyncState(SYNC_KEYS.lastSyncCompleted).catch(() => null),
     ]);
-    if (!shouldRefreshDailyMemoryForToday(cached, summary, lastSyncAt)) {
-      return applyWebsiteOverridesToActivity(cached);
+    if (shouldRefreshDailyMemoryForToday(cached, summary, lastSyncAt)) {
+      await materializeDailyMemory(date);
     }
-  }
-
-  // Stale (or no cache). Try to rebuild, but never let a slow rebuild time out the
-  // request — fall back to whatever cache we have.
-  try {
-    return await withTimeout(materializeDailyMemory(date), MATERIALIZE_TIMEOUT_MS);
-  } catch (err) {
-    console.error("[analytics] daily_memory rebuild slow/failed for today:", err);
-    if (cached) return applyWebsiteOverridesToActivity(cached);
-    throw err;
+  } catch {
+    // Background refresh is best-effort; the served cache is still valid.
   }
 }
 
