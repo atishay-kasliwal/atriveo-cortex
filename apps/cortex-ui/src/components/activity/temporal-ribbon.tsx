@@ -322,9 +322,7 @@ export function TemporalRibbon({
         </section>
       ) : null}
 
-      {health.data ? (
-        <HealthAxisRibbons data={health.data} dayStart={dayStart} />
-      ) : null}
+      {health.data ? <HealthAxisRibbons data={health.data} /> : null}
 
       <section className="space-y-4">
         <div className="col-span-full">

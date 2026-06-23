@@ -15,6 +15,7 @@ import {
   BookOpen,
   CalendarRange,
   CalendarDays,
+  History,
   MessageSquare,
   Brain,
   Activity,
@@ -50,6 +51,7 @@ const nav = [
     items: [
       { title: "Home", url: "/", icon: Home },
       { title: "Glance", url: "/glance", icon: CalendarDays },
+      { title: "History", url: "/activity", icon: History },
     ],
   },
   {

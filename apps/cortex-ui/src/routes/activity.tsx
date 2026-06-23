@@ -193,6 +193,7 @@ function ActivityLogPage() {
           onJumpToday={jumpToCurrentPeriod}
           onJumpYesterday={jumpYesterday}
           onPickDate={pickDate}
+          availableDates={history.data?.availableDates}
           showJumpToday={range === "today" && viewDate !== calendarToday}
           showJumpYesterday={
             range === "today" && viewDate !== yesterdayDate(calendarToday)
