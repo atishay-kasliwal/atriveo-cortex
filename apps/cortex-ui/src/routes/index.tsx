@@ -34,11 +34,16 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  // Auth lives in localStorage, which doesn't exist during SSR. Deciding
+  // landing-vs-app on the server (always "logged out") then flipping on the client
+  // caused a login/landing flash on every refresh. Gate on client mount: render
+  // nothing until we can actually read the token, so there's no wrong-state flash.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div className="min-h-screen bg-ink" />;
+
   // Public landing for signed-out visitors; the app dashboard once signed in.
-  if (!isAuthenticated()) {
-    return <LandingPage />;
-  }
-  return <AppHome />;
+  return isAuthenticated() ? <AppHome /> : <LandingPage />;
 }
 
 function AppHome() {

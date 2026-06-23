@@ -188,11 +188,30 @@ function RootComponent() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // Client-mount gate: auth (localStorage) isn't available during SSR, so deciding
+  // chrome vs chromeless on the server then flipping on the client flashed the
+  // login page on refresh. Until mounted, render the chromeless shell (matches the
+  // server output) so hydration is stable and there's no flash.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Until mounted, render a neutral shell (no app chrome, no page content) so the
+  // server output and first client paint match — no auth flash.
+  if (!mounted) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className="min-h-screen bg-background" />
+      </QueryClientProvider>
+    );
+  }
+
   // Render the bare page (no app chrome) for login, and for the public landing at
   // "/" when the visitor isn't signed in.
+  const loggedIn = isAuthenticated();
   const chromeless =
     location.pathname === "/login" ||
-    (location.pathname === "/" && !isAuthenticated());
+    location.pathname === "/calendar-board" ||
+    (location.pathname === "/" && !loggedIn);
 
   return (
     <QueryClientProvider client={queryClient}>

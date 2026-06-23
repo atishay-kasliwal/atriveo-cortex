@@ -109,32 +109,44 @@ export async function buildTodayActivityFromNeon(
     "./daily-memory",
   );
   const { localDateString } = await import("./aggregator");
-  const cached = await loadDailyMemory(date);
+
+  // The cache read itself can fail on a cold/contended Neon connection (the first
+  // burst of ~6 concurrent requests after the free-tier compute suspends). A blip
+  // here used to throw before any fallback ran → 500. Swallow it: a null cache just
+  // routes to the build path, and the Worker's edge cache serves the last-good copy.
+  const cached = await loadDailyMemory(date).catch((err) => {
+    console.warn("[analytics] daily_memory cache read failed, will retry/build:", err);
+    return null;
+  });
 
   // Past days never change — cache is always authoritative.
   if (date !== localDateString()) {
-    if (cached) return applyWebsiteOverridesToActivity(cached);
+    if (cached) return safeApplyOverrides(cached);
     return materializeDailyMemory(date);
   }
 
   // The SYNC PIPELINE owns materialization (memory-job-service materializes
   // daily_memory every run). The read path must NOT do a heavy rebuild on the
-  // Worker — that's what was 500ing: assembleTodayActivity's multi-query rebuild
-  // failing on the Worker's single transient connection.
-  //
-  // So: if we have ANY cache, serve it. It's at most one sync cycle old (~30min),
-  // and the next sync refreshes it. A possibly-slightly-stale page beats a 500.
+  // Worker. If we have ANY cache, serve it — at most one sync cycle old (~30min).
   if (cached) {
-    // Best-effort staleness check; if it says "stale" we still serve cache (the
-    // sync will refresh), we just kick a non-blocking rebuild so the next read is
-    // fresh. Never block or fail the request on it.
     void maybeRefreshInBackground(date, cached);
-    return applyWebsiteOverridesToActivity(cached);
+    return safeApplyOverrides(cached);
   }
 
-  // No cache at all (cold day) — we must build once. Guard with a timeout; if it
-  // fails, surface the error (there's genuinely nothing to show).
+  // No cache (cold day, or the cache read just blipped). Build once, guarded by a
+  // timeout. If even this fails, the Worker's edge cache will serve stale-on-error.
   return withTimeout(materializeDailyMemory(date), MATERIALIZE_TIMEOUT_MS);
+}
+
+/** Applying website overrides hits the DB; never let it turn a good cache into a 500. */
+async function safeApplyOverrides(
+  dto: TodayActivityDTO,
+): Promise<TodayActivityDTO> {
+  try {
+    return await applyWebsiteOverridesToActivity(dto);
+  } catch {
+    return dto; // serve the cached data without overrides rather than failing
+  }
 }
 
 /**
