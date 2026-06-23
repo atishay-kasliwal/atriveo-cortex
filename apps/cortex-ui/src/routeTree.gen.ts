@@ -24,6 +24,7 @@ import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as CaptureDoctorRouteImport } from './routes/capture-doctor'
+import { Route as CalendarBoardRouteImport } from './routes/calendar-board'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as BioRouteImport } from './routes/bio'
 import { Route as AuditRouteImport } from './routes/audit'
@@ -114,6 +115,11 @@ const DecisionsRoute = DecisionsRouteImport.update({
 const CaptureDoctorRoute = CaptureDoctorRouteImport.update({
   id: '/capture-doctor',
   path: '/capture-doctor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarBoardRoute = CalendarBoardRouteImport.update({
+  id: '/calendar-board',
+  path: '/calendar-board',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuditRoute
   '/bio': typeof BioRoute
   '/calendar': typeof CalendarRoute
+  '/calendar-board': typeof CalendarBoardRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/health': typeof HealthRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuditRoute
   '/bio': typeof BioRoute
   '/calendar': typeof CalendarRoute
+  '/calendar-board': typeof CalendarBoardRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/health': typeof HealthRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/audit': typeof AuditRoute
   '/bio': typeof BioRoute
   '/calendar': typeof CalendarRoute
+  '/calendar-board': typeof CalendarBoardRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/health': typeof HealthRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/bio'
     | '/calendar'
+    | '/calendar-board'
     | '/capture-doctor'
     | '/decisions'
     | '/health'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/bio'
     | '/calendar'
+    | '/calendar-board'
     | '/capture-doctor'
     | '/decisions'
     | '/health'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/bio'
     | '/calendar'
+    | '/calendar-board'
     | '/capture-doctor'
     | '/decisions'
     | '/health'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   AuditRoute: typeof AuditRoute
   BioRoute: typeof BioRoute
   CalendarRoute: typeof CalendarRoute
+  CalendarBoardRoute: typeof CalendarBoardRoute
   CaptureDoctorRoute: typeof CaptureDoctorRoute
   DecisionsRoute: typeof DecisionsRoute
   HealthRoute: typeof HealthRoute
@@ -533,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/capture-doctor'
       fullPath: '/capture-doctor'
       preLoaderRoute: typeof CaptureDoctorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar-board': {
+      id: '/calendar-board'
+      path: '/calendar-board'
+      fullPath: '/calendar-board'
+      preLoaderRoute: typeof CalendarBoardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -707,6 +727,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditRoute: AuditRoute,
   BioRoute: BioRoute,
   CalendarRoute: CalendarRoute,
+  CalendarBoardRoute: CalendarBoardRoute,
   CaptureDoctorRoute: CaptureDoctorRoute,
   DecisionsRoute: DecisionsRoute,
   HealthRoute: HealthRoute,

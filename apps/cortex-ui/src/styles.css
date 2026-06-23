@@ -62,6 +62,8 @@
   --color-brand-2: var(--signal-deep);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border-subtle: var(--border-subtle);
   --color-success: var(--success);
   --color-warning: var(--warning);
 
@@ -102,6 +104,8 @@
   --foreground: oklch(0.97 0.005 90);
   --surface: oklch(0.16 0.012 270);
   --surface-2: oklch(0.2 0.012 270);
+  --surface-elevated: oklch(0.22 0.013 270);
+  --border-subtle: oklch(1 0 0 / 5%);
 
   --card: oklch(0.16 0.012 270);
   --card-foreground: oklch(0.97 0.005 90);
