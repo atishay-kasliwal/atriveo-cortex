@@ -59,7 +59,7 @@ function CategoryBar({ blocks }: { blocks: TimelineBlock[] }) {
 
 // ── Single hour card ──────────────────────────────────────────────────────────
 
-const CARD_W = 280;
+const CARD_W = 360;
 const CARD_H = 320;
 const ROW_H = 52; // px per activity row — ~5 rows visible
 
