@@ -82,6 +82,8 @@ export function categorizeDomain(domain: string | null | undefined): SessionType
   return "OTHER";
 }
 
+const BROWSER_APP = /chrome|arc|safari|firefox|brave|edge|opera/i;
+
 export function resolveSessionType(
   app: string | null | undefined,
   domain: string | null | undefined,
@@ -91,6 +93,15 @@ export function resolveSessionType(
   // Catches video/streaming watched in a browser (or mis-attributed to a code
   // editor on another monitor) that the domain list would otherwise miss.
   if (titleIsEntertainment(windowTitle)) return "ENTERTAINMENT";
+
+  // Fullscreen video: a browser strips its window title AND url when a video goes
+  // fullscreen, so frames arrive as "Brave Browser" with empty title/url. You can't
+  // research with no page — a titleless browser frame is almost always fullscreen
+  // playback, so treat it as entertainment rather than the browser's RESEARCH default.
+  const title = (windowTitle ?? "").trim();
+  if (BROWSER_APP.test(normalizeAppName(app)) && !domain && title.length === 0) {
+    return "ENTERTAINMENT";
+  }
 
   if (domain) {
     const fromDomain = categorizeDomain(domain);
