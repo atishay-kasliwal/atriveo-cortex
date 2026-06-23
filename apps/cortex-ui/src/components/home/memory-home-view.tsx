@@ -9,8 +9,6 @@ import { AttentionMemorySection } from "@/components/attention/visualizations/at
 import { HomeAuditSection } from "@/components/home/home-audit-section";
 import { HomeHero } from "@/components/home/home-hero";
 import { ProductMomentumMap } from "@/components/home/product-momentum-map";
-import { MemoryStatusRibbon } from "@/components/home/memory-status-ribbon";
-import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
 import { WorkTimeline } from "@/components/activity/work-timeline";
 import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
 import { MultiMonitorTimeline } from "@/components/screens/multi-monitor-timeline";
@@ -70,27 +68,22 @@ export function MemoryHomeView({
   }
 
   return (
-    <div className="mt-4 space-y-6">
-      <MemoryStatusRibbon
-        pipelineState={pipelineState}
-        syncStatus={syncStatus.data}
-        dateLabel={dateLabel}
-      />
-
-      {/* Calendar — compact pill row */}
-      <CalendarUpcoming />
-
-      {/* ── Daily command center: hero + timeline ─────────────────────────── */}
+    <div className="mt-3 space-y-5">
+      {/* ── Daily command center: hero (with status + upcoming folded in) + timeline ── */}
       {activity.isError && !isApiNotFound(activity.error) ? (
         <ErrorState error={activity.error} onRetry={activity.refetch} />
       ) : activity.isLoading ? (
         <div className="space-y-4">
-          <div className="h-44 animate-pulse rounded-2xl bg-surface-2/50" />
+          <div className="h-52 animate-pulse rounded-2xl bg-surface-2/50" />
           <div className="h-64 animate-pulse rounded-xl bg-surface-2/50" />
         </div>
       ) : activity.data && hasTodayActivity(activity.data) ? (
         <div className="space-y-5">
-          <HomeHero data={activity.data} dateLabel={dateLabel} />
+          <HomeHero
+            data={activity.data}
+            dateLabel={dateLabel}
+            pipelineState={pipelineState}
+          />
 
           {/* Timeline of work */}
           <ActivityCard

@@ -42,11 +42,7 @@ function HomePage() {
 
   return (
     <PageBody compact>
-      <PageHeader
-        eyebrow="Home"
-        title="Today"
-        description="Activity · Screens · Truth Audit · Attention — honestly combined."
-      />
+      <PageHeader eyebrow="Home" title="Today" />
       <div className="mt-2">
         <ActivityPeriodNav
           range="today"

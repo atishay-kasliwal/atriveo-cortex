@@ -4,7 +4,17 @@
 
 import { categoryStyle, fmtDuration } from "@/components/dashboard/time";
 import { HomeKpiStrip } from "@/components/home/home-kpi-strip";
+import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
+import { syncPipelineStyles } from "@/lib/api/sync-adapter";
+import type { ActivityPipelineState } from "@/lib/activity/activity-state";
 import type { TodayActivity } from "@/lib/api/types";
+
+const PIPELINE_LABEL: Record<ActivityPipelineState, string> = {
+  live: "Live",
+  syncing: "Syncing",
+  stale: "Paused",
+  offline: "Offline",
+};
 
 const BREAKDOWN_CATEGORIES = [
   "build",
@@ -23,9 +33,11 @@ const BREAKDOWN_CATEGORIES = [
 export function HomeHero({
   data,
   dateLabel,
+  pipelineState,
 }: {
   data: TodayActivity;
   dateLabel: string;
+  pipelineState?: ActivityPipelineState;
 }) {
   const totals = new Map<string, number>();
   for (const b of data.timeline) {
@@ -45,10 +57,20 @@ export function HomeHero({
     <section className="surface-card overflow-hidden rounded-2xl">
       <div className="px-6 pt-5 pb-4">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              {dateLabel}
-            </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                {dateLabel}
+              </p>
+              {pipelineState ? (
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                  <span
+                    className={"h-1.5 w-1.5 rounded-full " + syncPipelineStyles[pipelineState].dot}
+                  />
+                  {PIPELINE_LABEL[pipelineState]}
+                </span>
+              ) : null}
+            </div>
             <h1 className="mt-1 font-display text-2xl tracking-tight">
               {top ? (
                 <>
@@ -114,6 +136,11 @@ export function HomeHero({
           </div>
         </div>
       ) : null}
+
+      {/* Upcoming — folded in (next meeting is also a KPI tile; this is the wider view) */}
+      <div className="border-t border-border/60 px-6 py-3">
+        <CalendarUpcoming />
+      </div>
     </section>
   );
 }
