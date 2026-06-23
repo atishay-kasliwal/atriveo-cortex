@@ -211,6 +211,7 @@ function RootComponent() {
   const chromeless =
     location.pathname === "/login" ||
     location.pathname === "/calendar-board" ||
+    location.pathname === "/workspace" ||
     (location.pathname === "/" && !loggedIn);
 
   return (

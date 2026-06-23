@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as WeeklyReviewRouteImport } from './routes/weekly-review'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScreensRouteImport } from './routes/screens'
@@ -42,6 +43,11 @@ import { Route as DebugTelemetryRouteImport } from './routes/debug.telemetry'
 import { Route as DebugAnalyticsRouteImport } from './routes/debug.analytics'
 import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WeeklyReviewRoute = WeeklyReviewRouteImport.update({
   id: '/weekly-review',
   path: '/weekly-review',
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
+  '/workspace': typeof WorkspaceRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
@@ -263,6 +270,7 @@ export interface FileRoutesByTo {
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
+  '/workspace': typeof WorkspaceRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
@@ -298,6 +306,7 @@ export interface FileRoutesById {
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
   '/weekly-review': typeof WeeklyReviewRoute
+  '/workspace': typeof WorkspaceRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
@@ -334,6 +343,7 @@ export interface FileRouteTypes {
     | '/screens'
     | '/settings'
     | '/weekly-review'
+    | '/workspace'
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/screens'
     | '/settings'
     | '/weekly-review'
+    | '/workspace'
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/screens'
     | '/settings'
     | '/weekly-review'
+    | '/workspace'
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
@@ -437,12 +449,20 @@ export interface RootRouteChildren {
   ScreensRoute: typeof ScreensRoute
   SettingsRoute: typeof SettingsRoute
   WeeklyReviewRoute: typeof WeeklyReviewRoute
+  WorkspaceRoute: typeof WorkspaceRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
   DebugTelemetryRoute: typeof DebugTelemetryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/weekly-review': {
       id: '/weekly-review'
       path: '/weekly-review'
@@ -743,6 +763,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScreensRoute: ScreensRoute,
   SettingsRoute: SettingsRoute,
   WeeklyReviewRoute: WeeklyReviewRoute,
+  WorkspaceRoute: WorkspaceRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
   DebugTelemetryRoute: DebugTelemetryRoute,
 }
