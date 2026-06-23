@@ -130,6 +130,16 @@ async function main() {
   });
   console.log(ts(), "done email sync:", emailResult.scanned, "scanned ->", emailResult.needsYou, "needs you");
 
+  // Record any media playing right now (video/music) from macOS power assertions —
+  // catches screen-off playback ScreenPipe can't capture while the screen is locked.
+  console.log(ts(), "step: recordMediaSnapshot");
+  const { recordMediaSnapshot } = await import("../lib/media/media-sessions");
+  const mediaRecorded = await recordMediaSnapshot().catch((err: Error) => {
+    console.error(ts(), "media snapshot failed:", err.message);
+    return 0;
+  });
+  console.log(ts(), "done media snapshot:", mediaRecorded, "app(s) playing");
+
   // Refresh the daily_memory cache the cloud read path serves. Without this the
   // local agent synced fresh sessions but the home page kept showing an old
   // snapshot (frozen at the last cloud /api/sync). Materialize every run so the

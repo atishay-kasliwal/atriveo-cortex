@@ -65,10 +65,21 @@ export async function syncDay(date: string): Promise<SyncResult> {
     const evidence = await loadExtendedSessionEvidence(start, end);
     const signalIndex = await buildProjectSignalIndex();
     const enrichedSessions = enrichSessions(attribution.sessions, evidence, signalIndex);
+
+    // Fill ScreenPipe capture gaps (screen locked) with media that was playing,
+    // detected from macOS power assertions — so screen-off YouTube/music counts.
+    const { listMediaSessionsForDay } = await import("@/lib/media/media-sessions");
+    const { buildMediaGapSessions } = await import("@/lib/media/media-gap-fill");
+    const mediaSessions = await listMediaSessionsForDay(start, end).catch(() => []);
+    const gapSessions = buildMediaGapSessions(frames, mediaSessions, start, end);
+    const allSessions = [...enrichedSessions, ...gapSessions].sort(
+      (a, b) => Date.parse(a.startTime) - Date.parse(b.startTime),
+    );
+
     recordsProcessed = attribution.recordsProcessed + uiEvents.length;
 
     await clearAnalyticsForDate(date);
-    await saveSessions(date, enrichedSessions);
+    await saveSessions(date, allSessions);
     await saveApplicationUsage(date, attribution.appSeconds);
     await saveWebsiteUsage(date, attribution.domainSeconds, attribution.domainVisits);
     await saveStateSegments(date, stateResult.segments);
