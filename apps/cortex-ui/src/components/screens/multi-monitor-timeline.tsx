@@ -11,9 +11,23 @@ type TimelineBlock = DayScreens["timelines"][string][number];
 const HOURS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const APP_TZ = "America/New_York";
+
+function etOffsetMin(instant: Date): number {
+  const p = new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(instant);
+  const g = (t: string) => Number(p.find((x) => x.type === t)?.value);
+  let h = g("hour"); if (h === 24) h = 0;
+  return (Date.UTC(g("year"), g("month") - 1, g("day"), h, g("minute"), g("second")) - instant.getTime()) / 60_000;
+}
+
+/** ET-midnight (UTC instant) for the given YYYY-MM-DD. */
 function dayStartMs(date: string): number {
   const [y, m, d] = date.split("-").map(Number);
-  return new Date(y!, m! - 1, d!, 0, 0, 0, 0).getTime();
+  const guess = Date.UTC(y!, m! - 1, d!, 0, 0, 0);
+  return guess - etOffsetMin(new Date(guess)) * 60_000;
 }
 
 function blockPos(block: TimelineBlock, dayStart: number): { left: string; width: string } {
@@ -43,7 +57,7 @@ function blockAt(blocks: TimelineBlock[], dayStart: number, pct: number): Timeli
 
 function pctToClock(date: string, pct: number): string {
   const ms = dayStartMs(date) + (pct / 100) * DAY_MS;
-  return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return new Date(ms).toLocaleTimeString("en-US", { timeZone: APP_TZ, hour: "numeric", minute: "2-digit" });
 }
 
 function TimelineLane({

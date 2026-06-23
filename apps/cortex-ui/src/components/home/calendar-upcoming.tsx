@@ -8,7 +8,7 @@ import { Link } from "@tanstack/react-router";
 import { fetchUpcomingEvents, type CalendarEvent } from "@/lib/api/calendar-adapter";
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 }
 
 function isToday(iso: string) {

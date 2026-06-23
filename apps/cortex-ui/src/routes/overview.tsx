@@ -63,7 +63,7 @@ function OverviewContent({ data }: { data: OverviewSummary }) {
     ...data.recentActions.slice(0, 4).map((a) => ({
       id: `a-${a.id}`,
       time: a.lastMentionedAt
-        ? new Date(a.lastMentionedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        ? new Date(a.lastMentionedAt).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" })
         : undefined,
       dot: "lavender" as const,
       children: (
@@ -79,7 +79,7 @@ function OverviewContent({ data }: { data: OverviewSummary }) {
     })),
     ...data.recentIdeas.slice(0, 4).map((i) => ({
       id: `i-${i.id}`,
-      time: new Date(i.lastSeenAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      time: new Date(i.lastSeenAt).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }),
       dot: "lavender" as const,
       children: (
         <Link to="/ideas/$id" params={{ id: i.id }} className="group block">

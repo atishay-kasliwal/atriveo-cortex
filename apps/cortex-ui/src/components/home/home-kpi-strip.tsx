@@ -116,7 +116,8 @@ export function HomeKpiStrip({
       value:
         period === "today"
           ? next
-            ? new Date(next.startTime).toLocaleTimeString([], {
+            ? new Date(next.startTime).toLocaleTimeString("en-US", {
+                timeZone: "America/New_York",
                 hour: "numeric",
                 minute: "2-digit",
               })

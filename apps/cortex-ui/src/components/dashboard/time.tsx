@@ -85,7 +85,15 @@ export function fmtDuration(sec: number): string {
   return `${h}h ${m.toString().padStart(2, "0")}m`;
 }
 
+/** The app shows clocks in Eastern Time everywhere, regardless of the viewer's zone. */
+export const APP_TZ = "America/New_York";
+
 export function fmtClock(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  return d.toLocaleTimeString("en-US", {
+    timeZone: APP_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }

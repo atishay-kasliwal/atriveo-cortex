@@ -138,7 +138,7 @@ function round2(n: number): number {
 
 export async function buildHealthTimeline(
   period: HealthPeriod,
-  tz = "America/Los_Angeles",
+  tz = "America/New_York",
 ): Promise<HealthTimelineResponse> {
   const { from, to, bucket } = periodBounds(period, tz);
   const fromIso = from.toISOString();
@@ -355,7 +355,7 @@ export interface DailyTrendRow {
 }
 
 export async function buildDailyTrend(
-  tz = "America/Los_Angeles",
+  tz = "America/New_York",
   days = 30,
 ): Promise<DailyTrendRow[]> {
   const now = new Date();
@@ -459,7 +459,7 @@ export interface ReadinessResult {
   };
 }
 
-export async function buildReadiness(tz = "America/Los_Angeles"): Promise<ReadinessResult> {
+export async function buildReadiness(tz = "America/New_York"): Promise<ReadinessResult> {
   // Today's data
   const { from: todayFrom, to: todayTo } = periodBounds("today", tz);
   const fromIso = todayFrom.toISOString();

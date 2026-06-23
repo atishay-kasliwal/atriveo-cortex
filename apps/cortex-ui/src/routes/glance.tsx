@@ -51,7 +51,7 @@ function isVideo(ev: CalendarEvent) {
 
 function fmtTime(iso: string, allDay: boolean) {
   if (allDay) return "All day";
-  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 }
 
 function fmtDuration(startIso: string, endIso: string, allDay: boolean) {

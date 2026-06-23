@@ -66,13 +66,32 @@ type RibbonSegment = {
   durationMin: number;
 };
 
+const APP_TZ = "America/New_York";
+
+/** APP_TZ offset (minutes) at an instant — handles EDT/EST. */
+function tzOffsetMin(instant: Date): number {
+  const p = new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TZ,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(instant);
+  const g = (t: string) => Number(p.find((x) => x.type === t)?.value);
+  let h = g("hour"); if (h === 24) h = 0;
+  const asUtc = Date.UTC(g("year"), g("month") - 1, g("day"), h, g("minute"), g("second"));
+  return (asUtc - instant.getTime()) / 60_000;
+}
+
+/** The UTC instant of ET-midnight for the given day, so block offsets land on the
+ *  24h axis in Eastern Time regardless of where the browser runs. */
 function localDayStart(reference: Date | string): Date {
-  const d =
+  const dateStr =
     typeof reference === "string"
-      ? new Date(`${reference}T00:00:00`)
-      : new Date(reference);
-  d.setHours(0, 0, 0, 0);
-  return d;
+      ? reference.slice(0, 10)
+      : new Intl.DateTimeFormat("en-CA", { timeZone: APP_TZ }).format(reference);
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const guess = Date.UTC(y!, m! - 1, d!, 0, 0, 0);
+  const offset = tzOffsetMin(new Date(guess));
+  return new Date(guess - offset * 60_000);
 }
 
 function blockToSegment(block: TimelineBlock, dayStart: Date): RibbonSegment {

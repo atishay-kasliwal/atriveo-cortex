@@ -179,7 +179,7 @@ export function HealthAxisRibbons({ data }: { data: HealthTimelineResponse }) {
     const efficiency = accounted > 0 ? Math.round((asleep / accounted) * 100) : null;
     const window =
       s.sleep_start && s.sleep_end
-        ? `${new Date(s.sleep_start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} → ${new Date(s.sleep_end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+        ? `${new Date(s.sleep_start).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })} → ${new Date(s.sleep_end).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })}`
         : null;
     return { total: s.total_hours, stages, accounted, efficiency, window };
   }, [data.sleep]);
