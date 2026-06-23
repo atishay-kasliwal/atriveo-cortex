@@ -77,6 +77,7 @@ export function HomeKpiStrip({
   // Resolve work values per period
   const activeSec = period === "today" ? data.activeSec : week.data?.activeSec;
   const focusSec = period === "today" ? data.focusSec : week.data?.focusSec;
+  const idleSec = period === "today" ? data.idleSec : week.data?.idleSec;
 
   const tiles: KpiTileProps[] = [
     {
@@ -88,6 +89,13 @@ export function HomeKpiStrip({
       label: "Focused",
       accent: "text-signal",
       value: focusSec != null ? fmtDuration(focusSec) : undefined,
+      state: period === "week" && week.isLoading ? "loading" : "live",
+    },
+    {
+      label: "Idle",
+      sub: "away",
+      value: idleSec != null ? fmtDuration(idleSec) : undefined,
+      higherIsBetter: false,
       state: period === "week" && week.isLoading ? "loading" : "live",
     },
     (() => {
@@ -154,7 +162,7 @@ export function HomeKpiStrip({
       </div>
 
       {/* KPI tiles — wrap on narrow screens */}
-      <div className="grid grid-cols-2 divide-x divide-y divide-border/40 overflow-hidden rounded-xl border border-border/40 sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
+      <div className="grid grid-cols-2 divide-x divide-y divide-border/40 overflow-hidden rounded-xl border border-border/40 sm:grid-cols-3 lg:grid-cols-7 lg:divide-y-0">
         {tiles.map((t) => (
           <KpiTile key={t.label} {...t} />
         ))}
