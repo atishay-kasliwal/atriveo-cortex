@@ -5,6 +5,10 @@
 import { aggregateWebsiteCategories } from "@/lib/analytics/analytics-service";
 import type { WebsiteCategory } from "@/lib/analytics/website-intelligence";
 import { domainCategoryOverridesRepository } from "@/lib/repositories/domain-category-overrides-repository";
+import {
+  sessionCategoryOverridesRepository,
+  sessionSignature,
+} from "@/lib/repositories/session-category-overrides-repository";
 
 type WebsiteRow = {
   domain: string;
@@ -36,6 +40,21 @@ export async function loadDomainCategoryOverrideMap(): Promise<
   return domainCategoryOverridesRepository.getMap();
 }
 
+type TimelineSession = { title: string; category: string };
+
+/** Rewrite timeline session categories from manual per-session overrides. */
+export function applySessionCategoryOverrides<T extends TimelineSession>(
+  timeline: T[],
+  overrides: Map<string, string>,
+): T[] {
+  if (overrides.size === 0) return timeline;
+  return timeline.map((s) => {
+    const override = overrides.get(sessionSignature(s.title));
+    if (!override || override === s.category) return s;
+    return { ...s, category: override };
+  });
+}
+
 export async function applyWebsiteOverridesToActivity<
   T extends {
     websites: WebsiteRow[];
@@ -44,16 +63,31 @@ export async function applyWebsiteOverridesToActivity<
       label: string;
       durationSec: number;
     }>;
+    timeline?: TimelineSession[];
   },
 >(activity: T): Promise<T> {
-  const overrides = await loadDomainCategoryOverrideMap();
-  if (overrides.size === 0) return activity;
-  const websites = applyDomainCategoryOverrides(activity.websites, overrides);
-  return {
-    ...activity,
-    websites,
-    websiteCategories: aggregateWebsiteCategories(websites),
-  };
+  const [domainOverrides, sessionOverrides] = await Promise.all([
+    loadDomainCategoryOverrideMap(),
+    sessionCategoryOverridesRepository.getMap().catch(() => new Map<string, string>()),
+  ]);
+  if (domainOverrides.size === 0 && sessionOverrides.size === 0) return activity;
+
+  let next = activity;
+  if (domainOverrides.size > 0) {
+    const websites = applyDomainCategoryOverrides(activity.websites, domainOverrides);
+    next = {
+      ...next,
+      websites,
+      websiteCategories: aggregateWebsiteCategories(websites),
+    };
+  }
+  if (sessionOverrides.size > 0 && next.timeline) {
+    next = {
+      ...next,
+      timeline: applySessionCategoryOverrides(next.timeline, sessionOverrides),
+    } as T;
+  }
+  return next;
 }
 
 export async function setDomainCategoryTag(

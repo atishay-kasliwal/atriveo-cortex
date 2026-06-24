@@ -19,7 +19,7 @@ const DOMAIN_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
   { match: /gmail\.com|mail\.google|linkedin\.com|twitter\.com|x\.com/i, category: "COMMUNICATION" },
   { match: /notion\.so|linear\.app|jira\.|asana\.com/i, category: "PLANNING" },
   {
-    match: /youtube\.com|netflix\.com|reddit\.com|twitch\.tv|streamfree|powerstreams|fmhy\.net|sextb|betonline|draftkings|fanduel|betmgm|espn\.com|nfl\.com|nba\.com|mlb\.com|cricbuzz|hotstar|primevideo|disneyplus|hulu|peacocktv|paramountplus|crunchyroll|pornhub|xvideos|onlyfans/i,
+    match: /youtube\.com|netflix\.com|reddit\.com|twitch\.tv|streamfree|powerstreams|fmhy\.net|sextb|subtitlecat|betonline|draftkings|fanduel|betmgm|espn\.com|nfl\.com|nba\.com|mlb\.com|cricbuzz|hotstar|primevideo|disneyplus|hulu|peacocktv|paramountplus|crunchyroll|pornhub|xvideos|onlyfans|missav|javhd|javguru|jav\.|\.jav|hanime|hentai|xhamster|redtube|youporn|spankbang|javbus|javlibrary|supjav|av28|highporn|netflav/i,
     category: "ENTERTAINMENT",
   },
   { match: /chatgpt\.com|openai\.com|claude\.ai|anthropic\.com/i, category: "RESEARCH" },
@@ -32,8 +32,14 @@ const MEETING_TITLE = /meeting|huddle|standup|call with/i;
 // would otherwise mis-attribute (e.g. a video watched in a browser on a second
 // monitor while a code editor is the "dominant" app). These titles are
 // unmistakably leisure regardless of which app reported them.
+// Known JAV/adult-video product-code prefixes (e.g. "STARS-265", "SNOS-243").
+// A curated list rather than a blanket [A-Z]{2,6}-\d+ so real work tickets
+// (JIRA-123, PROJ-45) are never mistaken for video codes.
+const JAV_CODE =
+  /\b(START|STARS|SONE|SSIS|SSNI|MIDV|MIDA|MIDE|MIAA|MIDD|SNOS|SNIS|PRED|PPPD|PPPE|HODV|ATID|IPX|IPZZ|IPZ|JUFE|JUL|JUQ|JUR|JUY|CAWD|MEYD|WANZ|EBOD|ABW|ABP|ADN|OFJE|HUNTB?|SOAV|MVSD|DASD|MIMK|ROYD|FSDSS|MUDR|DLDSS|SDDE|SDMU|SDNM|STARS|MOON|SOON|SDAB|GVH|NACR|VENX|NSPS|DOCP|HMN|MDVR|DANDY)-\d{2,4}\b/i;
+
 const ENTERTAINMENT_TITLE =
-  /\bmovies?\b|\btv\b|\banime\b|\bstream(s|ing|free)?\b|powerstreams|freemediaheckyeah|fmhy|\bepisode\b|\bseason \d|\bwatch\b|\btrailer\b|\bporn\b|\bxxx\b|\bav (debut|idol)\b|JUR-\d|SSIS-\d|MIDV-\d|\bjavhd\b|sextb|live (match|score|stream)|\bhighlights?\b|full (movie|match|episode)|house of the dragon|game of thrones|netflix|hotstar|crunchyroll/i;
+  /\bmovies?\b|\btv\b|\banime\b|\bstream(s|ing|free)?\b|powerstreams|freemediaheckyeah|fmhy|\bepisode\b|\bseason \d|\bwatch\b|\btrailer\b|\bporn\b|\bxxx\b|\bjav\b|\bav (debut|idol)\b|\bjavhd\b|subtitle ?cat|english subtitle|\[english subtitle\]|reducing mosaic|uncensored|profile,? videos for|videos for \w|gravure|sextb|sod create|live (match|score|stream)|\bhighlights?\b|full (movie|match|episode)|house of the dragon|game of thrones|netflix|hotstar|crunchyroll/i;
 
 /** Tech/work terms that appear in "X vs Y" comparisons — never sports. */
 const TECH_VS_TERMS =
@@ -47,6 +53,7 @@ const SPORTS_SIGNAL =
 export function titleIsEntertainment(windowTitle: string | null | undefined): boolean {
   const t = (windowTitle ?? "").trim();
   if (t.length < 4) return false;
+  if (JAV_CODE.test(t)) return true;
   if (ENTERTAINMENT_TITLE.test(t)) return true;
 
   // "X vs Y" matchups: entertainment unless it's a tech comparison.

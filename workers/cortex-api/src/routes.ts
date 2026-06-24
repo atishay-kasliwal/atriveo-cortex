@@ -287,6 +287,24 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.put("/api/analytics/session-category", async (c) => {
+    try {
+      const body = await c.req.json<{ title?: string; category?: string }>();
+      if (!body.title?.trim() || !body.category) {
+        return apiError(c, "title and category are required", 400);
+      }
+      const { sessionCategoryOverridesRepository } = await import(
+        "@/lib/repositories/session-category-overrides-repository"
+      );
+      return apiSuccess(
+        c,
+        await sessionCategoryOverridesRepository.upsert(body.title.trim(), body.category),
+      );
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to save session category", 500);
+    }
+  });
+
   app.get("/api/search", async (c) => {
     try {
       const q = c.req.query("q")?.trim();

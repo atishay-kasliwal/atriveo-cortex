@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
 import { sessionAppsLine, sessionContextLabel } from "@/lib/activity/session-context";
+import { SessionCategoryPicker } from "@/components/activity/session-category-picker";
 import type { TimelineBlock } from "@/lib/api/types";
 
 export function SessionDetailPanel({
@@ -40,6 +41,11 @@ export function SessionDetailPanel({
             {fmtClock(block.startedAt)}–{fmtClock(block.endedAt)} · {fmtDuration(block.durationSec)}
           </SheetDescription>
         </SheetHeader>
+
+        <div className="mt-3 flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">Category</span>
+          <SessionCategoryPicker title={block.title} category={block.category} />
+        </div>
 
         <div className="mt-6 space-y-6">
           <section>
