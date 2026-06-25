@@ -8,7 +8,6 @@ import {
 } from "./audit-evidence";
 import type { ActivityStateSegment } from "./idle-detector";
 import { auditRepository } from "@/lib/repositories/audit-repository";
-import { fetchFramesForWindow, fetchUiEventsForWindow } from "@/lib/screenpipe-db";
 import { localDayBounds } from "./aggregator";
 
 export async function persistDayAuditEvidence(
@@ -20,9 +19,15 @@ export async function persistDayAuditEvidence(
   let frameData = frames;
   let uiData = uiEvents;
   if (!frameData || !uiData) {
-    const { start, end } = localDayBounds(date);
-    frameData = fetchFramesForWindow(start, end);
-    uiData = fetchUiEventsForWindow(start, end);
+    if (typeof process === "undefined" || process.env.CORTEX_DB_SERVERLESS === "1") {
+      frameData = [];
+      uiData = [];
+    } else {
+      const { fetchFramesForWindow, fetchUiEventsForWindow } = await import("@/lib/screenpipe-db");
+      const { start, end } = localDayBounds(date);
+      frameData = fetchFramesForWindow(start, end);
+      uiData = fetchUiEventsForWindow(start, end);
+    }
   }
 
   const rows = buildDaySegmentEvidence(date, segments, frameData, uiData);

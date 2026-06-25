@@ -8,11 +8,24 @@ import type { DailyAttentionReport } from "./attention-types";
 import { attentionRepository } from "@/lib/repositories/attention-repository";
 import { analyticsRepository } from "@/lib/repositories/analytics-repository";
 import { isoWeekStart, localDayBounds, shiftDate, weekRange } from "./aggregator";
-import {
-  fetchAudioForWindow,
-  fetchFramesForWindow,
-  fetchUiEventsForWindow,
-} from "@/lib/screenpipe-db";
+import type { FrameRow } from "@/lib/types";
+import type { AnalyticsUiEvent } from "@/lib/screenpipe-db";
+
+async function loadFrameEvidence(start: string, end: string): Promise<{
+  frames: FrameRow[];
+  uiEvents: AnalyticsUiEvent[];
+  audioEvents: Array<{ timestamp: string; device: string | null; transcription: string | null }>;
+}> {
+  if (typeof process === "undefined" || process.env.CORTEX_DB_SERVERLESS === "1") {
+    return { frames: [], uiEvents: [], audioEvents: [] };
+  }
+  const { fetchFramesForWindow, fetchUiEventsForWindow, fetchAudioForWindow } = await import("@/lib/screenpipe-db");
+  return {
+    frames: fetchFramesForWindow(start, end),
+    uiEvents: fetchUiEventsForWindow(start, end),
+    audioEvents: fetchAudioForWindow(start, end),
+  };
+}
 
 export async function computeAndPersistDayAttention(date: string): Promise<DailyAttentionReport> {
   const stateSegments = await attentionRepository.listStateSegments(date);
@@ -34,9 +47,7 @@ export async function computeAndPersistDayAttention(date: string): Promise<Daily
   }
 
   const { start, end } = localDayBounds(date);
-  const frames = fetchFramesForWindow(start, end);
-  const uiEvents = fetchUiEventsForWindow(start, end);
-  const audioEvents = fetchAudioForWindow(start, end);
+  const { frames, uiEvents, audioEvents } = await loadFrameEvidence(start, end);
   const attribution = buildAttentionAttribution(frames, uiEvents, audioEvents, start, end);
 
   const report = buildDailyAttentionReport(

@@ -18,7 +18,6 @@ import { detectActivityStates } from "./idle-detector";
 import { loadEvidenceForDate, persistDayAuditEvidence } from "./audit-db";
 import { listStateSegments } from "./analytics-db";
 import { auditRepository } from "@/lib/repositories/audit-repository";
-import { fetchFramesForWindow, fetchUiEventsForWindow, screenpipeDbExists } from "@/lib/screenpipe-db";
 
 export type SegmentAuditDTO = {
   id: number;
@@ -57,6 +56,9 @@ async function ensureAuditEvidence(date: string): Promise<void> {
 
   const stateRows = await listStateSegments(date);
   if (stateRows.length === 0) return;
+  if (typeof process === "undefined" || process.env.CORTEX_DB_SERVERLESS === "1") return;
+
+  const { fetchFramesForWindow, fetchUiEventsForWindow, screenpipeDbExists } = await import("@/lib/screenpipe-db");
   if (!screenpipeDbExists()) return;
 
   const { start, end } = localDayBounds(date);

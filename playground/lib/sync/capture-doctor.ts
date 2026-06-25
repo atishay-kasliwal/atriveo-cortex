@@ -7,12 +7,12 @@ import {
   agentHeartbeatRepository,
   MAC_CAPTURE_AGENT_ID,
 } from "@/lib/repositories/agent-heartbeat-repository";
-import {
-  screenpipeDbExists,
-  getLatestCaptureTimestamp,
-  countFramesInLastMinutes,
-  inspectSqliteStorage,
-} from "@/lib/screenpipe-db";
+async function loadSqliteInfo() {
+  if (isServerlessRuntime()) {
+    return { screenpipeDbExists: () => false, getLatestCaptureTimestamp: () => null, countFramesInLastMinutes: () => 0, inspectSqliteStorage: () => ({ dbExists: false, walExists: false, shmExists: false, walBytes: null, dbBytes: null, volumeHint: null }) };
+  }
+  return import("@/lib/screenpipe-db");
+}
 import { probeScreenpipe } from "@/lib/system/screenpipe-probe";
 import { isServerlessRuntime } from "@/lib/db/client";
 import { resolveCloudCaptureTimestamps } from "./capture-timestamps";
@@ -114,12 +114,14 @@ function layerStatus(ok: boolean, unknown = false): DoctorComponentStatus {
 export async function buildCaptureDoctorReport(): Promise<CaptureDoctorReport> {
   const now = new Date().toISOString();
   const runtime = isServerlessRuntime() ? "cloud" : "local";
-  const [sync, agent, latestActivityAt] = await Promise.all([
+  const [sync, agent, latestActivityAt, sqlite] = await Promise.all([
     getSyncStatus(),
     agentHeartbeatRepository.get(MAC_CAPTURE_AGENT_ID),
     analyticsRepository.getLatestActivityEndTime(),
+    loadSqliteInfo(),
   ]);
 
+  const { screenpipeDbExists, getLatestCaptureTimestamp, countFramesInLastMinutes, inspectSqliteStorage } = sqlite;
   const capture = await resolveCloudCaptureTimestamps(sync);
   const localSqliteAt = screenpipeDbExists() ? getLatestCaptureTimestamp() : null;
   const sqliteStorage = inspectSqliteStorage();
