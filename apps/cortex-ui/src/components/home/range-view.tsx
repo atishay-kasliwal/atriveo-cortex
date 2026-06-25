@@ -7,6 +7,9 @@ import { fmtDuration } from "@/components/dashboard/time";
 import { KpiTile, type KpiTileProps } from "@/components/home/kpi-tile";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { RangeWorkRhythm } from "@/components/home/range-work-rhythm";
+import { RangeMiddleGrid } from "@/components/home/range-breakdowns";
+import { RangeTagCards } from "@/components/home/range-tag-cards";
+import { RangeHealthStrip } from "@/components/home/range-health-strip";
 import { formatDateLabel } from "@/lib/activity/date-nav";
 import type { RangeActivity } from "@/lib/api/range-adapter";
 
@@ -50,11 +53,14 @@ export function RangeView({
       {/* Row 2 — work rhythm heatmap full width (the temporal spine). */}
       <RangeWorkRhythm data={data} />
 
-      {/* Dashboard grid — sections sit side by side so the whole range reads in
-          one screen. Per-tag, apps, websites, screens, health fill in next. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* placeholders for upcoming sections */}
-      </div>
+      {/* Per-tag cards — one rich card per category, 4/5-up row. */}
+      <RangeTagCards data={data} />
+
+      {/* Middle grid — category mix · apps · websites · screens, 2-up. */}
+      <RangeMiddleGrid data={data} />
+
+      {/* Health strip — sleep · steps · HR over the range. */}
+      <RangeHealthStrip health={data.health} />
     </div>
   );
 }
