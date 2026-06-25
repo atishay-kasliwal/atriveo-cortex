@@ -41,17 +41,11 @@ export function CategoryMix({
   idleSec = 0,
 }: {
   categories: RangeCategorySlice[];
-  /** Presence idle (away) time — shown as a distinct muted slice so the donut
-   *  reflects the whole day, not just work. */
   idleSec?: number;
 }) {
-  const work = categories
+  const data = categories
     .filter((c) => c.durationSec > 0)
     .map((c) => ({ name: catLabel(c.category), value: c.durationSec, fill: catFill(c.category) }));
-  const data =
-    idleSec > 0
-      ? [...work, { name: "Idle", value: idleSec, fill: catFill("idle") }]
-      : work;
   const total = data.reduce((n, d) => n + d.value, 0);
 
   return (
