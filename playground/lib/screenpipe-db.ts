@@ -7,10 +7,10 @@ import type { AudioRow, FrameRow, RawEvidence, UiEventRow } from "./types";
 
 // Single shared handle — opening multiple connections to a WAL-mode SQLite on
 // an external drive causes indefinite stalls when ScreenPipe holds write locks.
+// Never call db.close() directly; use closeScreenpipe() so the null is kept in sync.
 let _sharedDb: Database.Database | null = null;
 
 function openScreenpipe(): Database.Database {
-  // Re-open if a prior caller closed the handle directly (via db.close()).
   if (_sharedDb?.open) return _sharedDb;
   _sharedDb = null;
   // ExFAT (external drive) does not support POSIX advisory locks so readonly:true
@@ -62,7 +62,6 @@ function fetchRawFramesForWindow(windowStart: string, windowEnd: string): FrameR
        ORDER BY timestamp ASC`,
     )
     .all(windowStart, windowEnd) as FrameRow[];
-  db.close();
   return frames;
 }
 
@@ -119,7 +118,6 @@ export function fetchUiEventsForWindow(
        ORDER BY timestamp ASC`,
     )
     .all(windowStart, windowEnd) as AnalyticsUiEvent[];
-  db.close();
   return rows;
 }
 
@@ -137,10 +135,7 @@ export function fetchAudioForWindow(
       )
       .get() as { name: string } | undefined
   )?.name;
-  if (!hasTable) {
-    db.close();
-    return [];
-  }
+  if (!hasTable) return [];
   const rows = db
     .prepare(
       `SELECT timestamp, device, transcription
@@ -154,7 +149,6 @@ export function fetchAudioForWindow(
     device: string | null;
     transcription: string | null;
   }>;
-  db.close();
   return rows;
 }
 
@@ -269,8 +263,6 @@ export function fetchEvidence(
     (r) => r.timestamp,
   );
 
-  db.close();
-
   return {
     hourStart,
     hourEnd,
@@ -324,7 +316,6 @@ export function getLatestCaptureTimestamp(): string | null {
        )`,
     )
     .get() as { ts: string | null };
-  db.close();
   return row?.ts ?? null;
 }
 
@@ -339,7 +330,6 @@ export function getLocalDatesWithFrames(sinceIso?: string | null): string[] {
     : (db
         .prepare(`SELECT timestamp FROM frames ORDER BY timestamp ASC`)
         .all() as { timestamp: string }[]);
-  db.close();
   const dates = new Set<string>();
   for (const { timestamp } of rows) {
     const ms = Date.parse(timestamp);
@@ -361,7 +351,6 @@ export function countFramesSince(sinceIso: string): number {
   const row = db
     .prepare(`SELECT COUNT(*) as c FROM frames WHERE timestamp > ?`)
     .get(sinceIso) as { c: number };
-  db.close();
   return row.c;
 }
 

@@ -46,10 +46,26 @@ export function RangeHero({ data }: { data: RangeActivity }) {
         </span>
       </div>
 
-      {/* focused share bar */}
-      <div className="mt-3 h-1.5 w-2/3 overflow-hidden rounded-full bg-surface-2/70">
-        <div className="h-full rounded-full bg-signal" style={{ width: `${focusShare}%` }} />
-      </div>
+      {/* presence split: focused · active · idle — the whole day in one bar */}
+      {(() => {
+        const idle = data.idleSec;
+        const activeOnly = Math.max(0, activeSec - data.focusSec);
+        const denom = data.focusSec + activeOnly + idle || 1;
+        const pct = (v: number) => (v / denom) * 100;
+        return (
+          <>
+            <div className="mt-3 flex h-1.5 w-3/4 overflow-hidden rounded-full bg-surface-2/70">
+              <div className="bg-signal" style={{ width: `${pct(data.focusSec)}%` }} title="Focused" />
+              <div className="bg-[oklch(0.74_0.14_200)]" style={{ width: `${pct(activeOnly)}%` }} title="Active" />
+              <div className="bg-[oklch(0.4_0.02_270)]" style={{ width: `${pct(idle)}%` }} title="Idle" />
+            </div>
+            <div className="mt-1.5 flex gap-3 text-[9px] text-muted-foreground/70">
+              <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-signal" />Focused {focusShare}%</span>
+              <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.4_0.02_270)]" />Idle {fmtDuration(idle)}</span>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Day shape — activity by hour of day */}
       <div className="mt-auto pt-5">

@@ -57,7 +57,7 @@ export function RangeView({
           <RangeHero data={data} />
         </div>
         <div className="lg:col-span-1">
-          <CategoryMix categories={data.categories} />
+          <CategoryMix categories={data.categories} idleSec={data.idleSec} />
         </div>
         <div className="lg:col-span-1">
           <TopApps apps={data.apps} />
