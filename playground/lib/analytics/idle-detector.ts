@@ -32,6 +32,13 @@ function isEntertainmentFrame(frame: IdleFrameInput | null): boolean {
 
 /** Gap with no interaction before classifying as idle (default 5 min). */
 export const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
+/**
+ * How long entertainment with NO interaction stays "present" once the screen
+ * has gone static (paused/ended video). A genuinely playing video keeps the
+ * screen changing and stays present indefinitely; this only caps the static
+ * case so a video left running doesn't inflate watch time. 15 min.
+ */
+export const ENTERTAINMENT_PRESENCE_CAP_MS = 15 * 60 * 1000;
 /** No frame capture before classifying as asleep (default 30 min). */
 export const SLEEP_THRESHOLD_MS = 30 * 60 * 1000;
 /** Minimum gap before background confidence is high (1 min). */
@@ -231,11 +238,22 @@ function classifyGap(opts: {
 
   // ── Presence without input, by content type ───────────────────────────────
   //
-  // Watching video/streaming: frames flowing on ENTERTAINMENT content = present,
-  // even with no input for a long stretch (a 1-hour movie needs no keypress).
-  // Only frames stopping (handled above as SLEEPING) ends it.
+  // Watching video/streaming: frames flowing on ENTERTAINMENT content = present
+  // even with no input for a while (a movie needs no keypress). BUT a video you
+  // walked away from — paused or ended — keeps flowing frames forever and would
+  // otherwise inflate "entertainment" with hours you weren't there. A *playing*
+  // video changes pixels (ocrChanged / not static); a paused/ended one is static.
+  // So: entertainment stays present only while the screen is still changing OR
+  // you interacted recently. Static + no interaction for a long stretch = away.
   if (framesFlowing && entertainment) {
-    return { state: "BACKGROUND", confidence: 0.68, hadInteraction: false };
+    const screenChanging = ocrChanged && !screenStatic;
+    const interactedRecently = msSinceLastInteraction < ENTERTAINMENT_PRESENCE_CAP_MS;
+    if (screenChanging || interactedRecently) {
+      return { state: "BACKGROUND", confidence: 0.68, hadInteraction: false };
+    }
+    // Static video + no interaction for >cap → you left it running. Mark idle.
+    const tier = classifyIdleTier(msSinceLastInteraction);
+    return { state: "IDLE", confidence: 0.82, idleTier: tier ?? "away" };
   }
 
   // Everything else (research, code, docs): no input means you're probably AWAY —
