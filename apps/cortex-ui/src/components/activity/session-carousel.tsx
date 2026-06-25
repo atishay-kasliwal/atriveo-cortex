@@ -10,7 +10,7 @@ import { collapseMicroEntertainment } from "@/lib/activity/session-collapse";
 import { sessionAppsLine, sessionContextLabel } from "@/lib/activity/session-context";
 import type { TimelineBlock } from "@/lib/api/types";
 
-const ALL_TAGS = ["All", "Build", "Research", "Communication", "Planning", "Entertainment", "Other"] as const;
+const ALL_TAGS = ["All", "Build", "Research", "Communication", "Planning", "Entertainment", "Job Application", "Other"] as const;
 type Tag = (typeof ALL_TAGS)[number];
 
 function blockTag(block: TimelineBlock): Tag {
@@ -21,6 +21,7 @@ function blockTag(block: TimelineBlock): Tag {
     communication: "Communication",
     planning: "Planning",
     entertainment: "Entertainment",
+    job_application: "Job Application",
     other: "Other",
   };
   return map[cat.toLowerCase()] ?? "Other";

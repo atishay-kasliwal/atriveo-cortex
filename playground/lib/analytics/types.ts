@@ -8,6 +8,7 @@ export type SessionType =
   | "COMMUNICATION"
   | "PLANNING"
   | "ENTERTAINMENT"
+  | "JOB_APPLICATION"
   | "OTHER";
 
 export type AnalyticsRunStatus = "running" | "completed" | "failed";

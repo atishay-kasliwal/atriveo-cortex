@@ -11,21 +11,22 @@ const HOUR_MARKS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
 // ── Colors ────────────────────────────────────────────────────────────────────
 
 const CAT_COLOR: Record<string, string> = {
-  build:         "#3b82f6",   // blue
-  research:      "#06b6d4",   // cyan
-  communication: "#f59e0b",   // amber
-  planning:      "#a78bfa",   // violet
-  learning:      "#34d399",   // emerald
-  entertainment: "#f87171",   // red
-  exercise:      "#22c55e",   // green
-  idle:          "#374151",   // gray
-  other:         "#4b5563",
+  build:           "#3b82f6",   // blue
+  research:        "#06b6d4",   // cyan
+  communication:   "#f59e0b",   // amber
+  planning:        "#a78bfa",   // violet
+  learning:        "#34d399",   // emerald
+  entertainment:   "#f87171",   // red
+  exercise:        "#22c55e",   // green
+  job_application: "#4ade80",   // green
+  idle:            "#374151",   // gray
+  other:           "#4b5563",
 };
 
 const CAT_LABEL: Record<string, string> = {
   build: "Building", research: "Research", communication: "Comm",
   planning: "Planning", learning: "Learning", entertainment: "Entertainment",
-  exercise: "Exercise", idle: "Idle", other: "Other",
+  exercise: "Exercise", job_application: "Job Application", idle: "Idle", other: "Other",
 };
 
 // Map raw attention/activity states → display states

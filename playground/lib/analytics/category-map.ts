@@ -29,6 +29,7 @@ const APP_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
   { match: /slack|discord|messages|mail|teams|telegram|whatsapp/i, category: "COMMUNICATION" },
   { match: /notion|linear|jira|asana|calendar|obsidian|todoist/i, category: "PLANNING" },
   { match: /spotify|netflix|music|steam|youtube/i, category: "ENTERTAINMENT" },
+  { match: /jack.*jill|jackandjill/i, category: "JOB_APPLICATION" },
   { match: /chrome|arc|safari|firefox|brave|edge/i, category: "RESEARCH" },
   { match: /zoom|meet|facetime|webex/i, category: "COMMUNICATION" },
 ];
@@ -36,7 +37,8 @@ const APP_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
 const DOMAIN_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
   { match: /github\.com|gitlab\.com|localhost/i, category: "BUILD" },
   { match: /stackoverflow|docs\.|arxiv\.org|wikipedia|medium\.com/i, category: "RESEARCH" },
-  { match: /gmail\.com|mail\.google|linkedin\.com|twitter\.com|x\.com/i, category: "COMMUNICATION" },
+  { match: /linkedin\.com|application\.atriveo\.com|atriveo\.com|workday\.com|myworkdayjobs\.com|jackandjillai\.com|jackandjill\.ai/i, category: "JOB_APPLICATION" },
+  { match: /gmail\.com|mail\.google|twitter\.com|x\.com/i, category: "COMMUNICATION" },
   { match: /notion\.so|linear\.app|jira\.|asana\.com/i, category: "PLANNING" },
   {
     match: new RegExp(
@@ -153,7 +155,8 @@ export function isMeetingApp(
 /** UI-facing lowercase category. */
 export function toUiCategory(
   sessionType: SessionType,
-): "build" | "research" | "communication" | "planning" | "entertainment" | "other" {
+): "build" | "research" | "communication" | "planning" | "entertainment" | "job_application" | "other" {
+  if (sessionType === "JOB_APPLICATION") return "job_application";
   return sessionType.toLowerCase() as
     | "build"
     | "research"

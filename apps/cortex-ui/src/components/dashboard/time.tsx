@@ -48,6 +48,14 @@ export const categoryStyle: Record<
     chip: "text-[oklch(0.75_0.15_20)] bg-[oklch(0.65_0.18_20/15%)]",
     glow: "oklch(0.65 0.18 20 / 35%)",
   },
+  job_application: {
+    label: "Job Application",
+    short: "Jobs",
+    bar: "bg-[oklch(0.72_0.18_145)]",
+    dot: "bg-[oklch(0.72_0.18_145)]",
+    chip: "text-[oklch(0.82_0.16_145)] bg-[oklch(0.72_0.18_145/15%)]",
+    glow: "oklch(0.72 0.18 145 / 35%)",
+  },
   idle: {
     label: "Idle",
     short: "Idle",

@@ -833,6 +833,7 @@ export type ActivityCategory =
   | "communication"
   | "planning"
   | "entertainment"
+  | "job_application"
   | "idle"
   | "other";
 
