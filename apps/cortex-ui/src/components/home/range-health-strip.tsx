@@ -69,23 +69,19 @@ function Metric({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex-1 px-4 py-3.5">
-      <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="px-4 py-3.5">
+      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
         {icon}
         <span>{label}</span>
       </div>
-      <div className="flex items-end justify-between gap-2">
-        <div>
-          <div className="flex items-baseline gap-1">
-            <span className="stat-hero text-xl tabular-nums text-foreground">{bigValue}</span>
-            <span className="text-[10px] text-muted-foreground/70">{unit}</span>
-          </div>
-          {context ? (
-            <div className="mt-0.5 text-[9px] text-muted-foreground/50">{context}</div>
-          ) : null}
-        </div>
-        <div className="w-28 shrink-0">{children}</div>
+      <div className="flex items-baseline gap-1">
+        <span className="stat-hero text-xl tabular-nums text-foreground">{bigValue}</span>
+        <span className="text-[10px] text-muted-foreground/70">{unit}</span>
       </div>
+      {context ? (
+        <div className="mt-0.5 text-[9px] text-muted-foreground/50">{context}</div>
+      ) : null}
+      <div className="mt-1.5">{children}</div>
     </div>
   );
 }
@@ -104,7 +100,7 @@ export function RangeHealthStrip({ health }: { health: RangeHealth | null }) {
 
   return (
     <ActivityCard title="Body" subtitle="Sleep, steps & heart over the range">
-      <div className="flex flex-col divide-y divide-border/40 sm:flex-row sm:divide-x sm:divide-y-0">
+      <div className="grid grid-cols-2 divide-x divide-y divide-border/40 [&>*:nth-child(-n+2)]:border-t-0 [&>*:nth-child(odd)]:border-l-0">
         <Metric
           icon={<Moon className="h-3.5 w-3.5 text-[oklch(0.7_0.12_270)]" />}
           label="Sleep"
