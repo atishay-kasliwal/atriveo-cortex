@@ -56,7 +56,7 @@ const stateBarClass: Record<string, string> = {
   focused: "bg-[oklch(0.72_0.16_280)]",
   active: "bg-signal",
   background: "bg-[oklch(0.72_0.12_200)]",
-  idle: "bg-[oklch(0.78_0.15_80)]",
+  idle: "bg-[oklch(0.55_0.01_270)]", // grey — away/idle
   sleeping: "bg-muted-foreground/50",
 };
 
@@ -130,13 +130,33 @@ export function TemporalRibbon({
     enabled: isToday || viewDate != null,
   });
 
-  const segments = useMemo(
+  const workSegments = useMemo(
     () =>
       [...blocks]
         .map((b) => blockToSegment(b, dayStart))
         .filter((s) => s.durationMin > 0 && s.startMin < DAY_MIN)
         .sort((a, b) => a.startMin - b.startMin),
     [blocks, dayStart],
+  );
+
+  // Idle segments lifted from the presence timeline, shaped as category="idle"
+  // blocks so they render in the master ribbon and category overlap alongside work.
+  const idleSegments = useMemo(
+    () =>
+      [...stateTimeline]
+        .filter((b) => b.state.toLowerCase() === "idle")
+        .map((b) => {
+          const seg = stateBlockToSegment(b, dayStart);
+          return { ...seg, block: { ...seg.block, category: "idle" as ActivityCategory } };
+        })
+        .filter((s) => s.durationMin > 0 && s.startMin < DAY_MIN),
+    [stateTimeline, dayStart],
+  );
+
+  // Combined view (work + idle) for the master ribbon + category overlap.
+  const segments = useMemo(
+    () => [...workSegments, ...idleSegments].sort((a, b) => a.startMin - b.startMin),
+    [workSegments, idleSegments],
   );
 
   const totals = useMemo(() => {
@@ -148,8 +168,8 @@ export function TemporalRibbon({
   }, [segments]);
 
   const totalActiveSec = useMemo(
-    () => segments.reduce((n, s) => n + s.block.durationSec, 0),
-    [segments],
+    () => workSegments.reduce((n, s) => n + s.block.durationSec, 0),
+    [workSegments],
   );
 
   const decompositionCategories = useMemo(() => {
@@ -202,7 +222,7 @@ export function TemporalRibbon({
             </p>
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-            {ribbonCategories.map((key) => (
+            {[...ribbonCategories, ...(idleSegments.length > 0 ? (["idle"] as const) : [])].map((key) => (
               <div key={key} className="flex items-center gap-1.5">
                 <span className={"size-1.5 rounded-full " + categoryStyle[key].dot} />
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">

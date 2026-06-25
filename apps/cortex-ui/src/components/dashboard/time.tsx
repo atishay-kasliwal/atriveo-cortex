@@ -51,10 +51,10 @@ export const categoryStyle: Record<
   idle: {
     label: "Idle",
     short: "Idle",
-    bar: "bg-[oklch(0.35_0.01_270)]",
-    dot: "bg-[oklch(0.35_0.01_270)]",
+    bar: "bg-[oklch(0.55_0.01_270)]",
+    dot: "bg-[oklch(0.55_0.01_270)]",
     chip: "text-muted-foreground bg-surface-2",
-    glow: "oklch(0.35 0.01 270 / 25%)",
+    glow: "oklch(0.55 0.01 270 / 25%)",
   },
   other: {
     label: "Other",

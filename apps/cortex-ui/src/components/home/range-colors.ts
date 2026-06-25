@@ -11,7 +11,7 @@ export const CATEGORY_FILL: Record<ActivityCategory, string> = {
   communication: "oklch(0.76 0.15 55)",
   planning: "oklch(0.74 0.16 320)",
   entertainment: "oklch(0.65 0.18 20)",
-  idle: "oklch(0.35 0.01 270)",
+  idle: "oklch(0.55 0.01 270)",
   other: "oklch(0.5 0.03 270)",
 };
 
