@@ -6,6 +6,7 @@ import { Calendar } from "lucide-react";
 import { fmtDuration } from "@/components/dashboard/time";
 import { KpiTile, type KpiTileProps } from "@/components/home/kpi-tile";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
+import { RangeWorkRhythm } from "@/components/home/range-work-rhythm";
 import { formatDateLabel } from "@/lib/activity/date-nav";
 import type { RangeActivity } from "@/lib/api/range-adapter";
 
@@ -42,10 +43,18 @@ export function RangeView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Row 1 — KPI strip spans full width: the at-a-glance summary. */}
       <HeroKpis data={data} />
-      {/* Sections (work rhythm, per-tag, apps, websites, screens, health)
-          land here one at a time. */}
+
+      {/* Row 2 — work rhythm heatmap full width (the temporal spine). */}
+      <RangeWorkRhythm data={data} />
+
+      {/* Dashboard grid — sections sit side by side so the whole range reads in
+          one screen. Per-tag, apps, websites, screens, health fill in next. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* placeholders for upcoming sections */}
+      </div>
     </div>
   );
 }
