@@ -4,6 +4,7 @@
 
 import { useMemo } from "react";
 import { categoryStyle, fmtDuration } from "@/components/dashboard/time";
+import { catFill } from "@/components/home/range-colors";
 import { formatDateLabel } from "@/lib/activity/date-nav";
 import type { RangeActivity } from "@/lib/api/range-adapter";
 import type { ActivityCategory } from "@/lib/api/types";
@@ -42,59 +43,88 @@ export function RangeTagCards({ data }: { data: RangeActivity }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         {cards.map(({ tag, slice, longest, topApps, share }) => {
           const style = categoryStyle[tag];
+          const fill = catFill(tag);
+          const appMax = topApps[0]?.durationSec ?? 1;
           return (
             <div
               key={tag}
-              className="flex flex-col rounded-xl border border-border/40 bg-surface-1/30 p-3"
+              className="relative flex flex-col overflow-hidden rounded-xl border border-border/40 bg-surface-1/40 p-3.5"
             >
-              <div className="flex items-center gap-1.5">
-                <span className={"h-2 w-2 rounded-full " + style.dot} />
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {style.label}
+              {/* category accent edge */}
+              <span
+                className="absolute inset-y-0 left-0 w-[3px]"
+                style={{ background: fill }}
+              />
+
+              {/* header: label + sessions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ background: fill }} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
+                    {style.label}
+                  </span>
+                </div>
+                <span className="font-mono text-[10px] tabular-nums text-muted-foreground/60">
+                  {slice.sessionCount} sess
                 </span>
               </div>
 
-              <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="stat-hero text-xl tabular-nums text-foreground">
+              {/* hero time + share */}
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="stat-hero text-[22px] leading-none tabular-nums text-foreground">
                   {fmtDuration(slice.durationSec)}
                 </span>
-                <span className="text-[10px] text-muted-foreground">{Math.round(share)}%</span>
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums"
+                  style={{ background: `${fill.replace(")", " / 0.15)")}`, color: fill }}
+                >
+                  {Math.round(share)}%
+                </span>
               </div>
 
               {/* share bar */}
-              <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2/70">
-                <div className={"h-full rounded-full " + style.bar} style={{ width: `${share}%` }} />
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2/70">
+                <div className="h-full rounded-full" style={{ width: `${share}%`, background: fill }} />
               </div>
 
-              <div className="mt-2 text-[10px] text-muted-foreground/70">
-                {slice.sessionCount} session{slice.sessionCount === 1 ? "" : "s"}
-              </div>
+              {/* per-app time bars (richer than chips) */}
+              {topApps.length > 0 ? (
+                <div className="mt-3 space-y-1">
+                  {topApps.map((a) => (
+                    <div key={a.app} className="flex items-center gap-1.5">
+                      <span className="w-16 shrink-0 truncate text-[9px] text-muted-foreground/80" title={a.app}>
+                        {a.app}
+                      </span>
+                      <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-surface-2/60">
+                        <div
+                          className="absolute inset-y-0 left-0 rounded-full"
+                          style={{ width: `${(a.durationSec / appMax) * 100}%`, background: fill, opacity: 0.7 }}
+                        />
+                      </div>
+                      <span className="w-9 shrink-0 text-right font-mono text-[9px] tabular-nums text-muted-foreground/60">
+                        {fmtDuration(a.durationSec)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {longest ? (
-                <div className="mt-2 border-t border-border/30 pt-2">
-                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground/50">
-                    Longest
+                <div className="mt-3 border-t border-border/30 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50">
+                      Longest session
+                    </span>
+                    <span className="font-mono text-[9px] tabular-nums text-foreground/70">
+                      {fmtDuration(longest.durationSec)}
+                    </span>
                   </div>
                   <div className="mt-0.5 truncate text-[11px] text-foreground/85" title={longest.title}>
                     {longest.title}
                   </div>
-                  <div className="font-mono text-[9px] tabular-nums text-muted-foreground/60">
-                    {fmtDuration(longest.durationSec)} · {formatDateLabel(longest.date)}
+                  <div className="font-mono text-[9px] tabular-nums text-muted-foreground/50">
+                    {formatDateLabel(longest.date)}
                   </div>
-                </div>
-              ) : null}
-
-              {topApps.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {topApps.map((a) => (
-                    <span
-                      key={a.app}
-                      className="truncate rounded bg-surface-2/60 px-1.5 py-0.5 text-[9px] text-muted-foreground"
-                      title={`${a.app} · ${fmtDuration(a.durationSec)}`}
-                    >
-                      {a.app}
-                    </span>
-                  ))}
                 </div>
               ) : null}
             </div>

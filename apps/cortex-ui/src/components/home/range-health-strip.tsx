@@ -56,22 +56,36 @@ function Spark({
 function Metric({
   icon,
   label,
-  value,
+  bigValue,
+  unit,
+  context,
   children,
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  bigValue: string;
+  unit: string;
+  context?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex-1 px-4 py-3">
-      <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="flex-1 px-4 py-3.5">
+      <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
         {icon}
         <span>{label}</span>
-        <span className="ml-auto font-mono tabular-nums text-foreground/85">{value}</span>
       </div>
-      {children}
+      <div className="flex items-end justify-between gap-2">
+        <div>
+          <div className="flex items-baseline gap-1">
+            <span className="stat-hero text-xl tabular-nums text-foreground">{bigValue}</span>
+            <span className="text-[10px] text-muted-foreground/70">{unit}</span>
+          </div>
+          {context ? (
+            <div className="mt-0.5 text-[9px] text-muted-foreground/50">{context}</div>
+          ) : null}
+        </div>
+        <div className="w-28 shrink-0">{children}</div>
+      </div>
     </div>
   );
 }
@@ -82,27 +96,38 @@ export function RangeHealthStrip({ health }: { health: RangeHealth | null }) {
   const steps = health.days.map((d) => d.steps);
   const hr = health.days.map((d) => d.restingHr ?? d.avgHr);
 
+  const sleepVals = sleep.filter((v): v is number => v != null);
+  const hrVals = hr.filter((v): v is number => v != null);
+  const range = (arr: number[], fmt: (n: number) => string) =>
+    arr.length ? `${fmt(Math.min(...arr))}–${fmt(Math.max(...arr))}` : "—";
+
   return (
     <ActivityCard title="Body" subtitle="Sleep, steps & heart over the range">
       <div className="flex flex-col divide-y divide-border/40 sm:flex-row sm:divide-x sm:divide-y-0">
         <Metric
           icon={<Moon className="h-3.5 w-3.5 text-[oklch(0.7_0.12_270)]" />}
           label="Sleep"
-          value={health.avgSleepHours != null ? `${health.avgSleepHours.toFixed(1)}h avg` : "—"}
+          bigValue={health.avgSleepHours != null ? health.avgSleepHours.toFixed(1) : "—"}
+          unit="h avg"
+          context={`range ${range(sleepVals, (n) => n.toFixed(1))}h`}
         >
           <Spark vals={sleep} stroke="oklch(0.65 0.13 270)" fill="oklch(0.6 0.13 270 / 0.16)" />
         </Metric>
         <Metric
           icon={<Footprints className="h-3.5 w-3.5 text-[oklch(0.7_0.15_150)]" />}
           label="Steps"
-          value={`${health.totalSteps.toLocaleString()} total`}
+          bigValue={(health.totalSteps / 1000).toFixed(1) + "k"}
+          unit="total"
+          context={`${health.avgSteps.toLocaleString()}/day avg`}
         >
           <Spark vals={steps} stroke="oklch(0.72 0.15 150)" fill="oklch(0.7 0.15 150 / 0.16)" />
         </Metric>
         <Metric
           icon={<Heart className="h-3.5 w-3.5 text-[oklch(0.65_0.2_20)]" />}
           label="Resting HR"
-          value={health.avgRestingHr != null ? `${health.avgRestingHr} bpm` : "—"}
+          bigValue={health.avgRestingHr != null ? String(health.avgRestingHr) : "—"}
+          unit="bpm avg"
+          context={`range ${range(hrVals, (n) => String(Math.round(n)))} bpm`}
         >
           <Spark vals={hr} stroke="oklch(0.68 0.2 20)" fill="oklch(0.65 0.2 20 / 0.16)" />
         </Metric>
