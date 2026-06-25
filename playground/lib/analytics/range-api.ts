@@ -86,6 +86,13 @@ export interface RangeScreenRow {
   categories: Array<{ category: string; label: string; durationSec: number }>;
 }
 
+/** Active + focused seconds per hour-of-day (0–23), summed across the range. */
+export interface RangeHourBucket {
+  hour: number;
+  activeSec: number;
+  focusSec: number;
+}
+
 export interface RangeActivityDTO {
   start: string;
   end: string;
@@ -107,6 +114,10 @@ export interface RangeActivityDTO {
   longestByCategory: RangeLongestSession[];
   apps: RangeAppRow[];
   websites: RangeWebsiteRow[];
+
+  // Hour-of-day shape (24 buckets) + weekday×hour matrix [7][24] of active sec.
+  hourByHour: RangeHourBucket[];
+  weekHourMatrix: number[][];
 
   // Bundled extras — degrade independently (null/empty if unavailable).
   health: RangeHealthSummary | null;
@@ -249,6 +260,64 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+const APP_TZ = "America/New_York";
+
+/** ET weekday (0=Mon..6=Sun) and hour (0–23) for an instant. */
+function etWeekdayHour(instant: Date): { weekday: number; hour: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TZ,
+    weekday: "short",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(instant);
+  const wd = parts.find((p) => p.type === "weekday")?.value ?? "Mon";
+  let hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  if (hour === 24) hour = 0;
+  const idx = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
+  return { weekday: (idx + 6) % 7, hour };
+}
+
+/**
+ * Bin session active-time into hour-of-day buckets and a weekday×hour matrix.
+ * A session is sampled minute-by-minute (capped) so one crossing 14:00–16:00
+ * lands in hours 14 and 15 proportionally.
+ */
+function buildHourly(sessions: ActivitySessionRow[]): {
+  hourByHour: RangeHourBucket[];
+  weekHourMatrix: number[][];
+} {
+  const hours: RangeHourBucket[] = Array.from({ length: 24 }, (_, h) => ({
+    hour: h,
+    activeSec: 0,
+    focusSec: 0,
+  }));
+  const matrix: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));
+
+  for (const s of sessions) {
+    const startMs = Date.parse(s.start_time);
+    const endMs = Date.parse(s.end_time);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
+    const isFocus = s.session_type === "BUILD"; // focused ≈ deep build sessions
+    // Sample in 5-minute steps (cap iterations for very long sessions).
+    const STEP = 5 * 60_000;
+    const steps = Math.min(2000, Math.ceil((endMs - startMs) / STEP));
+    const perStepSec = (endMs - startMs) / 1000 / steps;
+    for (let i = 0; i < steps; i++) {
+      const t = new Date(startMs + i * STEP + STEP / 2);
+      const { weekday, hour } = etWeekdayHour(t);
+      hours[hour]!.activeSec += perStepSec;
+      if (isFocus) hours[hour]!.focusSec += perStepSec;
+      matrix[weekday]![hour]! += perStepSec;
+    }
+  }
+  for (const h of hours) {
+    h.activeSec = Math.round(h.activeSec);
+    h.focusSec = Math.round(h.focusSec);
+  }
+  for (const row of matrix) for (let i = 0; i < 24; i++) row[i] = Math.round(row[i]!);
+  return { hourByHour: hours, weekHourMatrix: matrix };
+}
+
 /** Aggregate everything the Home range view needs for an arbitrary [start, end]. */
 export async function buildRangeActivity(
   start: string,
@@ -304,6 +373,7 @@ export async function buildRangeActivity(
     longestByCategory: longestByCategory(sessions),
     apps,
     websites,
+    ...buildHourly(sessions),
     health,
     screens,
   };

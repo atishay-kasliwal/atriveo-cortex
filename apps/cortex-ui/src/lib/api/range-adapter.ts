@@ -81,6 +81,8 @@ export type RangeActivity = {
   longestByCategory: RangeLongestSession[];
   apps: RangeApp[];
   websites: RangeWebsite[];
+  hourByHour: Array<{ hour: number; activeSec: number; focusSec: number }>;
+  weekHourMatrix: number[][];
   health: RangeHealth | null;
   screens: RangeScreen[];
 };

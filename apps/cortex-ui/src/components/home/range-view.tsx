@@ -7,7 +7,8 @@ import { fmtDuration } from "@/components/dashboard/time";
 import { KpiTile, type KpiTileProps } from "@/components/home/kpi-tile";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { RangeWorkRhythm } from "@/components/home/range-work-rhythm";
-import { RangeMiddleGrid } from "@/components/home/range-breakdowns";
+import { RangeHero } from "@/components/home/range-hero";
+import { CategoryMix, TopApps, TopWebsites, ScreenSplit } from "@/components/home/range-breakdowns";
 import { RangeTagCards } from "@/components/home/range-tag-cards";
 import { RangeHealthStrip } from "@/components/home/range-health-strip";
 import { formatDateLabel } from "@/lib/activity/date-nav";
@@ -50,17 +51,37 @@ export function RangeView({
       {/* KPI strip — the at-a-glance summary. */}
       <HeroKpis data={data} />
 
+      {/* Row 2 — Active hero (wide) · category mix · top apps. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <RangeHero data={data} />
+        </div>
+        <div className="lg:col-span-1">
+          <CategoryMix categories={data.categories} />
+        </div>
+        <div className="lg:col-span-1">
+          <TopApps apps={data.apps} />
+        </div>
+      </div>
+
       {/* Per-tag cards — one rich card per category. */}
       <RangeTagCards data={data} />
 
-      {/* Charts grid — donut · bars · bars · screens, 2-up. */}
-      <RangeMiddleGrid data={data} />
+      {/* Row 3 — when-you-worked rhythm (wide) · top websites · body. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <RangeWorkRhythm data={data} />
+        </div>
+        <div className="lg:col-span-1">
+          <TopWebsites websites={data.websites} />
+        </div>
+        <div className="lg:col-span-1">
+          <RangeHealthStrip health={data.health} />
+        </div>
+      </div>
 
-      {/* Health strip — sleep · steps · HR over the range. */}
-      <RangeHealthStrip health={data.health} />
-
-      {/* Work rhythm heatmap — the temporal map, last. */}
-      <RangeWorkRhythm data={data} />
+      {/* Screens — what each monitor was used for. */}
+      <ScreenSplit screens={data.screens} />
     </div>
   );
 }
