@@ -43,15 +43,20 @@ export function HomeHero({
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
   }
-  const rows = BREAKDOWN_CATEGORIES.map((c) => ({
-    category: c,
+  const workRows = BREAKDOWN_CATEGORIES.map((c) => ({
+    category: c as string,
     sec: totals.get(c) ?? 0,
-  }))
-    .filter((r) => r.sec > 0)
-    .sort((a, b) => b.sec - a.sec);
+  })).filter((r) => r.sec > 0);
+
+  // Idle is presence (away) time, not a work session — include it so the bar
+  // reflects the whole day, shown last with the muted idle color.
+  const idleSec = data.idleSec ?? 0;
+  const rows = [...workRows]
+    .sort((a, b) => b.sec - a.sec)
+    .concat(idleSec > 0 ? [{ category: "idle", sec: idleSec }] : []);
 
   const totalCat = rows.reduce((n, r) => n + r.sec, 0) || 1;
-  const top = rows[0];
+  const top = workRows.slice().sort((a, b) => b.sec - a.sec)[0];
 
   return (
     <section className="surface-card overflow-hidden rounded-2xl">

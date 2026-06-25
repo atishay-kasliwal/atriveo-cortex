@@ -200,20 +200,23 @@ function CategoryBreakdown({ data }: { data: TodayActivity }) {
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
   }
-  const rows = BREAKDOWN_CATEGORIES.map((c) => ({
-    category: c,
+  const workRows = BREAKDOWN_CATEGORIES.map((c) => ({
+    category: c as string,
     sec: totals.get(c) ?? 0,
   })).filter((r) => r.sec > 0);
 
-  if (rows.length === 0) return null;
+  if (workRows.length === 0) return null;
 
+  workRows.sort((a, b) => b.sec - a.sec);
+  // Include idle (away) time as a muted slice so the bar covers the whole day.
+  const idleSec = data.idleSec ?? 0;
+  const rows = workRows.concat(idleSec > 0 ? [{ category: "idle", sec: idleSec }] : []);
   const total = rows.reduce((n, r) => n + r.sec, 0) || 1;
-  rows.sort((a, b) => b.sec - a.sec);
 
   return (
     <ActivityCard
       title="Where your time went"
-      subtitle="Active time by category — attributed to the screen you were actually on"
+      subtitle="Time by category across the day — work plus idle/away time"
     >
       <div className="px-5 py-4">
         {/* Stacked proportional bar */}

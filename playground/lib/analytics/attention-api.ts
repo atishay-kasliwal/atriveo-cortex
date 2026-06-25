@@ -13,7 +13,6 @@ import { buildAttentionDecisionView, type AttentionDecisionView } from "./attent
 import { buildAttentionVisualizations, type AttentionVisualizations } from "./attention-visualizations";
 import { buildProductMomentum, type ProductMomentumRow } from "./product-momentum";
 import { buildDailyAttentionReport } from "./attention-engine";
-import { computeAndPersistDayAttention } from "./attention-db";
 import type {
   AttentionTrends,
   DailyAttentionReport,
@@ -234,10 +233,6 @@ async function loadOrComputeDay(date: string): Promise<DailyAttentionReport> {
   }
 
   const stateSegments = await attentionRepository.listStateSegments(date);
-  if (stateSegments.length > 0) {
-    return computeAndPersistDayAttention(date);
-  }
-
   const sessions = await analyticsRepository.listSessions(date, date);
   return buildDailyAttentionReport(date, stateSegments, sessions, {}, undefined, {
     visibleTime: [],
