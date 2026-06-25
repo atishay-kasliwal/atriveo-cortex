@@ -17,6 +17,8 @@ export type RangeCategorySlice = {
   category: ActivityCategory;
   durationSec: number;
   sessionCount: number;
+  daily: number[];
+  busiestDay: { date: string; durationSec: number } | null;
 };
 
 export type RangeLongestSession = {
@@ -45,6 +47,7 @@ export type RangeHealthDay = {
   steps: number;
   avgHr: number | null;
   restingHr: number | null;
+  activeCalories: number;
 };
 
 export type RangeHealth = {
@@ -52,6 +55,8 @@ export type RangeHealth = {
   totalSteps: number;
   avgSteps: number;
   avgRestingHr: number | null;
+  totalCalories: number;
+  avgCalories: number;
   days: RangeHealthDay[];
 };
 

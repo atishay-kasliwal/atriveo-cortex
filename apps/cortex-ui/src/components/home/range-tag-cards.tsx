@@ -30,7 +30,18 @@ export function RangeTagCards({ data }: { data: RangeActivity }) {
     if (!slice || slice.durationSec <= 0) return null;
     const longest = data.longestByCategory.find((l) => l.category === tag) ?? null;
     const topApps = data.apps.filter((a) => a.category === tag).slice(0, 3);
-    return { tag, slice, longest, topApps, share: (slice.durationSec / totalWork) * 100 };
+    // When this tag has few apps, fall back to its top websites so the card fills.
+    const topSites = data.websites
+      .filter((w) => w.category === tag && w.durationSec > 0)
+      .slice(0, 3);
+    return {
+      tag,
+      slice,
+      longest,
+      topApps,
+      topSites,
+      share: (slice.durationSec / totalWork) * 100,
+    };
   }).filter((x): x is NonNullable<typeof x> => x != null);
 
   if (cards.length === 0) return null;
@@ -41,10 +52,15 @@ export function RangeTagCards({ data }: { data: RangeActivity }) {
         By category
       </h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-        {cards.map(({ tag, slice, longest, topApps, share }) => {
+        {cards.map(({ tag, slice, longest, topApps, topSites, share }) => {
           const style = categoryStyle[tag];
           const fill = catFill(tag);
-          const appMax = topApps[0]?.durationSec ?? 1;
+          // Fill to 3 rows: apps first, then sites — so every card has body.
+          const rows = [
+            ...topApps.map((a) => ({ key: "a:" + a.app, label: a.app, durationSec: a.durationSec })),
+            ...topSites.map((s) => ({ key: "s:" + s.domain, label: s.domain, durationSec: s.durationSec })),
+          ].slice(0, 3);
+          const rowMax = rows[0]?.durationSec ?? 1;
           return (
             <div
               key={tag}
@@ -87,30 +103,44 @@ export function RangeTagCards({ data }: { data: RangeActivity }) {
                 <div className="h-full rounded-full" style={{ width: `${share}%`, background: fill }} />
               </div>
 
-              {/* per-app time bars (richer than chips) */}
-              {topApps.length > 0 ? (
+              {/* top apps/sites time bars (filled to 3 so cards are even) */}
+              {rows.length > 0 ? (
                 <div className="mt-3 space-y-1">
-                  {topApps.map((a) => (
-                    <div key={a.app} className="flex items-center gap-1.5">
-                      <span className="w-16 shrink-0 truncate text-[9px] text-muted-foreground/80" title={a.app}>
-                        {a.app}
+                  {rows.map((r) => (
+                    <div key={r.key} className="flex items-center gap-1.5">
+                      <span className="w-16 shrink-0 truncate text-[9px] text-muted-foreground/80" title={r.label}>
+                        {r.label}
                       </span>
                       <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-surface-2/60">
                         <div
                           className="absolute inset-y-0 left-0 rounded-full"
-                          style={{ width: `${(a.durationSec / appMax) * 100}%`, background: fill, opacity: 0.7 }}
+                          style={{ width: `${(r.durationSec / rowMax) * 100}%`, background: fill, opacity: 0.7 }}
                         />
                       </div>
                       <span className="w-9 shrink-0 text-right font-mono text-[9px] tabular-nums text-muted-foreground/60">
-                        {fmtDuration(a.durationSec)}
+                        {fmtDuration(r.durationSec)}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : null}
 
+              {/* daily trend sparkline — fills space + shows the tag's rhythm */}
+              {slice.daily.some((v) => v > 0) ? (
+                <div className="mt-3">
+                  <TagSpark daily={slice.daily} fill={fill} />
+                  {slice.busiestDay ? (
+                    <div className="mt-1 text-[9px] text-muted-foreground/50">
+                      Peak {formatDateLabel(slice.busiestDay.date)} ·{" "}
+                      {fmtDuration(slice.busiestDay.durationSec)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {/* longest session pinned to the bottom so all cards align */}
               {longest ? (
-                <div className="mt-3 border-t border-border/30 pt-2">
+                <div className="mt-auto border-t border-border/30 pt-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50">
                       Longest session
@@ -132,5 +162,37 @@ export function RangeTagCards({ data }: { data: RangeActivity }) {
         })}
       </div>
     </div>
+  );
+}
+
+/** Tiny per-tag daily-trend area sparkline. */
+function TagSpark({ daily, fill }: { daily: number[]; fill: string }) {
+  const W = 100;
+  const Hh = 22;
+  const max = Math.max(1, ...daily);
+  const n = daily.length;
+  const pts = daily.map((v, i) => ({
+    x: n === 1 ? W / 2 : (i / (n - 1)) * W,
+    y: Hh - 2 - (v / max) * (Hh - 4),
+  }));
+  if (pts.length === 0) return null;
+  const line =
+    pts.length === 1
+      ? `M ${pts[0]!.x - 6} ${pts[0]!.y} L ${pts[0]!.x + 6} ${pts[0]!.y}`
+      : "M " + pts.map((p) => `${p.x} ${p.y}`).join(" L ");
+  const area = `${line} L ${pts[pts.length - 1]!.x} ${Hh} L ${pts[0]!.x} ${Hh} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${Hh}`} preserveAspectRatio="none" className="h-6 w-full">
+      <path d={area} fill={fill} opacity={0.16} />
+      <path
+        d={line}
+        fill="none"
+        stroke={fill}
+        strokeWidth={1.5}
+        vectorEffect="non-scaling-stroke"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

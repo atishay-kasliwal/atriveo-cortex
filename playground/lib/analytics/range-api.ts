@@ -40,6 +40,10 @@ export interface RangeCategorySlice {
   category: UiCategory;
   durationSec: number;
   sessionCount: number;
+  /** Seconds per day across the range, in day order — for a per-tag trend. */
+  daily: number[];
+  /** The single busiest day for this category. */
+  busiestDay: { date: string; durationSec: number } | null;
 }
 
 export interface RangeLongestSession {
@@ -68,6 +72,7 @@ export interface RangeHealthDay {
   steps: number;
   avgHr: number | null;
   restingHr: number | null;
+  activeCalories: number;
 }
 
 export interface RangeHealthSummary {
@@ -75,6 +80,8 @@ export interface RangeHealthSummary {
   totalSteps: number;
   avgSteps: number;
   avgRestingHr: number | null;
+  totalCalories: number;
+  avgCalories: number;
   days: RangeHealthDay[];
 }
 
@@ -136,17 +143,36 @@ function sumDays(rows: RangeDayRow[]) {
   );
 }
 
-function categoryBreakdown(sessions: ActivitySessionRow[]): RangeCategorySlice[] {
-  const map = new Map<UiCategory, { durationSec: number; sessionCount: number }>();
+function categoryBreakdown(
+  sessions: ActivitySessionRow[],
+  dayList: string[],
+): RangeCategorySlice[] {
+  const dayIndex = new Map(dayList.map((d, i) => [d, i]));
+  const map = new Map<
+    UiCategory,
+    { durationSec: number; sessionCount: number; daily: number[] }
+  >();
   for (const s of sessions) {
     const cat = toUiCategory(s.session_type) as UiCategory;
-    const entry = map.get(cat) ?? { durationSec: 0, sessionCount: 0 };
-    entry.durationSec += Math.round(s.duration_minutes * 60);
+    const entry =
+      map.get(cat) ?? { durationSec: 0, sessionCount: 0, daily: new Array(dayList.length).fill(0) };
+    const sec = Math.round(s.duration_minutes * 60);
+    entry.durationSec += sec;
     entry.sessionCount += 1;
+    const di = dayIndex.get(s.start_time.slice(0, 10));
+    if (di != null) entry.daily[di] += sec;
     map.set(cat, entry);
   }
   return [...map.entries()]
-    .map(([category, v]) => ({ category, ...v }))
+    .map(([category, v]) => {
+      let busiest: { date: string; durationSec: number } | null = null;
+      v.daily.forEach((sec, i) => {
+        if (sec > 0 && (!busiest || sec > busiest.durationSec)) {
+          busiest = { date: dayList[i]!, durationSec: sec };
+        }
+      });
+      return { category, durationSec: v.durationSec, sessionCount: v.sessionCount, daily: v.daily, busiestDay: busiest };
+    })
     .sort((a, b) => b.durationSec - a.durationSec);
 }
 
@@ -199,15 +225,19 @@ async function buildRangeHealth(
       steps: r.steps,
       avgHr: r.avg_hr,
       restingHr: r.resting_hr,
+      activeCalories: r.active_calories ?? 0,
     }));
     const sleeps = days.map((d) => d.sleepHours).filter((v): v is number => v != null);
     const rhrs = days.map((d) => d.restingHr).filter((v): v is number => v != null);
     const totalSteps = days.reduce((n, d) => n + d.steps, 0);
+    const totalCalories = days.reduce((n, d) => n + d.activeCalories, 0);
     return {
       avgSleepHours: sleeps.length ? round2(sleeps.reduce((a, b) => a + b, 0) / sleeps.length) : null,
       totalSteps,
       avgSteps: days.length ? Math.round(totalSteps / days.length) : 0,
       avgRestingHr: rhrs.length ? Math.round(rhrs.reduce((a, b) => a + b, 0) / rhrs.length) : null,
+      totalCalories,
+      avgCalories: days.length ? Math.round(totalCalories / days.length) : 0,
       days,
     };
   } catch {
@@ -369,7 +399,7 @@ export async function buildRangeActivity(
       ? { date: busiestDay.date, activeSec: busiestDay.activeSec }
       : null,
     days,
-    categories: categoryBreakdown(sessions),
+    categories: categoryBreakdown(sessions, days.map((d) => d.date)),
     longestByCategory: longestByCategory(sessions),
     apps,
     websites,
