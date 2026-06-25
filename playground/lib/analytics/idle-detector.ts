@@ -33,12 +33,12 @@ function isEntertainmentFrame(frame: IdleFrameInput | null): boolean {
 /** Gap with no interaction before classifying as idle (default 5 min). */
 export const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 /**
- * How long entertainment with NO interaction stays "present" once the screen
- * has gone static (paused/ended video). A genuinely playing video keeps the
- * screen changing and stays present indefinitely; this only caps the static
- * case so a video left running doesn't inflate watch time. 15 min.
+ * How long entertainment stays "present" with NO interaction. Real watching has
+ * periodic input (seek/pause/volume/next), so after this window with zero input a
+ * video is assumed left-running and counts as idle, not watch time. 5 min — short
+ * because video OCR is too noisy to prove presence on its own.
  */
-export const ENTERTAINMENT_PRESENCE_CAP_MS = 15 * 60 * 1000;
+export const ENTERTAINMENT_PRESENCE_CAP_MS = 5 * 60 * 1000;
 /** No frame capture before classifying as asleep (default 30 min). */
 export const SLEEP_THRESHOLD_MS = 30 * 60 * 1000;
 /** Minimum gap before background confidence is high (1 min). */
@@ -246,12 +246,17 @@ function classifyGap(opts: {
   // So: entertainment stays present only while the screen is still changing OR
   // you interacted recently. Static + no interaction for a long stretch = away.
   if (framesFlowing && entertainment) {
-    const screenChanging = ocrChanged && !screenStatic;
+    // Real watching involves periodic input — seek, volume, pause, fullscreen,
+    // picking the next video. So presence is primarily gated on RECENT interaction
+    // (within the cap). Video OCR is noisy (timestamps/scene pixels flicker), so a
+    // mere "screen changed" is NOT enough to prove you're there — it only extends
+    // presence for a short grace right after real input. Past the cap with no
+    // interaction, a video left running is idle, not watch time.
     const interactedRecently = msSinceLastInteraction < ENTERTAINMENT_PRESENCE_CAP_MS;
-    if (screenChanging || interactedRecently) {
+    if (interactedRecently) {
       return { state: "BACKGROUND", confidence: 0.68, hadInteraction: false };
     }
-    // Static video + no interaction for >cap → you left it running. Mark idle.
+    // No interaction past the cap → you left it running. Mark idle.
     const tier = classifyIdleTier(msSinceLastInteraction);
     return { state: "IDLE", confidence: 0.82, idleTier: tier ?? "away" };
   }

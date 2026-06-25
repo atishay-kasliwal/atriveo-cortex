@@ -85,45 +85,35 @@ describe("detectActivityStates", () => {
     expect(result.totals.backgroundSeconds).toBeLessThan(300);
   });
 
-  it("counts 30 min of a PLAYING video (changing screen) as PRESENT, not idle", () => {
-    // A genuinely playing video changes pixels frame-to-frame (scene/subtitles),
-    // so the OCR text changes — this keeps it present even with no keypress.
+  it("counts an ACTIVELY watched video (periodic input) as PRESENT, not idle", () => {
+    // Real watching has periodic interaction — seek, volume, pause, picking the
+    // next video. With input every few minutes the video stays present.
     const start = "2026-06-17T14:00:00.000Z";
     const frames: ReturnType<typeof frame>[] = [];
+    const events: ReturnType<typeof ui>[] = [];
     for (let i = 0; i <= 60; i++) {
       frames.push(
-        frame(
-          addSec(start, i * 30),
-          "Brave Browser",
-          "House of the Dragon - Brave", // genuine entertainment title
-          `scene ${i}: a different subtitle line plays on screen now`, // CHANGING
-        ),
+        frame(addSec(start, i * 30), "Brave Browser", "House of the Dragon - Brave", `scene ${i}`),
       );
+      // an interaction every ~2.5 min (well within the 5-min cap)
+      if (i % 5 === 0) events.push(ui(addSec(start, i * 30), "Brave Browser"));
     }
-    const result = detectActivityStates("2026-06-17", frames, [], DAY_START, DAY_END);
-    // Watching counts as present (background), NOT idle.
-    expect(result.totals.backgroundSeconds).toBeGreaterThan(1500);
+    const result = detectActivityStates("2026-06-17", frames, events, DAY_START, DAY_END);
     expect(result.totals.idleSeconds).toBeLessThan(120);
   });
 
-  it("counts a STATIC video left running with no input as IDLE (walked away)", () => {
-    // The bug fix: a paused/ended video (or one you walked away from) keeps frames
-    // flowing but the screen is static and there's no interaction — that's idle, not
-    // "entertainment", so it doesn't inflate watch time.
+  it("counts a video left running with NO input as IDLE (walked away)", () => {
+    // The bug fix: a video you walked away from keeps frames flowing but you give
+    // no input — past the 5-min cap it's idle, not inflated "entertainment".
     const start = "2026-06-17T14:00:00.000Z";
     const frames: ReturnType<typeof frame>[] = [];
     for (let i = 0; i <= 60; i++) {
       frames.push(
-        frame(
-          addSec(start, i * 30),
-          "Brave Browser",
-          "House of the Dragon - Brave",
-          "paused frame — same pixels every capture", // STATIC, never changes
-        ),
+        frame(addSec(start, i * 30), "Brave Browser", "House of the Dragon - Brave", `scene ${i}`),
       );
     }
+    // No interaction events at all → walked away after the cap.
     const result = detectActivityStates("2026-06-17", frames, [], DAY_START, DAY_END);
-    // After the ~15 min entertainment-presence cap, static + no input → idle.
     expect(result.totals.idleSeconds).toBeGreaterThan(600);
   });
 
