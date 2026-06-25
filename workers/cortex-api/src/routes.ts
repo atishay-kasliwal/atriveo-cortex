@@ -232,6 +232,21 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.get("/api/analytics/range", async (c) => {
+    try {
+      const start = c.req.query("start");
+      const end = c.req.query("end");
+      if (!start || !end || !/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+        return apiError(c, "start and end (YYYY-MM-DD) are required", 400);
+      }
+      const [from, to] = start <= end ? [start, end] : [end, start];
+      const { buildRangeActivity } = await import("@/lib/analytics/range-api");
+      return await cachedRead(c, 60, () => buildRangeActivity(from, to));
+    } catch (e) {
+      return apiError(c, e instanceof Error ? e.message : "Failed to load range analytics", 500);
+    }
+  });
+
   app.get("/api/analytics/week", async (c) => {
     try {
       const range = weekRange(c.req.query("start") ?? undefined);
