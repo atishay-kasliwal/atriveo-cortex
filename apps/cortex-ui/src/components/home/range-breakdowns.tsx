@@ -97,21 +97,22 @@ function HBarChart({
 }: {
   rows: Array<{ label: string; value: number; fill: string }>;
 }) {
-  const height = Math.max(120, rows.length * 30);
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={rows} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 0 }} barCategoryGap={6}>
-        <XAxis type="number" hide />
-        <YAxis
+    <ResponsiveContainer width="100%" height={180}>
+      <BarChart data={rows} margin={{ top: 4, right: 4, bottom: 40, left: 4 }} barCategoryGap="30%">
+        <XAxis
           type="category"
           dataKey="label"
-          width={104}
           tickLine={false}
           axisLine={false}
-          tick={{ fontSize: 11, fill: "var(--muted-foreground, #888)" }}
+          tick={{ fontSize: 10, fill: "var(--muted-foreground, #888)" }}
+          angle={-35}
+          textAnchor="end"
+          interval={0}
         />
+        <YAxis type="number" hide />
         <Tooltip cursor={{ fill: "oklch(0.5 0 0 / 0.08)" }} content={<ChartTip />} />
-        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
           {rows.map((r, i) => (
             <Cell key={i} fill={r.fill} />
           ))}
