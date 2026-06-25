@@ -6,13 +6,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ActivityPeriodNav,
-} from "@/components/activity/activity-period-nav";
+  HomePeriodNav,
+  type HomeMode,
+  type DateRangeValue,
+} from "@/components/home/home-period-nav";
 import { MemoryHomeView } from "@/components/home/memory-home-view";
+import { RangeView } from "@/components/home/range-view";
 import { LandingPage } from "@/components/landing/landing-page";
 import { PageBody } from "@/components/dashboard/page-shell";
 import { isAuthenticated } from "@/lib/auth";
-import { analyticsHistoryQuery } from "@/lib/api/queries";
+import { analyticsHistoryQuery, rangeQuery } from "@/lib/api/queries";
 import {
   localDateString,
   shiftDate,
@@ -51,38 +54,60 @@ function HomePage() {
 function AppHome() {
   const calendarToday = useMemo(() => localDateString(), []);
   const { date: dateParam } = Route.useSearch();
+  const [mode, setMode] = useState<HomeMode>("today");
   const [viewDate, setViewDate] = useState(dateParam ?? calendarToday);
+  // Default range: last 7 days ending today.
+  const [range, setRange] = useState<DateRangeValue>(() => ({
+    start: shiftDate(calendarToday, -6),
+    end: calendarToday,
+  }));
   const history = useQuery(analyticsHistoryQuery);
 
   useEffect(() => {
-    if (dateParam) setViewDate(dateParam);
+    if (dateParam) {
+      setMode("today");
+      setViewDate(dateParam);
+    }
   }, [dateParam]);
+
+  const rangeData = useQuery({
+    ...rangeQuery(range.start, range.end),
+    enabled: mode === "range",
+  });
 
   return (
     <PageBody compact>
       <div className="mt-2">
-        <ActivityPeriodNav
-          range="today"
-          onRangeChange={() => {}}
+        <HomePeriodNav
+          mode={mode}
+          onModeChange={setMode}
           viewDate={viewDate}
-          weekEnd={calendarToday}
-          monthKey={calendarToday.slice(0, 7)}
-          calendarToday={calendarToday}
-          onPrev={() => setViewDate((d) => shiftDate(d, -1))}
-          onNext={() => setViewDate((d) => shiftDate(d, 1))}
-          canNext={viewDate < calendarToday}
+          onPrevDay={() => setViewDate((d) => shiftDate(d, -1))}
+          onNextDay={() => setViewDate((d) => shiftDate(d, 1))}
           onJumpToday={() => setViewDate(calendarToday)}
           onJumpYesterday={() => setViewDate(yesterdayDate(calendarToday))}
           onPickDate={(date) =>
             setViewDate(date > calendarToday ? calendarToday : date)
           }
           availableDates={history.data?.availableDates}
-          showJumpToday={viewDate !== calendarToday}
-          showJumpYesterday={viewDate !== yesterdayDate(calendarToday)}
+          range={range}
+          onRangeChange={setRange}
+          calendarToday={calendarToday}
         />
       </div>
 
-      <MemoryHomeView viewDate={viewDate} calendarToday={calendarToday} />
+      <div className="mt-4">
+        {mode === "today" ? (
+          <MemoryHomeView viewDate={viewDate} calendarToday={calendarToday} />
+        ) : (
+          <RangeView
+            data={rangeData.data}
+            loading={rangeData.isLoading}
+            isError={rangeData.isError}
+            onRetry={rangeData.refetch}
+          />
+        )}
+      </div>
     </PageBody>
   );
 }

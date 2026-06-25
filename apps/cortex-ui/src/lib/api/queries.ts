@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { api, type ActionBucket } from "./client";
 import { cortexFetch, isRetryableApiError } from "./cortex-fetch";
 import { fetchDailyTrend, fetchReadiness } from "./health-adapter";
+import { fetchRangeActivity } from "./range-adapter";
 import type { HealthPeriod } from "./health-types";
 
 const STALE = 30_000;
@@ -16,6 +17,7 @@ export const qk = {
   today: (date?: string) => ["analytics", "today", date ?? "today"] as const,
   week: (start?: string) => ["analytics", "week", start ?? "current"] as const,
   month: (start?: string) => ["analytics", "month", start ?? "current"] as const,
+  range: (start: string, end: string) => ["analytics", "range", start, end] as const,
   history: ["analytics", "history"] as const,
   projects: ["projects"] as const,
   projectsHealth: (date?: string) => ["projects", "health", date ?? "today"] as const,
@@ -81,6 +83,14 @@ export const monthQuery = (start?: string) =>
     queryKey: qk.month(start),
     queryFn: () => api.analytics.month(start),
     staleTime: STALE,
+  });
+
+export const rangeQuery = (start: string, end: string) =>
+  queryOptions({
+    queryKey: qk.range(start, end),
+    queryFn: () => fetchRangeActivity(start, end),
+    staleTime: STALE,
+    retry: defaultQueryRetry,
   });
 
 export const analyticsHistoryQuery = queryOptions({
