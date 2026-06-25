@@ -24,7 +24,7 @@ import {
 import { cortexFetch } from "@/lib/api/cortex-fetch";
 import type { PlatformHealth } from "@/lib/api/platform-health-types";
 
-const POLL_MS = 15_000;
+const POLL_MS = 60_000;
 
 async function fetchPlatformHealth(): Promise<PlatformHealth> {
   const data = await cortexFetch<PlatformHealth>("/api/platform/health", {
