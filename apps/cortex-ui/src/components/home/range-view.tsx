@@ -47,20 +47,20 @@ export function RangeView({
 
   return (
     <div className="space-y-4">
-      {/* Row 1 — KPI strip spans full width: the at-a-glance summary. */}
+      {/* KPI strip — the at-a-glance summary. */}
       <HeroKpis data={data} />
 
-      {/* Row 2 — work rhythm heatmap full width (the temporal spine). */}
-      <RangeWorkRhythm data={data} />
-
-      {/* Per-tag cards — one rich card per category, 4/5-up row. */}
+      {/* Per-tag cards — one rich card per category. */}
       <RangeTagCards data={data} />
 
-      {/* Middle grid — category mix · apps · websites · screens, 2-up. */}
+      {/* Charts grid — donut · bars · bars · screens, 2-up. */}
       <RangeMiddleGrid data={data} />
 
       {/* Health strip — sleep · steps · HR over the range. */}
       <RangeHealthStrip health={data.health} />
+
+      {/* Work rhythm heatmap — the temporal map, last. */}
+      <RangeWorkRhythm data={data} />
     </div>
   );
 }
