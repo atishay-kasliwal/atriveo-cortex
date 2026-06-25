@@ -18,8 +18,10 @@ const TAGS: ActivityCategory[] = [
   "planning",
 ];
 
-/** One rich card per category: total, share, longest session, top apps. */
-export function RangeTagCards({ data }: { data: RangeActivity }) {
+/** One rich card per category: total, share, longest session, top apps.
+ *  `extra` renders as an additional same-sized cell in the grid (e.g. the
+ *  when-you-worked heatmap), so the row reads as 5 equal cards. */
+export function RangeTagCards({ data, extra }: { data: RangeActivity; extra?: React.ReactNode }) {
   const totalWork = useMemo(
     () => data.categories.reduce((n, c) => n + c.durationSec, 0) || 1,
     [data.categories],
@@ -160,6 +162,7 @@ export function RangeTagCards({ data }: { data: RangeActivity }) {
             </div>
           );
         })}
+        {extra ? <div className="min-w-0">{extra}</div> : null}
       </div>
     </div>
   );

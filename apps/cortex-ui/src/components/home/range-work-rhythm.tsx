@@ -33,8 +33,10 @@ function fmtHour(h: number): string {
   return h < 12 ? `${h}a` : `${h - 12}p`;
 }
 
-/** Day-of-week × hour-of-day rhythm: WHEN in the day you're active. */
-export function RangeWorkRhythm({ data }: { data: RangeActivity }) {
+/** Day-of-week × hour-of-day rhythm: WHEN in the day you're active.
+ *  `compact` renders a self-contained bordered card sized to sit in the
+ *  category-card row (5-up). */
+export function RangeWorkRhythm({ data, compact = false }: { data: RangeActivity; compact?: boolean }) {
   const matrix = data.weekHourMatrix ?? [];
   const max = useMemo(() => Math.max(1, ...matrix.flat()), [matrix]);
 
@@ -50,6 +52,79 @@ export function RangeWorkRhythm({ data }: { data: RangeActivity }) {
     return best.sum > 0 ? best : null;
   }, [matrix]);
 
+  const grid = (
+    <>
+      {peak ? (
+        <div className="mb-3 text-[11px] text-muted-foreground">
+          Peak hours{" "}
+          <span className="font-medium text-foreground">
+            {fmtHour(peak.start)}–{fmtHour((peak.start + 3) % 24)}
+          </span>
+        </div>
+      ) : null}
+
+      {/* hour axis */}
+      <div className="mb-1.5 flex">
+        <div className="w-7 shrink-0" />
+        <div className="grid flex-1 grid-cols-[repeat(24,1fr)] text-[9px] text-muted-foreground/45">
+          {[0, 6, 12, 18].map((h) => (
+            <span key={h} style={{ gridColumnStart: h + 1 }}>
+              {fmtHour(h)}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-[2px]">
+        {matrix.map((row, ri) => {
+          const isWeekend = ri >= 5;
+          return (
+            <div key={ri} className="flex items-center">
+              <span
+                className={
+                  "w-7 shrink-0 text-[9px] " +
+                  (isWeekend ? "text-muted-foreground/40" : "text-muted-foreground/70")
+                }
+              >
+                {ROWS[ri]}
+              </span>
+              <div className="grid flex-1 grid-cols-[repeat(24,1fr)] gap-[2px]">
+                {row.map((sec, hi) => (
+                  <div
+                    key={hi}
+                    className={
+                      "aspect-square rounded-[2px] ring-1 ring-inset ring-border/15 transition-transform hover:scale-125 " +
+                      CELL_BG[bucket(sec, max)]
+                    }
+                    title={`${ROW_LABELS[ri]} ${fmtHour(hi)} · ${fmtDuration(sec)}`}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+
+  if (compact) {
+    return (
+      <div className="flex h-full flex-col rounded-xl border border-border/40 bg-surface-1/40 p-3.5">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
+            When you worked
+          </span>
+          <div className="flex items-center gap-1 text-[9px] text-muted-foreground/50">
+            {CELL_BG.map((bg, i) => (
+              <span key={i} className={"h-[8px] w-[8px] rounded-[2px] " + bg} />
+            ))}
+          </div>
+        </div>
+        <div className="flex-1">{grid}</div>
+      </div>
+    );
+  }
+
   return (
     <ActivityCard
       title="When you worked"
@@ -64,58 +139,7 @@ export function RangeWorkRhythm({ data }: { data: RangeActivity }) {
         </div>
       }
     >
-      <div className="px-5 py-4">
-        {peak ? (
-          <div className="mb-3 text-[11px] text-muted-foreground">
-            Peak hours{" "}
-            <span className="font-medium text-foreground">
-              {fmtHour(peak.start)}–{fmtHour((peak.start + 3) % 24)}
-            </span>
-          </div>
-        ) : null}
-
-        {/* hour axis */}
-        <div className="mb-1.5 flex">
-          <div className="w-7 shrink-0" />
-          <div className="grid flex-1 grid-cols-[repeat(24,1fr)] text-[9px] text-muted-foreground/45">
-            {[0, 6, 12, 18].map((h) => (
-              <span key={h} style={{ gridColumnStart: h + 1 }}>
-                {fmtHour(h)}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-[2px]">
-          {matrix.map((row, ri) => {
-            const isWeekend = ri >= 5;
-            return (
-              <div key={ri} className="flex items-center">
-                <span
-                  className={
-                    "w-7 shrink-0 text-[9px] " +
-                    (isWeekend ? "text-muted-foreground/40" : "text-muted-foreground/70")
-                  }
-                >
-                  {ROWS[ri]}
-                </span>
-                <div className="grid flex-1 grid-cols-[repeat(24,1fr)] gap-[2px]">
-                  {row.map((sec, hi) => (
-                    <div
-                      key={hi}
-                      className={
-                        "aspect-square rounded-[2px] ring-1 ring-inset ring-border/15 transition-transform hover:scale-125 " +
-                        CELL_BG[bucket(sec, max)]
-                      }
-                      title={`${ROW_LABELS[ri]} ${fmtHour(hi)} · ${fmtDuration(sec)}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <div className="px-5 py-4">{grid}</div>
     </ActivityCard>
   );
 }

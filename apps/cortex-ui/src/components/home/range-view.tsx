@@ -64,24 +64,15 @@ export function RangeView({
         </div>
       </div>
 
-      {/* Per-tag cards — one rich card per category. */}
-      <RangeTagCards data={data} />
+      {/* Category row — 4 tag cards + when-you-worked heatmap as the 5th cell. */}
+      <RangeTagCards data={data} extra={<RangeWorkRhythm data={data} compact />} />
 
-      {/* Row 3 — when-you-worked rhythm (wide) · top websites · body. */}
+      {/* Bottom row — top websites · body · screens, 3 equal cards. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <RangeWorkRhythm data={data} />
-        </div>
-        <div className="lg:col-span-1">
-          <TopWebsites websites={data.websites} />
-        </div>
-        <div className="lg:col-span-1">
-          <RangeHealthStrip health={data.health} />
-        </div>
+        <TopWebsites websites={data.websites} />
+        <RangeHealthStrip health={data.health} />
+        <ScreenSplit screens={data.screens} />
       </div>
-
-      {/* Screens — what each monitor was used for. */}
-      <ScreenSplit screens={data.screens} />
     </div>
   );
 }
