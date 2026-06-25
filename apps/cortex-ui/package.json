@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:docker": "NITRO_PRESET=node-server vite build",
     "build:pages": "NITRO_PRESET=cloudflare-pages vite build",
-    "clean:pages-artifacts": "find dist -name '._*' -delete 2>/dev/null; find dist -name '.__*' -delete 2>/dev/null; true",
+    "clean:pages-artifacts": "find dist -name '._*' -delete 2>/dev/null; find dist -name '.__*' -delete 2>/dev/null; node scripts/sanitize-routes.mjs dist; true",
     "deploy:pages": "npm run build:pages && npm run clean:pages-artifacts && wrangler pages deploy dist --project-name=cortex-ui --branch=production --commit-dirty=true",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
