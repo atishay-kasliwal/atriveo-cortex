@@ -33,8 +33,15 @@ import {
 import { buildMonitorInteractionSegments, rollupInteractionByMonitor } from "./monitor-interaction";
 import { getMonitorRoleMap } from "./monitor-roles-api";
 import { screensRepository } from "@/lib/repositories/screens-repository";
-import { fetchFramesForWindow } from "@/lib/screenpipe-db";
 import { applyMonitorOverridesToDay } from "./monitor-names-api";
+
+// better-sqlite3 is a native Node module — not available in Cloudflare Workers runtime.
+// Dynamic import guards against the worker bundler pulling it in at module load time.
+async function fetchFramesLocal(start: string, end: string) {
+  if (typeof process === "undefined" || process.env.CORTEX_DB_SERVERLESS === "1") return [];
+  const { fetchFramesForWindow } = await import("@/lib/screenpipe-db");
+  return fetchFramesForWindow(start, end);
+}
 
 export type MonitorTimelineDTO = MonitorTimelineSegment;
 
@@ -225,7 +232,7 @@ async function buildInteractionLayer(
   }
 
   const { start, end } = localDayBounds(date);
-  const frames = fetchFramesForWindow(start, end);
+  const frames = await fetchFramesLocal(start, end);
   const interactionSegments = buildMonitorInteractionSegments(frames, end);
   const interactionTimelines = rowsToTimelines(interactionSegments);
   const interactionSummary = rollupInteractionByMonitor(interactionSegments).map((row) => {
@@ -245,7 +252,7 @@ async function loadOrComputeDay(date: string): Promise<DayScreensDTO | null> {
 
   if (!payload || rows.length === 0) {
     const { start, end } = localDayBounds(date);
-    const frames = fetchFramesForWindow(start, end);
+    const frames = await fetchFramesLocal(start, end);
     if (frames.length === 0) return null;
     payload = await computeAndPersistDayScreens(date);
     rows = await screensRepository.listTimelineSegments(date);
@@ -486,8 +493,8 @@ export async function buildScreensSummary(
 }
 
 /** Recompute from frames without persisting — used in tests. */
-export function previewDayScreens(date: string): ReturnType<typeof buildScreensIntelligence> {
+export async function previewDayScreens(date: string): Promise<ReturnType<typeof buildScreensIntelligence>> {
   const { start, end } = localDayBounds(date);
-  const frames = fetchFramesForWindow(start, end);
+  const frames = await fetchFramesLocal(start, end);
   return buildScreensIntelligence(date, frames, start, end);
 }
