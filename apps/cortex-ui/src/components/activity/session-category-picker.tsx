@@ -17,15 +17,7 @@ import {
 import { saveSessionCategory } from "@/lib/api/session-category-adapter";
 import type { ActivityCategory } from "@/lib/api/types";
 
-const OPTIONS: ActivityCategory[] = [
-  "build",
-  "research",
-  "communication",
-  "planning",
-  "entertainment",
-  "idle",
-  "other",
-];
+const OPTIONS = Object.keys(categoryStyle) as ActivityCategory[];
 
 /**
  * Reclassify a session's category by hand. Saves a per-title override so the same

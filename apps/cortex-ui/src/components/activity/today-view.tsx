@@ -28,7 +28,7 @@ import {
   dayViewHeading,
   dayViewTemporalSubtitle,
 } from "@/components/activity/activity-period-nav";
-import type { TodayActivity } from "@/lib/api/types";
+import type { ActivityCategory, TodayActivity } from "@/lib/api/types";
 
 export function TodayView({
   data,
@@ -200,8 +200,8 @@ function CategoryBreakdown({ data }: { data: TodayActivity }) {
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
   }
-  const workRows = BREAKDOWN_CATEGORIES.map((c) => ({
-    category: c as string,
+  const workRows: { category: ActivityCategory; sec: number }[] = BREAKDOWN_CATEGORIES.map((c) => ({
+    category: c as ActivityCategory,
     sec: totals.get(c) ?? 0,
   })).filter((r) => r.sec > 0);
 
@@ -210,7 +210,7 @@ function CategoryBreakdown({ data }: { data: TodayActivity }) {
   workRows.sort((a, b) => b.sec - a.sec);
   // Include idle (away) time as a muted slice so the bar covers the whole day.
   const idleSec = data.idleSec ?? 0;
-  const rows = workRows.concat(idleSec > 0 ? [{ category: "idle", sec: idleSec }] : []);
+  const rows = workRows.concat(idleSec > 0 ? [{ category: "idle" as ActivityCategory, sec: idleSec }] : []);
   const total = rows.reduce((n, r) => n + r.sec, 0) || 1;
 
   return (

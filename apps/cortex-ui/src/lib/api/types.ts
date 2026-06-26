@@ -832,8 +832,14 @@ export type ActivityCategory =
   | "research"
   | "communication"
   | "planning"
-  | "entertainment"
   | "job_application"
+  | "shopping"
+  | "finance"
+  | "entertainment"
+  | "infrastructure"
+  | "admin"
+  | "health"
+  | "personal"
   | "idle"
   | "other";
 

@@ -7,7 +7,7 @@ import { HomeKpiStrip } from "@/components/home/home-kpi-strip";
 import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
 import { syncPipelineStyles } from "@/lib/api/sync-adapter";
 import type { ActivityPipelineState } from "@/lib/activity/activity-state";
-import type { TodayActivity } from "@/lib/api/types";
+import type { ActivityCategory, TodayActivity } from "@/lib/api/types";
 
 const PIPELINE_LABEL: Record<ActivityPipelineState, string> = {
   live: "Live",
@@ -43,8 +43,8 @@ export function HomeHero({
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
   }
-  const workRows = BREAKDOWN_CATEGORIES.map((c) => ({
-    category: c as string,
+  const workRows: { category: ActivityCategory; sec: number }[] = BREAKDOWN_CATEGORIES.map((c) => ({
+    category: c as ActivityCategory,
     sec: totals.get(c) ?? 0,
   })).filter((r) => r.sec > 0);
 
@@ -53,7 +53,7 @@ export function HomeHero({
   const idleSec = data.idleSec ?? 0;
   const rows = [...workRows]
     .sort((a, b) => b.sec - a.sec)
-    .concat(idleSec > 0 ? [{ category: "idle", sec: idleSec }] : []);
+    .concat(idleSec > 0 ? [{ category: "idle" as ActivityCategory, sec: idleSec }] : []);
 
   const totalCat = rows.reduce((n, r) => n + r.sec, 0) || 1;
   const top = workRows.slice().sort((a, b) => b.sec - a.sec)[0];
