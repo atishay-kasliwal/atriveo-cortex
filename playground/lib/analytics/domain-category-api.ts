@@ -101,4 +101,20 @@ export async function listDomainCategoryTags() {
   return domainCategoryOverridesRepository.list();
 }
 
+export async function removeDomainCategoryTag(domain: string) {
+  return domainCategoryOverridesRepository.remove(domain);
+}
+
+export async function listSessionCategoryTags() {
+  return sessionCategoryOverridesRepository.list();
+}
+
+export async function setSessionCategoryTag(title: string, category: string) {
+  return sessionCategoryOverridesRepository.upsert(title, category);
+}
+
+export async function removeSessionCategoryTag(title: string) {
+  return sessionCategoryOverridesRepository.remove(title);
+}
+
 export type { WebsiteRow };

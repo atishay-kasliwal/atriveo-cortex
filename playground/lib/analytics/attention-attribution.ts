@@ -5,6 +5,7 @@
 import { resolveSessionType, toUiCategory } from "./category-map";
 import { extractDomain } from "./website-parser";
 import type { SessionType } from "./types";
+import { tagLabel } from "./tags";
 
 export type AttributionFrame = {
   timestamp: string;
@@ -62,15 +63,6 @@ const SCROLL_EVENTS = /^scroll$/i;
 const FOCUS_EVENTS = /^(window_focus|app_switch|focus)$/i;
 const ENTERTAINMENT_APPS = /youtube|netflix|spotify|vlc|prime video|disney|twitch/i;
 
-const CATEGORY_LABELS: Record<string, string> = {
-  build: "Build",
-  research: "Research",
-  communication: "Communication",
-  planning: "Planning",
-  entertainment: "Entertainment",
-  other: "Other",
-};
-
 function gapSec(startMs: number, endMs: number): number {
   return Math.max(0, Math.min(endMs - startMs, MAX_GAP_MS) / 1000);
 }
@@ -110,7 +102,7 @@ function rollupCategory(
   return [...totals.entries()]
     .map(([category, durationSec]) => ({
       category: toUiCategory(category),
-      label: CATEGORY_LABELS[toUiCategory(category)] ?? toUiCategory(category),
+      label: tagLabel(toUiCategory(category)),
       durationSec: Math.round(durationSec),
     }))
     .filter((r) => r.durationSec > 0)

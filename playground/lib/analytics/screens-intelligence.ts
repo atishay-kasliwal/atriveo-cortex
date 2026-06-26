@@ -5,6 +5,7 @@
 import { normalizeAppName, resolveSessionType, toUiCategory } from "./category-map";
 import { extractDomain } from "./website-parser";
 import type { SessionType } from "./types";
+import { tagLabel } from "./tags";
 
 export type ScreenFrame = {
   timestamp: string;
@@ -77,15 +78,6 @@ export type ScreensIntelligenceResult = {
   dailySummary: MonitorDailySummary[];
   heatmap: MonitorHeatmapRow[];
   insights: MonitorInsights;
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  build: "Build",
-  research: "Research",
-  communication: "Communication",
-  planning: "Planning",
-  entertainment: "Entertainment",
-  other: "Other",
 };
 
 function deviceKey(deviceName: string | null | undefined): string {
@@ -540,7 +532,7 @@ export function rollupMonitorSummaries(
       topCategories: [...row.categories.entries()]
         .map(([category, durationSec]) => ({
           category,
-          label: CATEGORY_LABELS[category] ?? category,
+          label: tagLabel(category),
           durationSec,
         }))
         .sort((a, b) => b.durationSec - a.durationSec),
@@ -737,7 +729,7 @@ export function aggregateScreensSummaries(
     topCategories: [...categories.entries()]
       .map(([category, durationSec]) => ({
         category,
-        label: CATEGORY_LABELS[category] ?? category,
+        label: tagLabel(category),
         durationSec,
       }))
       .sort((a, b) => b.durationSec - a.durationSec),
