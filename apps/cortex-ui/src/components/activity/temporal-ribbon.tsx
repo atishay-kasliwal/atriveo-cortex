@@ -8,7 +8,6 @@ import {
   categoryStyle,
   fmtClock,
   fmtDuration,
-  ribbonCategories,
 } from "@/components/dashboard/time";
 import type { ActivityCategory, TimelineBlock } from "@/lib/api/types";
 import { healthTimelineQuery } from "@/lib/api/queries";
@@ -173,13 +172,16 @@ export function TemporalRibbon({
   );
 
   const decompositionCategories = useMemo(() => {
-    const cats = new Set<ActivityCategory>(ribbonCategories);
-    for (const s of segments) {
-      if (s.block.category === "idle" || s.block.category === "other") {
-        cats.add(s.block.category);
-      }
-    }
-    return [...cats];
+    // Derive rows from actual data so new tags automatically appear.
+    // Preserve a stable display order: known categories first, then anything
+    // extra from the data, with idle/other always last.
+    const ORDER: ActivityCategory[] = [
+      "build", "research", "communication", "planning", "job_application",
+      "shopping", "finance", "entertainment", "infrastructure", "admin",
+      "health", "personal", "idle", "other",
+    ];
+    const present = new Set(segments.map((s) => s.block.category));
+    return ORDER.filter((c) => present.has(c));
   }, [segments]);
 
   // When real sleep is available from the health DB, drop the INFERRED "sleeping"
@@ -222,7 +224,7 @@ export function TemporalRibbon({
             </p>
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-            {[...ribbonCategories, ...(idleSegments.length > 0 ? (["idle"] as const) : [])].map((key) => (
+            {decompositionCategories.map((key) => (
               <div key={key} className="flex items-center gap-1.5">
                 <span className={"size-1.5 rounded-full " + categoryStyle[key].dot} />
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">

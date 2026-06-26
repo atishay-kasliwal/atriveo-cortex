@@ -235,18 +235,15 @@ export function MultiMonitorTimeline({ data }: { data: DayScreens }) {
 
         {/* Category legend */}
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-border/30 pt-3">
-          {(["build", "research", "communication", "planning", "entertainment", "other"] as const).map(
-            (cat) => {
+          {(Object.keys(categoryStyle) as (keyof typeof categoryStyle)[]).map((cat) => {
               const s = categoryStyle[cat];
-              if (!s) return null;
               return (
                 <div key={cat} className="flex items-center gap-1.5">
                   <span className={`size-2 flex-shrink-0 rounded-sm ${s.bar}`} />
-                  <span className="text-[10px] capitalize text-muted-foreground">{cat}</span>
+                  <span className="text-[10px] text-muted-foreground">{s.short}</span>
                 </div>
               );
-            },
-          )}
+            })}
         </div>
       </div>
     </section>

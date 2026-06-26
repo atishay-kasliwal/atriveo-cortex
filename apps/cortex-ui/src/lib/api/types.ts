@@ -887,11 +887,16 @@ export type WebsiteCategory =
   | "build"
   | "research"
   | "communication"
+  | "planning"
+  | "job_application"
   | "networking"
   | "entertainment"
   | "shopping"
   | "finance"
   | "infrastructure"
+  | "admin"
+  | "health"
+  | "personal"
   | "unknown";
 
 export type WebsiteUsage = {

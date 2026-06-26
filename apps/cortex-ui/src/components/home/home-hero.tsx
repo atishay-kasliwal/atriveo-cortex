@@ -16,14 +16,11 @@ const PIPELINE_LABEL: Record<ActivityPipelineState, string> = {
   offline: "Offline",
 };
 
-const BREAKDOWN_CATEGORIES = [
-  "build",
-  "research",
-  "communication",
-  "planning",
-  "entertainment",
-  "other",
-] as const;
+const CATEGORY_ORDER: ActivityCategory[] = [
+  "build", "research", "communication", "planning", "job_application",
+  "shopping", "finance", "entertainment", "infrastructure", "admin",
+  "health", "personal", "other",
+];
 
 /**
  * The daily command-center hero: big headline stats + a proportional "where your
@@ -43,10 +40,10 @@ export function HomeHero({
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
   }
-  const workRows: { category: ActivityCategory; sec: number }[] = BREAKDOWN_CATEGORIES.map((c) => ({
-    category: c as ActivityCategory,
-    sec: totals.get(c) ?? 0,
-  })).filter((r) => r.sec > 0);
+  // Build rows from actual data so any tag the user assigns shows up.
+  const workRows: { category: ActivityCategory; sec: number }[] = CATEGORY_ORDER
+    .map((c) => ({ category: c, sec: totals.get(c) ?? 0 }))
+    .filter((r) => r.sec > 0);
 
   // Idle is presence (away) time, not a work session — include it so the bar
   // reflects the whole day, shown last with the muted idle color.

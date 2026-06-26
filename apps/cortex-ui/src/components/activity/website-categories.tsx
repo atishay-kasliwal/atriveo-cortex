@@ -24,6 +24,16 @@ export const websiteCategoryStyle: Record<
     chip: "text-[oklch(0.82_0.13_55)] bg-[oklch(0.76_0.15_55/15%)]",
     bar: "bg-[oklch(0.76_0.15_55)]",
   },
+  planning: {
+    label: "Planning",
+    chip: "text-[oklch(0.8_0.14_320)] bg-[oklch(0.74_0.16_320/15%)]",
+    bar: "bg-[oklch(0.74_0.16_320)]",
+  },
+  job_application: {
+    label: "Job Application",
+    chip: "text-[oklch(0.82_0.16_145)] bg-[oklch(0.72_0.18_145/15%)]",
+    bar: "bg-[oklch(0.72_0.18_145)]",
+  },
   networking: {
     label: "Networking",
     chip: "text-[oklch(0.8_0.12_300)] bg-[oklch(0.72_0.14_300/15%)]",
@@ -36,18 +46,33 @@ export const websiteCategoryStyle: Record<
   },
   shopping: {
     label: "Shopping",
-    chip: "text-[oklch(0.78_0.13_140)] bg-[oklch(0.7_0.14_140/15%)]",
-    bar: "bg-[oklch(0.7_0.14_140)]",
+    chip: "text-[oklch(0.80_0.15_35)] bg-[oklch(0.72_0.17_35/15%)]",
+    bar: "bg-[oklch(0.72_0.17_35)]",
   },
   finance: {
     label: "Finance",
-    chip: "text-[oklch(0.78_0.12_85)] bg-[oklch(0.72_0.13_85/15%)]",
-    bar: "bg-[oklch(0.72_0.13_85)]",
+    chip: "text-[oklch(0.78_0.14_170)] bg-[oklch(0.70_0.16_170/15%)]",
+    bar: "bg-[oklch(0.70_0.16_170)]",
   },
   infrastructure: {
     label: "Infrastructure",
-    chip: "text-[oklch(0.78_0.1_230)] bg-[oklch(0.62_0.08_230/15%)]",
-    bar: "bg-[oklch(0.62_0.08_230)]",
+    chip: "text-[oklch(0.76_0.10_240)] bg-[oklch(0.68_0.12_240/15%)]",
+    bar: "bg-[oklch(0.68_0.12_240)]",
+  },
+  admin: {
+    label: "Admin",
+    chip: "text-[oklch(0.74_0.08_280)] bg-[oklch(0.66_0.09_280/15%)]",
+    bar: "bg-[oklch(0.66_0.09_280)]",
+  },
+  health: {
+    label: "Health",
+    chip: "text-[oklch(0.82_0.16_130)] bg-[oklch(0.74_0.18_130/15%)]",
+    bar: "bg-[oklch(0.74_0.18_130)]",
+  },
+  personal: {
+    label: "Personal",
+    chip: "text-[oklch(0.78_0.12_300)] bg-[oklch(0.70_0.14_300/15%)]",
+    bar: "bg-[oklch(0.70_0.14_300)]",
   },
   unknown: {
     label: "Unknown",

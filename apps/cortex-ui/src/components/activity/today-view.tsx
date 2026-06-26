@@ -185,14 +185,11 @@ export function TodayView({
   );
 }
 
-const BREAKDOWN_CATEGORIES = [
-  "build",
-  "research",
-  "communication",
-  "planning",
-  "entertainment",
-  "other",
-] as const;
+const CATEGORY_ORDER: ActivityCategory[] = [
+  "build", "research", "communication", "planning", "job_application",
+  "shopping", "finance", "entertainment", "infrastructure", "admin",
+  "health", "personal", "other",
+];
 
 /** Where the day's active time actually went — derived straight from the timeline. */
 function CategoryBreakdown({ data }: { data: TodayActivity }) {
@@ -200,10 +197,9 @@ function CategoryBreakdown({ data }: { data: TodayActivity }) {
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
   }
-  const workRows: { category: ActivityCategory; sec: number }[] = BREAKDOWN_CATEGORIES.map((c) => ({
-    category: c as ActivityCategory,
-    sec: totals.get(c) ?? 0,
-  })).filter((r) => r.sec > 0);
+  const workRows: { category: ActivityCategory; sec: number }[] = CATEGORY_ORDER
+    .map((c) => ({ category: c, sec: totals.get(c) ?? 0 }))
+    .filter((r) => r.sec > 0);
 
   if (workRows.length === 0) return null;
 

@@ -38,24 +38,21 @@ export function WebsiteCategoryTagPicker({
   const saveMutation = useMutation({
     mutationFn: (next: WebsiteCategory) => saveDomainCategoryTag(domain, next),
     onMutate: (next) => {
-      // Optimistic: show the new category immediately so the UI never looks stuck.
       setPendingCategory(next);
     },
     onSuccess: async (saved) => {
-      toast.success(`Tagged ${saved.domain} as ${websiteCategoryStyle[saved.category].label}`);
+      toast.success(`Tagged ${saved.domain} as ${websiteCategoryStyle[saved.category]?.label ?? saved.category}`);
       setOpen(false);
-      // Force an immediate refetch (not just mark-stale) and AWAIT it, so the row
-      // reflects the new tag without manual refreshes. The server applies domain
-      // overrides on read, so a fresh fetch returns corrected categories.
-      await queryClient.refetchQueries({ queryKey: ["analytics"], type: "active" });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["analytics"], type: "active" }),
+        queryClient.refetchQueries({ queryKey: ["attention"], type: "active" }),
+        queryClient.refetchQueries({ queryKey: ["screens"], type: "active" }),
+      ]);
+      setPendingCategory(null);
     },
     onError: () => {
-      // Roll back the optimistic category.
       setPendingCategory(null);
       toast.error("Couldn't save tag. Try again.");
-    },
-    onSettled: () => {
-      setPendingCategory(null);
     },
   });
 

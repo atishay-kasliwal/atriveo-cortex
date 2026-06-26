@@ -5,7 +5,6 @@
 import type { AttentionVisualizations } from "@/lib/api/types";
 import { categoryStyle } from "@/components/dashboard/time";
 
-const HEAT_CATEGORIES = ["build", "research", "communication", "entertainment"] as const;
 
 type Props = {
   data: NonNullable<AttentionVisualizations["monitorHeatmap"]>;
@@ -25,6 +24,9 @@ function cellFill(category: string): string {
 
 export function MonitorHeatmap({ data }: Props) {
   const visibleHours = Array.from({ length: 12 }, (_, i) => i + 7);
+  const presentCategories = [...new Set(
+    data.monitors.flatMap((m) => m.cells.map((c) => c.category))
+  )].filter((c) => c in categoryStyle) as (keyof typeof categoryStyle)[];
 
   return (
     <div className="overflow-x-auto px-1">
@@ -65,7 +67,7 @@ export function MonitorHeatmap({ data }: Props) {
         ))}
 
         <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-muted-foreground">
-          {HEAT_CATEGORIES.map((c) => (
+          {presentCategories.map((c) => (
             <span key={c} className="flex items-center gap-1.5">
               <span className={"size-2 rounded-sm " + categoryStyle[c].dot} />
               {categoryStyle[c].short}
