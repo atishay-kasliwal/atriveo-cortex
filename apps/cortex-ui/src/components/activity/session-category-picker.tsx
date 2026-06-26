@@ -40,7 +40,11 @@ export function SessionCategoryPicker({
     onSuccess: async (saved) => {
       toast.success(`Reclassified as ${categoryStyle[saved.category]?.label ?? saved.category}`);
       setOpen(false);
-      await queryClient.refetchQueries({ queryKey: ["analytics"], type: "active" });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["analytics"], type: "active" }),
+        queryClient.refetchQueries({ queryKey: ["attention"], type: "active" }),
+        queryClient.refetchQueries({ queryKey: ["screens"], type: "active" }),
+      ]);
       setPending(null);
     },
     onError: () => {
