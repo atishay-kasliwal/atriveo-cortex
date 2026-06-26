@@ -41,12 +41,12 @@ export function SessionCategoryPicker({
       toast.success(`Reclassified as ${categoryStyle[saved.category]?.label ?? saved.category}`);
       setOpen(false);
       await queryClient.refetchQueries({ queryKey: ["analytics"], type: "active" });
+      setPending(null);
     },
     onError: () => {
       setPending(null);
       toast.error("Couldn't reclassify. Try again.");
     },
-    onSettled: () => setPending(null),
   });
 
   const current = pending ?? category;
