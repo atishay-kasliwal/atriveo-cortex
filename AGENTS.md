@@ -10,7 +10,11 @@ ScreenPipe DB → evidence-builder → Gemma prompt → parsed JSON → human ra
 
 North-star question: **"What am I forgetting?"**
 
-This repo is an evaluation lab, not a production product. Do not add dashboards, analytics, auth, or job-search-specific logic unless explicitly requested.
+**Platform migration in progress.** Canonical repo: **[`atriveo-capture-agent`](https://github.com/atishay-kasliwal/atriveo-capture-agent)** — handbook, ADRs, and all forward implementation.
+
+This repo (`atriveo-cortex`) is **reference only** (production Mac mini until M13 cutover). See [docs/CANONICAL_REPO.md](./docs/CANONICAL_REPO.md).
+
+Do not add new platform milestones here. Use canonical terms from `atriveo-capture-agent/docs/platform/VOCABULARY.md`.
 
 ## Repository layout
 
