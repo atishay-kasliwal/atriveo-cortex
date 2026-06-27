@@ -13,7 +13,7 @@ import {
   aggregateWebsiteUsage,
   aggregateWebsiteCategories,
 } from "@/lib/analytics/analytics-service";
-import { toUiCategory } from "@/lib/analytics/category-map";
+import { isBackgroundSystemApp, toUiCategory } from "@/lib/analytics/category-map";
 import { applyWebsiteOverridesToActivity } from "@/lib/analytics/domain-category-api";
 import { loadDayScreensPayload } from "@/lib/analytics/screens-db";
 import { buildDailyTrend } from "@/lib/health/health-api";
@@ -353,7 +353,7 @@ export async function buildRangeActivity(
   start: string,
   end: string,
 ): Promise<RangeActivityDTO> {
-  const [summaries, sessions, appRows, websiteRows, health, screens] = await Promise.all([
+  const [summaries, rawSessions, appRows, websiteRows, health, screens] = await Promise.all([
     listDailySummaries(start, end),
     listSessions(start, end),
     listApplicationUsage(start, end),
@@ -361,6 +361,8 @@ export async function buildRangeActivity(
     buildRangeHealth(start, end),
     buildRangeScreens(start, end),
   ]);
+
+  const sessions = rawSessions.filter((s) => !isBackgroundSystemApp(s.dominant_app));
 
   const days: RangeDayRow[] = summaries.map((s) => ({
     date: s.date,

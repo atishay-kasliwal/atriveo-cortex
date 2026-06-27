@@ -11,7 +11,7 @@ import {
   listSessions,
   listWebsiteUsage,
 } from "./analytics-db";
-import { categorizeApp, toUiCategory } from "./category-map";
+import { categorizeApp, isBackgroundSystemApp, toUiCategory } from "./category-map";
 import {
   buildWebsiteIntel,
   sanitizeWebsiteList,
@@ -192,7 +192,9 @@ export async function getOpenLoopBriefs() {
 }
 
 export function sessionsToTimeline(sessions: ActivitySessionRow[]) {
-  const blocks = sessions.map((s) => {
+  const blocks = sessions
+    .filter((s) => !isBackgroundSystemApp(s.dominant_app))
+    .map((s) => {
     const applicationsUsed = parseStringArrayField(s.applications_used);
     const websitesUsed = sanitizeWebsiteList(parseStringArrayField(s.websites_used));
     const windowSnippets = parseStringArrayField(s.window_snippets);

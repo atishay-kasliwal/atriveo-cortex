@@ -54,6 +54,12 @@ const DOMAIN_CATEGORIES: Array<{ match: RegExp; category: SessionType }> = [
 const MEETING_APPS = /zoom|meet|teams|facetime|webex|huddle/i;
 const MEETING_TITLE = /meeting|huddle|standup|call with/i;
 
+// macOS system utilities that are never the intentional foreground activity.
+// Screenpipe captures these when they appear on a second monitor or briefly
+// surface during a hotkey / drag. They should not become timeline entries.
+const BACKGROUND_SYSTEM_APPS =
+  /^(airdrop|notification center|control center|spotlight|finder|dock|menubar|system preferences|system settings|keystroke pro|bartender|raycast|alfred|launchpad|mission control|exposé|spaces|screenshot|quicklook|quick look|preview\.app|activity monitor|console|installd|update|softwareupdate|security agent|universal control)$/i;
+
 // Strong entertainment signals in a window/page title — used when the app/domain
 // would otherwise mis-attribute (e.g. a video watched in a browser on a second
 // monitor while a code editor is the "dominant" app). These titles are
@@ -151,6 +157,16 @@ export function isMeetingApp(
   const name = normalizeAppName(app);
   if (MEETING_APPS.test(name)) return true;
   return MEETING_TITLE.test(windowTitle ?? "");
+}
+
+/**
+ * Returns true for macOS system utilities that are never the intentional
+ * foreground activity. Screenpipe picks these up from secondary monitors or
+ * transient UI overlays — they should be hidden from the timeline.
+ */
+export function isBackgroundSystemApp(app: string | null | undefined): boolean {
+  if (!app) return false;
+  return BACKGROUND_SYSTEM_APPS.test(normalizeAppName(app));
 }
 
 /** UI-facing lowercase category. */
