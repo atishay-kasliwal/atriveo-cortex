@@ -151,7 +151,13 @@ function HourCard({
   );
 }
 
-export function WorkTimeline({ blocks }: { blocks: TimelineBlock[] }) {
+export function WorkTimeline({
+  blocks,
+  action,
+}: {
+  blocks: TimelineBlock[];
+  action?: React.ReactNode;
+}) {
   const collapsed = collapseMicroEntertainment(blocks);
   const groups = groupByHour(collapsed);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -176,31 +182,33 @@ export function WorkTimeline({ blocks }: { blocks: TimelineBlock[] }) {
 
   return (
     <>
-      <div className="px-6 py-5 sm:px-8">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="text-[13px] text-muted-foreground">
-            Scroll horizontally · tap a session for details
-          </span>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-[13px] text-muted-foreground sm:inline">
-              {groups.length} active {groups.length === 1 ? "hour" : "hours"} ·{" "}
-              {fmtDuration(totalSec)} total
+      <div className="px-5 pb-3 pt-2 sm:px-6">
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+              Timeline of work
             </span>
+            <span className="hidden text-[11px] text-muted-foreground/50 sm:inline">
+              {groups.length} {groups.length === 1 ? "hr" : "hrs"} · {fmtDuration(totalSec)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
             {(["left", "right"] as const).map((dir) => (
               <button
                 key={dir}
                 type="button"
                 aria-label={dir === "left" ? "Scroll left" : "Scroll right"}
                 onClick={() => scroll(dir)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] text-muted-foreground transition-all duration-150 hover:border-white/[0.1] hover:bg-white/[0.05] hover:text-foreground"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-muted-foreground transition-all duration-150 hover:border-white/[0.1] hover:text-foreground"
               >
                 {dir === "left" ? (
-                  <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
+                  <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.75} />
                 ) : (
-                  <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
+                  <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.75} />
                 )}
               </button>
             ))}
+            {action}
           </div>
         </div>
 
