@@ -5,28 +5,17 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { ArrowUpRight, Brain, Clock, Monitor, TrendingUp } from "lucide-react";
-import { AttentionMemorySection } from "@/components/attention/visualizations/attention-memory-section";
-import { HomeAuditSection } from "@/components/home/home-audit-section";
+import { ArrowUpRight, Clock } from "lucide-react";
 import { HomeHero } from "@/components/home/home-hero";
-import { ProductMomentumMap } from "@/components/home/product-momentum-map";
 import { WorkTimeline } from "@/components/activity/work-timeline";
-import { TemporalRibbon } from "@/components/activity/temporal-ribbon";
-import { MultiMonitorTimeline } from "@/components/screens/multi-monitor-timeline";
-import { ActivityCard } from "@/components/activity/shared";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
-import { fmtDuration } from "@/components/dashboard/time";
 import { UpdateTodayButton } from "@/components/sync/update-today-button";
-import { Badge } from "@/components/ui/badge";
-import { ScreensSnapshotPanel } from "@/components/screens/screens-snapshot-panel";
 import { formatDateLabel } from "@/lib/activity/date-nav";
 import { hasTodayActivity, resolveActivityPipelineState } from "@/lib/activity/activity-state";
 import { isApiNotFound } from "@/lib/api/client";
 import { fetchSyncStatus } from "@/lib/api/sync-adapter";
 import {
-  attentionDayQuery,
   localTodayFactsQuery,
-  screensDayQuery,
   screenpipeHealthQuery,
   todayQuery,
 } from "@/lib/api/queries";
@@ -46,8 +35,6 @@ export function MemoryHomeView({
     ...localTodayFactsQuery(viewDate),
     enabled: isClient && viewDate === calendarToday,
   });
-  const screens = useQuery({ ...screensDayQuery(viewDate), retry: false });
-  const attention = useQuery({ ...attentionDayQuery(viewDate), retry: false });
   const screenpipeHealth = useQuery(screenpipeHealthQuery);
   const syncStatus = useQuery({
     queryKey: SYNC_STATUS_KEY,
@@ -67,11 +54,6 @@ export function MemoryHomeView({
     return { data: activity.data, origin: "cloud" as const };
   }, [activity.data, localToday.data]);
 
-  const productMomentum =
-    attention.data?.productMomentum?.length
-      ? attention.data.productMomentum
-      : (localToday.data?.productMomentum ?? []);
-
   const pipelineState =
     syncStatus.data?.pipelineStatus ??
     resolveActivityPipelineState(
@@ -87,7 +69,7 @@ export function MemoryHomeView({
   );
 
   const loading =
-    heroPending && screens.isLoading && attention.isLoading && !hasHeroData;
+    heroPending && !hasHeroData;
 
   if (loading) {
     return (
@@ -99,9 +81,9 @@ export function MemoryHomeView({
   }
 
   return (
-    <div className="mt-3 space-y-8">
+    <div className="mt-3">
       {activitySource.origin === "local" ? (
-        <div className="rounded-lg border border-signal/30 bg-signal-soft/30 px-4 py-2 text-xs text-muted-foreground">
+        <div className="mb-3 rounded-lg border border-signal/30 bg-signal-soft/30 px-4 py-2 text-xs text-muted-foreground">
           Showing today from your Mac build (
           <code className="text-[11px]">cortex:sync-local</code> →{" "}
           <code className="text-[11px]">cortex:build:today</code> →{" "}
@@ -109,52 +91,30 @@ export function MemoryHomeView({
         </div>
       ) : null}
 
-      {/* ── Daily command center: hero (with status + upcoming folded in) + timeline ── */}
-      {activity.isError &&
-      !isApiNotFound(activity.error) &&
-      !hasHeroData ? (
+      {activity.isError && !isApiNotFound(activity.error) && !hasHeroData ? (
         <ErrorState error={activity.error} onRetry={activity.refetch} />
       ) : heroPending && !hasHeroData ? (
-        <div className="space-y-4">
-          <div className="h-52 animate-pulse rounded-2xl bg-surface-2/50" />
-          <div className="h-64 animate-pulse rounded-xl bg-surface-2/50" />
-        </div>
+        <div className="h-[480px] animate-pulse rounded-2xl bg-surface-2/50" />
       ) : hasHeroData && activitySource.data ? (
-        <div className="space-y-8">
-          <HomeHero
-            data={activitySource.data}
-            dateLabel={dateLabel}
-            pipelineState={pipelineState}
-          >
-            <WorkTimeline
-              blocks={activitySource.data.timeline}
-              action={
-                <Link
-                  to="/activity"
-                  search={{ date: viewDate }}
-                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-                >
-                  Full log
-                  <ArrowUpRight className="h-3 w-3" />
-                </Link>
-              }
-            />
-          </HomeHero>
-
-          {/* When it happened */}
-          {activitySource.data.stateTimeline?.length ? (
-            <ActivityCard
-              title="When it happened"
-              subtitle="Your day on a 24-hour axis — work above, presence below"
-            >
-              <TemporalRibbon
-                blocks={activitySource.data.timeline}
-                stateTimeline={activitySource.data.stateTimeline}
-                viewDate={viewDate}
-              />
-            </ActivityCard>
-          ) : null}
-        </div>
+        <HomeHero
+          data={activitySource.data}
+          dateLabel={dateLabel}
+          pipelineState={pipelineState}
+        >
+          <WorkTimeline
+            blocks={activitySource.data.timeline}
+            action={
+              <Link
+                to="/activity"
+                search={{ date: viewDate }}
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                Full log
+                <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            }
+          />
+        </HomeHero>
       ) : (
         <EmptyState
           icon={Clock}
@@ -171,155 +131,6 @@ export function MemoryHomeView({
           }
         />
       )}
-
-      {/* Product momentum */}
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 className="text-[28px] font-semibold tracking-tight">Product momentum</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Which projects are heating up or cooling off — day over day.
-            </p>
-          </div>
-          <Link
-            to="/projects"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            All projects
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </div>
-
-        {attention.isLoading ? (
-          <div className="h-24 animate-pulse rounded-xl bg-surface-2/50" />
-        ) : attention.isError &&
-          !isApiNotFound(attention.error) &&
-          productMomentum.length === 0 ? (
-          <ErrorState error={attention.error} onRetry={attention.refetch} />
-        ) : productMomentum.length === 0 ? (
-          <EmptyState
-            icon={TrendingUp}
-            title="No project momentum yet"
-            description="Project trajectory appears after attention is computed for this day."
-          />
-        ) : (
-          <ActivityCard title="Where is attention moving?" subtitle="Bar = share today · % = vs yesterday">
-            <div className="px-5 py-4">
-              <ProductMomentumMap rows={productMomentum} compact />
-            </div>
-          </ActivityCard>
-        )}
-      </section>
-
-      {/* Screens */}
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 className="font-display text-lg tracking-tight">Screens</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              What was on each monitor — roles and snapshots.
-            </p>
-          </div>
-          <Link
-            to="/screens"
-            search={{ date: viewDate }}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            All displays
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </div>
-
-        {screens.isLoading ? (
-          <div className="h-32 animate-pulse rounded-xl bg-surface-2/50" />
-        ) : screens.isError && !isApiNotFound(screens.error) ? (
-          <ErrorState error={screens.error} onRetry={screens.refetch} />
-        ) : !screens.data || screens.data.monitors.length === 0 ? (
-          <EmptyState
-            icon={Monitor}
-            title="No screen memory yet"
-            description="Per-monitor capture appears after ScreenPipe syncs frames from your Mac."
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="gap-1">
-                <Monitor className="size-3" />
-                {screens.data.decision.monitorCount} display
-                {screens.data.decision.monitorCount === 1 ? "" : "s"}
-              </Badge>
-              {screens.data.decision.monitorCards.map((card) => (
-                <Badge key={card.monitorId} variant="outline" className="text-[10px]">
-                  {card.displayName}: {card.role}
-                </Badge>
-              ))}
-            </div>
-
-            <MultiMonitorTimeline data={screens.data} />
-
-            {screens.data.decision.categoryComparison.length > 0 ? (
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                {screens.data.decision.categoryComparison.slice(0, 4).map((row) => (
-                  <div
-                    key={row.category}
-                    className="rounded-lg border border-border/50 bg-surface-1/30 px-3 py-2"
-                  >
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      {row.shortLabel}
-                    </div>
-                    <div className="mt-1 font-mono text-sm tabular-nums">
-                      {fmtDuration(row.durationSec)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            <ActivityCard title="What was on my screens?" subtitle="Pick a time">
-              <div className="px-5 py-4">
-                <ScreensSnapshotPanel decision={screens.data.decision} />
-              </div>
-            </ActivityCard>
-          </div>
-        )}
-      </section>
-
-      {/* Attention */}
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 className="font-display text-lg tracking-tight">Attention</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Where focus lived — flow, depth, and monitor heat.
-            </p>
-          </div>
-          <Link
-            to="/attention"
-            search={{ date: viewDate }}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            Full attention
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </div>
-
-        {attention.isLoading ? (
-          <div className="h-40 animate-pulse rounded-xl bg-surface-2/50" />
-        ) : attention.isError && !isApiNotFound(attention.error) ? (
-          <ErrorState error={attention.error} onRetry={attention.refetch} />
-        ) : !attention.data ? (
-          <EmptyState
-            icon={Brain}
-            title="No attention data yet"
-            description="Attention is computed after activity sync."
-          />
-        ) : (
-          <AttentionMemorySection visualizations={attention.data.visualizations} compact />
-        )}
-      </section>
-
-      {/* Truth audit — verification detail, demoted to the bottom */}
-      <HomeAuditSection viewDate={viewDate} />
     </div>
   );
 }
