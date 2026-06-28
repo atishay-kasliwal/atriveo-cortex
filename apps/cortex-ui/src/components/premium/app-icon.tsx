@@ -4,18 +4,18 @@
 
 import {
   AppWindow,
+  Braces,
   Chrome,
-  Code2,
   Globe,
   Mail,
-  Terminal,
+  SquareTerminal,
 } from "lucide-react";
 
 const APP_ICONS: Array<{ match: RegExp; icon: typeof Chrome }> = [
   { match: /chrome/i, icon: Chrome },
   { match: /brave/i, icon: Globe },
-  { match: /cursor|vscode|code/i, icon: Code2 },
-  { match: /terminal|warp|iterm/i, icon: Terminal },
+  { match: /cursor|vscode|code/i, icon: Braces },
+  { match: /terminal|warp|iterm|bash|zsh/i, icon: SquareTerminal },
   { match: /mail|gmail|outlook/i, icon: Mail },
   { match: /safari|firefox|arc/i, icon: Globe },
 ];

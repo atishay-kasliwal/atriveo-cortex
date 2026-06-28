@@ -33,7 +33,7 @@ function resolveTimezone(): string {
 
 /** Compare synced Postgres analytics coverage — no local SQLite reads. */
 export async function getAnalyticsHistory(): Promise<AnalyticsHistoryDTO> {
-  const [summaryRows, sessionRange] = await Promise.all([
+  const [summaryRows, sessionRange, sessionDates] = await Promise.all([
     runUnsafe<{ date: string; active_minutes: number }>(
       `SELECT date, active_minutes FROM daily_activity_summary
        WHERE active_minutes > 0
@@ -42,9 +42,15 @@ export async function getAnalyticsHistory(): Promise<AnalyticsHistoryDTO> {
     runUnsafe<{ earliest: string | null; latest: string | null }>(
       `SELECT MIN(date) as earliest, MAX(date) as latest FROM activity_sessions`,
     ),
+    runUnsafe<{ date: string }>(
+      `SELECT DISTINCT date FROM activity_sessions WHERE date IS NOT NULL ORDER BY date ASC`,
+    ),
   ]);
 
-  const availableDates = summaryRows.map((r) => r.date);
+  // Union summary dates and session dates so every day with any data shows a dot
+  const dateSet = new Set<string>(summaryRows.map((r) => r.date));
+  for (const r of sessionDates) dateSet.add(r.date);
+  const availableDates = Array.from(dateSet).sort();
   const neonEarliest = availableDates[0] ?? null;
   const neonLatest = availableDates[availableDates.length - 1] ?? null;
 
