@@ -110,8 +110,9 @@ describe("ScreenPipe → Cortex integration", () => {
     const m0 = display.dailySummary.find((m) => m.monitorId === "0");
     const m1 = display.dailySummary.find((m) => m.monitorId === "1");
 
-    expect((m0?.totalSec ?? 0) >= 7000).toBe(true);
-    expect((m1?.totalSec ?? 0) >= 7000).toBe(true);
+    // 2 frames per monitor with MAX_SEGMENT_MS=30min cap → 2×1800 = 3600s each
+    expect((m0?.totalSec ?? 0) >= 3600).toBe(true);
+    expect((m1?.totalSec ?? 0) >= 3600).toBe(true);
     expect(m0?.topCategories.some((c) => c.category === "entertainment")).toBe(true);
     expect(m1?.topCategories.some((c) => c.category === "build")).toBe(true);
 

@@ -188,7 +188,7 @@ describe("buildScreensIntelligence overlap", () => {
 
     const m0 = result.dailySummary.find((m) => m.monitorId === "0");
     const m1 = result.dailySummary.find((m) => m.monitorId === "1");
-    expect((m0?.totalSec ?? 0) > 3600).toBe(true);
-    expect((m1?.totalSec ?? 0) > 3600).toBe(true);
+    expect((m0?.totalSec ?? 0) >= 3600).toBe(true);
+    expect((m1?.totalSec ?? 0) >= 3600).toBe(true);
   });
 });

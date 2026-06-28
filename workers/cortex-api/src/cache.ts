@@ -98,8 +98,11 @@ export async function cachedRead<T>(
     if (err instanceof ApiNotFound) throw err;
     // DB blip (503 etc.) — serve the last-good cached copy, but never older than 24h.
     if (cached && (Date.now() - cached.cachedAt) < MAX_STALE_AGE_MS) {
-      console.warn(`[cache] stale-on-error: serving ${Math.round((Date.now() - cached.cachedAt) / 60_000)}min old cache`);
-      return apiSuccess(c, cached.data);
+      const ageMin = Math.round((Date.now() - cached.cachedAt) / 60_000);
+      console.warn(`[cache] stale-on-error: serving ${ageMin}min old cache`);
+      const res = apiSuccess(c, cached.data);
+      res.headers.set("X-Cache-Age", String(ageMin));
+      return res;
     }
     throw err;
   }

@@ -24,7 +24,7 @@ app.use(
     origin: (origin, c) => {
       const allowed = corsOrigin(c.env);
       if (!origin || origin === allowed) return allowed;
-      return origin === allowed ? origin : allowed;
+      return allowed;
     },
     allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
     allowHeaders: ["Content-Type", "Accept", "api-key", "Authorization"],

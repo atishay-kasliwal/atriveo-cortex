@@ -24,8 +24,9 @@ function sleep(ms: number): Promise<void> {
 
 function killPort(port: number): void {
   if (process.platform === "win32") return;
+  const safePort = Math.trunc(port);
   try {
-    execSync(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`, {
+    execSync(`lsof -ti:${safePort} | xargs kill -9 2>/dev/null || true`, {
       stdio: "ignore",
     });
   } catch {

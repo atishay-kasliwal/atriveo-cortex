@@ -12,8 +12,8 @@ describe.skipIf(!hasNeon)("analytics-db (Neon)", () => {
   });
 
   afterEach(async () => {
-    const { getSql } = await import("@/lib/db/client");
-    await getSql().end();
+    const { closeSqlPool } = await import("@/lib/db/client");
+    closeSqlPool();
   });
 
   it("records analytics runs", async () => {
@@ -63,6 +63,7 @@ describe.skipIf(!hasNeon)("analytics-db (Neon)", () => {
       date,
       active_minutes: 60,
       idle_minutes: 0,
+      sleeping_minutes: 0,
       focused_minutes: 45,
       meeting_minutes: 0,
       project_count: 1,

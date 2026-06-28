@@ -1072,7 +1072,9 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
           }),
         );
       } else {
-        void persistPlatformHealthEvents(payload.services);
+        void persistPlatformHealthEvents(payload.services).catch((err) => {
+            console.error("[platform-health] event persistence failed:", err);
+          });
       }
       c.header("Cache-Control", "no-store, max-age=0");
       return apiSuccess(c, payload);
