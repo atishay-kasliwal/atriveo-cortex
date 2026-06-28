@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install workspace packages (links @cortex/* into node_modules)
+        run: npm install
+
       - name: Install playground dependencies
         run: npm install
         working-directory: playground
