@@ -8,14 +8,9 @@ import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/tim
 import { AppIcon, Sparkline, StatBadge } from "@/components/premium";
 import { collapseMicroEntertainment } from "@/lib/activity/session-collapse";
 import { sessionContextLabel } from "@/lib/activity/session-context";
-import { SessionDetailPanel } from "@/components/activity/session-detail-panel";
+import { HourDeepDive } from "@/components/activity/hour-deep-dive";
+import type { HourGroup } from "@/components/activity/hour-deep-dive";
 import type { TimelineBlock } from "@/lib/api/types";
-
-interface HourGroup {
-  hour: number;
-  blocks: TimelineBlock[];
-  totalSec: number;
-}
 
 function groupByHour(blocks: TimelineBlock[]): HourGroup[] {
   const map = new Map<number, TimelineBlock[]>();
@@ -75,30 +70,44 @@ function CategoryBar({ blocks }: { blocks: TimelineBlock[] }) {
   );
 }
 
-const CARD_W = 340;
-const CARD_H = 360;
+const CARD_W = 300;
+const CARD_H = 320;
 
 function HourCard({
   group,
-  onSelect,
+  isSelected,
+  onClick,
 }: {
   group: HourGroup;
-  onSelect: (b: TimelineBlock) => void;
+  isSelected: boolean;
+  onClick: () => void;
 }) {
   const accent = categoryAccent(group.blocks[0]?.category ?? "other");
 
   return (
     <div
-      className="group/card flex shrink-0 flex-col overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#121722] transition-all duration-150 hover:-translate-y-1 hover:border-white/[0.1] hover:shadow-[0_16px_48px_-20px_rgba(0,0,0,0.65)]"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
+      className={
+        "group/card flex shrink-0 cursor-pointer flex-col overflow-hidden rounded-[18px] border transition-all duration-150 " +
+        (isSelected
+          ? "border-[#2DD4BF]/40 bg-[#121722]"
+          : "border-white/[0.06] bg-[#121722] hover:-translate-y-0.5 hover:border-white/[0.1]")
+      }
       style={{
         width: CARD_W,
         height: CARD_H,
-        boxShadow: `inset 3px 0 0 0 ${accent}`,
+        boxShadow: isSelected
+          ? `inset 3px 0 0 0 ${accent}, 0 0 0 1px rgba(45,212,191,0.12)`
+          : `inset 3px 0 0 0 ${accent}`,
       }}
     >
+      {/* Header */}
       <div className="shrink-0 border-b border-white/[0.06] px-4 pb-3 pt-4">
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[15px] font-semibold tabular-nums text-foreground">
+          <span className="font-mono text-[14px] font-semibold tabular-nums text-foreground">
             {fmtHour(group.hour)}
           </span>
           <span className="rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-muted-foreground">
@@ -108,6 +117,7 @@ function HourCard({
         <CategoryBar blocks={group.blocks} />
       </div>
 
+      {/* Session list — display only, click handled at card level */}
       <div
         className="min-h-0 flex-1 divide-y divide-white/[0.04] overflow-y-auto"
         style={{ scrollbarWidth: "none" }}
@@ -115,36 +125,37 @@ function HourCard({
         {group.blocks.map((block) => {
           const context = sessionContextLabel(block);
           return (
-            <button
+            <div
               key={block.id}
-              type="button"
-              onClick={() => onSelect(block)}
-              className="group/row flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-white/[0.03]"
+              className="flex w-full items-start gap-3 px-4 py-2.5 text-left"
             >
               <AppIcon app={block.app ?? block.applicationsUsed?.[0]} size="sm" />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-medium leading-snug text-foreground">
+                <div className="truncate text-[13px] font-medium leading-snug text-foreground">
                   {block.title}
                 </div>
                 {context ? (
-                  <div className="mt-0.5 truncate text-[12px] text-muted-foreground">{context}</div>
+                  <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                    {context}
+                  </div>
                 ) : null}
-                <div className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground/70">
+                <div className="mt-0.5 font-mono text-[10px] tabular-nums text-muted-foreground/60">
                   {fmtClock(block.startedAt)}–{fmtClock(block.endedAt)}
                 </div>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
-                <span className="font-mono text-[12px] font-medium tabular-nums text-foreground/90">
+              <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5">
+                <span className="font-mono text-[11px] font-medium tabular-nums text-foreground/90">
                   {fmtDuration(block.durationSec)}
                 </span>
                 <StatBadge category={block.category} />
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
 
-      <div className="shrink-0 border-t border-white/[0.06] px-4 py-3 opacity-70 transition-opacity group-hover/card:opacity-100">
+      {/* Sparkline footer */}
+      <div className="shrink-0 border-t border-white/[0.06] px-4 py-2.5 opacity-60 transition-opacity group-hover/card:opacity-100">
         <Sparkline seed={`hour-${group.hour}`} color={accent} />
       </div>
     </div>
@@ -161,7 +172,10 @@ export function WorkTimeline({
   const collapsed = collapseMicroEntertainment(blocks);
   const groups = groupByHour(collapsed);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [selected, setSelected] = useState<TimelineBlock | null>(null);
+  // Default to the most recent hour (first group, sorted desc)
+  const [selectedHour, setSelectedHour] = useState<number | null>(
+    groups[0]?.hour ?? null,
+  );
 
   if (groups.length === 0) {
     return (
@@ -173,6 +187,7 @@ export function WorkTimeline({
 
   const totalSec = groups.reduce((s, g) => s + g.totalSec, 0);
   const hours = [...new Set(groups.map((g) => g.hour))].sort((a, b) => b - a);
+  const selectedGroup = groups.find((g) => g.hour === selectedHour) ?? null;
 
   function scroll(dir: "left" | "right") {
     const el = scrollRef.current;
@@ -183,6 +198,7 @@ export function WorkTimeline({
   return (
     <>
       <div className="px-5 pb-3 pt-2 sm:px-6">
+        {/* Toolbar */}
         <div className="mb-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
@@ -212,12 +228,14 @@ export function WorkTimeline({
           </div>
         </div>
 
+        {/* Hour label axis */}
         <div className="mb-3 hidden overflow-x-auto sm:block" style={{ scrollbarWidth: "none" }}>
           <div className="flex min-w-max gap-3 px-1">
             {hours.map((h) => (
               <div
                 key={h}
-                className="w-[340px] shrink-0 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60"
+                className="shrink-0 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60"
+                style={{ width: CARD_W }}
               >
                 {fmtHourLabel(h)}
               </div>
@@ -225,24 +243,29 @@ export function WorkTimeline({
           </div>
         </div>
 
+        {/* Horizontal scroll of hour cards */}
         <div
           ref={scrollRef}
           className="flex gap-4 scroll-smooth pb-1"
           style={{ overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {groups.map((g) => (
-            <HourCard key={g.hour} group={g} onSelect={setSelected} />
+            <HourCard
+              key={g.hour}
+              group={g}
+              isSelected={g.hour === selectedHour}
+              onClick={() =>
+                setSelectedHour(g.hour === selectedHour ? null : g.hour)
+              }
+            />
           ))}
         </div>
       </div>
 
-      <SessionDetailPanel
-        block={selected}
-        open={selected != null}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null);
-        }}
-      />
+      {/* Hour deep dive — expands below the scroll inside the same card */}
+      {selectedGroup ? (
+        <HourDeepDive key={selectedGroup.hour} group={selectedGroup} />
+      ) : null}
     </>
   );
 }
