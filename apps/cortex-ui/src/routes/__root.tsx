@@ -105,7 +105,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@700;800&family=JetBrains+Mono:wght@400;500;600&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
       },
     ],
   }),
@@ -131,7 +131,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function Topbar({ onOpenSearch }: { onOpenSearch: () => void }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-white/[0.06] bg-[#07090c]/80 px-4 backdrop-blur-xl">
       <SidebarTrigger className="-ml-1" />
       <div className="hidden h-5 w-px bg-border md:block" />
       <div className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
@@ -144,7 +144,7 @@ function Topbar({ onOpenSearch }: { onOpenSearch: () => void }) {
         <button
           type="button"
           onClick={onOpenSearch}
-          className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs text-muted-foreground transition hover:text-foreground"
+          className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 text-[13px] text-muted-foreground transition-all duration-150 hover:border-white/[0.1] hover:text-foreground"
         >
           <Search className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Search memory…</span>

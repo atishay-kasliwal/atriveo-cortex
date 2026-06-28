@@ -144,7 +144,8 @@ export type ManualSyncResult = {
 export type SyncUiState = "idle" | "refreshing" | "success" | "partial" | "failed";
 
 const SYNC_STATUS_CACHE_KEY = "cortex-sync-status-v2";
-const JOB_POLL_MS = 2_000;
+const JOB_POLL_MIN_MS = 1_000;
+const JOB_POLL_MAX_MS = 10_000;
 const JOB_POLL_TIMEOUT_MS = 120_000;
 const JOB_FETCH_MAX_RETRIES = 4;
 
@@ -225,9 +226,14 @@ function jobToManualResult(
   };
 }
 
+function pollBackoffMs(attempt: number): number {
+  return Math.min(JOB_POLL_MAX_MS, JOB_POLL_MIN_MS * Math.pow(1.5, attempt));
+}
+
 async function pollMemoryJob(jobId: string): Promise<ManualSyncResult> {
   const started = Date.now();
   let transientErrors = 0;
+  let pollAttempt = 0;
 
   while (Date.now() - started < JOB_POLL_TIMEOUT_MS) {
     const [job, status] = await Promise.all([
@@ -238,7 +244,8 @@ async function pollMemoryJob(jobId: string): Promise<ManualSyncResult> {
     if (!job) {
       transientErrors += 1;
       if (transientErrors >= 8) break;
-      await new Promise((resolve) => setTimeout(resolve, JOB_POLL_MS));
+      await new Promise((resolve) => setTimeout(resolve, pollBackoffMs(pollAttempt)));
+      pollAttempt += 1;
       continue;
     }
 
@@ -251,7 +258,8 @@ async function pollMemoryJob(jobId: string): Promise<ManualSyncResult> {
       return jobToManualResult(job, freshStatus);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, JOB_POLL_MS));
+    await new Promise((resolve) => setTimeout(resolve, pollBackoffMs(pollAttempt)));
+    pollAttempt += 1;
   }
 
   const [status, job] = await Promise.all([
@@ -327,6 +335,23 @@ export async function triggerMemoryRefresh(): Promise<ManualSyncResult> {
   }
 
   return pollMemoryJob(enqueued.jobId);
+}
+
+export type TodayUpdateResult = {
+  ok: true;
+  date: string;
+  activeSec: number;
+  timelineEvents: number;
+  generatedAt: string;
+  sessionCount?: number;
+  recordsProcessed?: number;
+};
+
+export async function triggerTodayUpdate(): Promise<TodayUpdateResult> {
+  return cortexFetch<TodayUpdateResult>("/api/today/update", {
+    method: "POST",
+    cache: "no-store",
+  });
 }
 
 /** @deprecated use triggerMemoryRefresh */

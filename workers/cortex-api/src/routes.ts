@@ -140,7 +140,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
   // Specific routes must be registered before the :period wildcard
   app.get("/api/v1/health/readiness", async (c) => {
     try {
-      const tz = c.req.query("timezone") ?? "America/Los_Angeles";
+      const tz = c.req.query("timezone") ?? "America/New_York";
       const data = await buildReadiness(tz);
       c.header("Cache-Control", "no-store, max-age=0");
       return apiSuccess(c, data);
@@ -151,7 +151,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
 
   app.get("/api/v1/health/trend/daily", async (c) => {
     try {
-      const tz = c.req.query("timezone") ?? "America/Los_Angeles";
+      const tz = c.req.query("timezone") ?? "America/New_York";
       const days = Math.min(90, Math.max(7, Number(c.req.query("days") ?? 30)));
       const data = await buildDailyTrend(tz, days);
       c.header("Cache-Control", "no-store, max-age=0");
@@ -167,7 +167,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       if (!["today", "yesterday", "week", "month"].includes(period)) {
         return apiError(c, "Invalid period. Use: today, yesterday, week, month", 400);
       }
-      const tz = c.req.query("timezone") ?? "America/Los_Angeles";
+      const tz = c.req.query("timezone") ?? "America/New_York";
       const data = await buildHealthTimeline(period, tz);
       c.header("Cache-Control", "no-store, max-age=0");
       return apiSuccess(c, data);
@@ -219,6 +219,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       const date = todayDateParam(c.req.query("date") ?? null);
       return await cachedRead(c, 20, () => buildTodayActivityFromNeon(date));
     } catch (e) {
+      if (e instanceof ApiNotFound) return apiError(c, e.message, 404);
       return apiError(c, e instanceof Error ? e.message : "Failed to load today analytics", 500);
     }
   });
@@ -228,6 +229,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
       const date = todayDateParam(c.req.query("date") ?? null);
       return await cachedRead(c, 20, () => buildTodayActivityFromNeon(date));
     } catch (e) {
+      if (e instanceof ApiNotFound) return apiError(c, e.message, 404);
       return apiError(c, e instanceof Error ? e.message : "Failed to load day analytics", 500);
     }
   });
@@ -970,12 +972,12 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
   app.get("/api/decisions/recommendations", async (c) => {
     try {
       const date = c.req.query("date") ?? null;
-      const limit = Number(c.req.query("limit") ?? "50");
+      const limit = Math.min(100, Number.isFinite(Number(c.req.query("limit"))) ? Number(c.req.query("limit")) : 50);
       return apiSuccess(
         c,
         await buildDecisions({
           date,
-          limit: Number.isFinite(limit) ? limit : 50,
+          limit,
         }),
       );
     } catch (e) {
@@ -1151,6 +1153,15 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
     }
   });
 
+  app.post("/api/today/update", async (c) => {
+    try {
+      const { triggerTodayFactsUpdate } = await import("@/lib/sync/today-facts-update-api");
+      return apiSuccess(c, await triggerTodayFactsUpdate());
+    } catch (e) {
+      return apiErrorFromException(c, e, "Today update failed", 500);
+    }
+  });
+
   // AI provider settings — stored in sync_state under "ai.*" keys
   app.get("/api/settings/ai", async (c) => {
     try {
@@ -1201,7 +1212,7 @@ export function registerReadRoutes(app: import("hono").Hono<{ Bindings: import("
 
   app.get("/api/calendar/upcoming", async (c) => {
     try {
-      const days = Math.min(Number(c.req.query("days") ?? "7"), 30);
+      const days = Math.min(Math.max(1, Number(c.req.query("days") ?? "7")), 30);
       const now = new Date();
       const windowEnd = new Date(now.getTime() + days * 86400_000).toISOString();
       const rows = await runUnsafe<{

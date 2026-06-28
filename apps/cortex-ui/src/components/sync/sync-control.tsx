@@ -21,6 +21,7 @@ import {
   syncPipelineLabels,
   syncPipelineStyles,
   triggerMemoryRefresh,
+  triggerTodayUpdate,
   writeCachedSyncStatus,
   type ManualSyncResult,
   type SyncUiState,
@@ -158,6 +159,43 @@ export function SyncControl() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: triggerTodayUpdate,
+    onMutate: () => setUiState("refreshing"),
+    onSuccess: (result) => {
+      invalidateAfterRefresh(queryClient);
+      const hours = Math.floor(result.activeSec / 3600);
+      const mins = Math.round((result.activeSec % 3600) / 60);
+      const activeLabel =
+        hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+      const queued = result.dbPath === "queued-replay";
+      toast.success(
+        queued ? "Update queued — Mac will refresh on next sync" : "Today updated",
+        {
+          description: queued
+            ? `${activeLabel} active shown · fresh capture publishes when your Mac syncs`
+            : `${activeLabel} active · ${result.timelineEvents} sessions`,
+          duration: 6000,
+        },
+      );
+      setUiState("success");
+    },
+    onError: (error) => {
+      setUiState("failed");
+      const detail =
+        error instanceof ApiError && error.message
+          ? error.message
+          : "Couldn't run today's update. Try npm run cortex:refresh:today on your Mac.";
+      toast.warning("Couldn't update today.", {
+        description: detail,
+        duration: 8000,
+      });
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: SYNC_STATUS_KEY });
+    },
+  });
+
   useEffect(() => {
     if (uiState !== "success" && uiState !== "partial" && uiState !== "failed") return;
     const timer = window.setTimeout(() => setUiState("idle"), 5000);
@@ -220,7 +258,11 @@ export function SyncControl() {
   const freshness = status?.memoryFreshness;
   const score = freshness?.score ?? null;
   const statusLoading = statusQuery.isLoading && !status;
-  const isRefreshing = refreshMutation.isPending || activeJobLive || uiState === "refreshing";
+  const isRefreshing =
+    refreshMutation.isPending ||
+    updateMutation.isPending ||
+    activeJobLive ||
+    uiState === "refreshing";
   const pipelineStatus =
     isRefreshing
       ? "syncing"
@@ -229,6 +271,7 @@ export function SyncControl() {
         : (status?.pipelineStatus ?? readCachedSyncStatus()?.pipelineStatus ?? "offline");
   const pipelineStyle = syncPipelineStyles[pipelineStatus];
   const canRefresh = status?.canRefreshMemory !== false && !isRefreshing;
+  const canUpdate = !isRefreshing;
 
   const captureSla = agentHealth?.capture.slaLevel ?? "offline";
   const syncSla = agentHealth?.sync.slaLevel ?? "offline";
@@ -285,9 +328,29 @@ export function SyncControl() {
       </div>
       <Button
         type="button"
+        size="sm"
+        className="h-9 gap-1.5 rounded-xl border-0 bg-gradient-to-r from-[#2DD4BF] to-[#14b8a6] px-3.5 text-[13px] font-semibold text-[#07090c] shadow-[0_0_24px_rgba(45,212,191,0.2)] transition-all duration-150 hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+        disabled={!canUpdate}
+        onClick={() => {
+          if (isRefreshing || updateMutation.isPending) return;
+          updateMutation.mutate();
+        }}
+      >
+        {updateMutation.isPending ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <RefreshCw className="h-3.5 w-3.5" />
+        )}
+        <span className="hidden sm:inline">
+          {updateMutation.isPending ? "Updating…" : "Update"}
+        </span>
+        <span className="sm:hidden">{updateMutation.isPending ? "…" : "Update"}</span>
+      </Button>
+      <Button
+        type="button"
         variant="outline"
         size="sm"
-        className="h-8 gap-1.5 px-2.5 text-xs"
+        className="h-9 gap-1.5 rounded-xl border-white/[0.06] bg-white/[0.03] px-3.5 text-[13px] transition-all duration-150 hover:border-white/[0.1] hover:bg-white/[0.05] active:scale-[0.98]"
         disabled={isRefreshing || !canRefresh}
         onClick={() => {
           if (isRefreshing || refreshMutation.isPending) return;

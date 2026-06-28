@@ -4,13 +4,34 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Activity,
+  Clock,
+  Focus,
+  Globe,
+  Inbox,
+  Timer,
+  Video,
+} from "lucide-react";
 import { fmtDuration } from "@/components/dashboard/time";
+import { MetricCard } from "@/components/premium/metric-card";
+import type { KpiTileProps } from "@/components/home/kpi-tile";
 import { fetchUpcomingEvents } from "@/lib/api/calendar-adapter";
 import { needsYouQuery, siteAnalyticsQuery, weekQuery } from "@/lib/api/queries";
 import type { TodayActivity } from "@/lib/api/types";
-import { KpiTile, type KpiTileProps } from "@/components/home/kpi-tile";
 
 type Period = "today" | "week";
+
+const ICONS: Record<string, typeof Activity> = {
+  Active: Activity,
+  Focused: Focus,
+  Idle: Timer,
+  "Needs you": Inbox,
+  "Next meeting": Video,
+  Meetings: Video,
+  "atriveo.com": Globe,
+  atishaykasliwal: Globe,
+};
 
 function nextMeeting(events: Array<{ startTime: string; title: string; isAllDay: boolean }>) {
   const now = Date.now();
@@ -29,28 +50,22 @@ export function HomeKpiStrip({
   weekStart,
 }: {
   data: TodayActivity;
-  /** Monday of the current week, for the week aggregate. */
   weekStart?: string;
 }) {
   const [period, setPeriod] = useState<Period>("today");
 
-  // Calendar (live — already wired)
   const { data: events = [] } = useQuery({
     queryKey: ["calendar-upcoming", 7],
     queryFn: () => fetchUpcomingEvents(7),
     staleTime: 5 * 60 * 1000,
   });
 
-  // Week work aggregate (live — already wired), only fetched when needed
   const week = useQuery({
     ...weekQuery(weekStart),
     enabled: period === "week",
   });
 
-  // Email "needs you" — degrades to "unconnected" if the sync hasn't run yet
   const needsYou = useQuery(needsYouQuery);
-
-  // Site analytics (GA) — degrades to "unconnected" if the sync hasn't run yet
   const sites = useQuery(siteAnalyticsQuery);
 
   function siteTile(key: string, label: string): KpiTileProps {
@@ -74,21 +89,26 @@ export function HomeKpiStrip({
   );
   const next = useMemo(() => nextMeeting(events), [events]);
 
-  // Resolve work values per period
   const activeSec = period === "today" ? data.activeSec : week.data?.activeSec;
   const focusSec = period === "today" ? data.focusSec : week.data?.focusSec;
   const idleSec = period === "today" ? data.idleSec : week.data?.idleSec;
+  const dayTotal = Math.max(activeSec ?? 0, 1);
 
   const tiles: KpiTileProps[] = [
     {
       label: "Active",
       value: activeSec != null ? fmtDuration(activeSec) : undefined,
+      sub: activeSec != null ? `${Math.round((activeSec / 86400) * 100)}% of day` : undefined,
       state: period === "week" && week.isLoading ? "loading" : "live",
     },
     {
       label: "Focused",
-      accent: "text-signal",
+      accent: "text-[#2DD4BF]",
       value: focusSec != null ? fmtDuration(focusSec) : undefined,
+      sub:
+        focusSec != null && activeSec
+          ? `${Math.round((focusSec / dayTotal) * 100)}% of active`
+          : undefined,
       state: period === "week" && week.isLoading ? "loading" : "live",
     },
     {
@@ -106,7 +126,7 @@ export function HomeKpiStrip({
       return {
         label: "Needs you",
         value: String(count),
-        sub: count === 0 ? "all clear 🎉" : top ? top.fromName : "email",
+        sub: count === 0 ? "All clear 🎉" : top ? top.fromName : "email",
         higherIsBetter: false,
         state: "live" as const,
       };
@@ -139,20 +159,30 @@ export function HomeKpiStrip({
     siteTile("atishaykasliwal", "atishaykasliwal"),
   ];
 
+  const accentColors: Record<string, string> = {
+    Active: "#2DD4BF",
+    Focused: "#2DD4BF",
+    Idle: "#94A3B8",
+    "Needs you": "#F59E0B",
+    "Next meeting": "#4F8CFF",
+    Meetings: "#4F8CFF",
+    "atriveo.com": "#4F8CFF",
+    atishaykasliwal: "#4F8CFF",
+  };
+
   return (
     <div>
-      {/* Period toggle */}
-      <div className="mb-2 flex items-center justify-end">
-        <div className="inline-flex rounded-full border border-border/60 bg-surface-2/40 p-0.5">
+      <div className="mb-4 flex items-center justify-end">
+        <div className="inline-flex rounded-full border border-white/[0.06] bg-[#0f131a] p-1">
           {(["today", "week"] as const).map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => setPeriod(p)}
               className={
-                "rounded-full px-3 py-1 text-[11px] font-medium capitalize transition-colors " +
+                "rounded-full px-4 py-1.5 text-[13px] font-medium capitalize transition-all duration-150 " +
                 (period === p
-                  ? "bg-foreground text-background"
+                  ? "bg-[#2DD4BF] text-[#07090c] shadow-[0_0_20px_rgba(45,212,191,0.25)]"
                   : "text-muted-foreground hover:text-foreground")
               }
             >
@@ -162,10 +192,14 @@ export function HomeKpiStrip({
         </div>
       </div>
 
-      {/* KPI tiles — wrap on narrow screens */}
-      <div className="grid grid-cols-2 divide-x divide-y divide-border/40 overflow-hidden rounded-xl border border-border/40 sm:grid-cols-3 lg:grid-cols-7 lg:divide-y-0">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
         {tiles.map((t) => (
-          <KpiTile key={t.label} {...t} />
+          <MetricCard
+            key={t.label}
+            {...t}
+            icon={ICONS[t.label] ?? Clock}
+            accentColor={accentColors[t.label] ?? "#2DD4BF"}
+          />
         ))}
       </div>
     </div>

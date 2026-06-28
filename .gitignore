@@ -25,6 +25,7 @@ logs/
 # SQLite variants
 *.sqlite
 *.sqlite3
+packages/cortex-cli/build/
 
 # ScreenPipe capture data (never commit)
 screenpipe-data/

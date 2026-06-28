@@ -4,6 +4,7 @@
 
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { ArrowUpRight, Brain, Clock, Monitor, TrendingUp } from "lucide-react";
 import { AttentionMemorySection } from "@/components/attention/visualizations/attention-memory-section";
 import { HomeAuditSection } from "@/components/home/home-audit-section";
@@ -15,6 +16,7 @@ import { MultiMonitorTimeline } from "@/components/screens/multi-monitor-timelin
 import { ActivityCard } from "@/components/activity/shared";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
 import { fmtDuration } from "@/components/dashboard/time";
+import { UpdateTodayButton } from "@/components/sync/update-today-button";
 import { Badge } from "@/components/ui/badge";
 import { ScreensSnapshotPanel } from "@/components/screens/screens-snapshot-panel";
 import { formatDateLabel } from "@/lib/activity/date-nav";
@@ -23,6 +25,7 @@ import { isApiNotFound } from "@/lib/api/client";
 import { fetchSyncStatus } from "@/lib/api/sync-adapter";
 import {
   attentionDayQuery,
+  localTodayFactsQuery,
   screensDayQuery,
   screenpipeHealthQuery,
   todayQuery,
@@ -37,7 +40,12 @@ export function MemoryHomeView({
   viewDate: string;
   calendarToday: string;
 }) {
+  const isClient = typeof window !== "undefined";
   const activity = useQuery({ ...todayQuery(viewDate), retry: false });
+  const localToday = useQuery({
+    ...localTodayFactsQuery(viewDate),
+    enabled: isClient && viewDate === calendarToday,
+  });
   const screens = useQuery({ ...screensDayQuery(viewDate), retry: false });
   const attention = useQuery({ ...attentionDayQuery(viewDate), retry: false });
   const screenpipeHealth = useQuery(screenpipeHealthQuery);
@@ -48,15 +56,38 @@ export function MemoryHomeView({
   });
 
   const dateLabel = formatDateLabel(viewDate, calendarToday);
+
+  const activitySource = useMemo(() => {
+    if (activity.data && hasTodayActivity(activity.data)) {
+      return { data: activity.data, origin: "cloud" as const };
+    }
+    if (localToday.data?.activity && hasTodayActivity(localToday.data.activity)) {
+      return { data: localToday.data.activity, origin: "local" as const };
+    }
+    return { data: activity.data, origin: "cloud" as const };
+  }, [activity.data, localToday.data]);
+
+  const productMomentum =
+    attention.data?.productMomentum?.length
+      ? attention.data.productMomentum
+      : (localToday.data?.productMomentum ?? []);
+
   const pipelineState =
     syncStatus.data?.pipelineStatus ??
     resolveActivityPipelineState(
       screenpipeHealth.data,
-      hasTodayActivity(activity.data),
+      hasTodayActivity(activitySource.data),
     );
 
+  const waitingForLocal =
+    viewDate === calendarToday && isClient && localToday.isFetching;
+  const heroPending = activity.isLoading || waitingForLocal;
+  const hasHeroData = Boolean(
+    activitySource.data && hasTodayActivity(activitySource.data),
+  );
+
   const loading =
-    activity.isLoading && screens.isLoading && attention.isLoading;
+    heroPending && screens.isLoading && attention.isLoading && !hasHeroData;
 
   if (loading) {
     return (
@@ -68,19 +99,30 @@ export function MemoryHomeView({
   }
 
   return (
-    <div className="mt-3 space-y-5">
+    <div className="mt-3 space-y-8">
+      {activitySource.origin === "local" ? (
+        <div className="rounded-lg border border-signal/30 bg-signal-soft/30 px-4 py-2 text-xs text-muted-foreground">
+          Showing today from your Mac build (
+          <code className="text-[11px]">cortex:sync-local</code> →{" "}
+          <code className="text-[11px]">cortex:build:today</code> →{" "}
+          <code className="text-[11px]">cortex:serve</code>). Cloud sync is still catching up.
+        </div>
+      ) : null}
+
       {/* ── Daily command center: hero (with status + upcoming folded in) + timeline ── */}
-      {activity.isError && !isApiNotFound(activity.error) ? (
+      {activity.isError &&
+      !isApiNotFound(activity.error) &&
+      !hasHeroData ? (
         <ErrorState error={activity.error} onRetry={activity.refetch} />
-      ) : activity.isLoading ? (
+      ) : heroPending && !hasHeroData ? (
         <div className="space-y-4">
           <div className="h-52 animate-pulse rounded-2xl bg-surface-2/50" />
           <div className="h-64 animate-pulse rounded-xl bg-surface-2/50" />
         </div>
-      ) : activity.data && hasTodayActivity(activity.data) ? (
-        <div className="space-y-5">
+      ) : hasHeroData && activitySource.data ? (
+        <div className="space-y-8">
           <HomeHero
-            data={activity.data}
+            data={activitySource.data}
             dateLabel={dateLabel}
             pipelineState={pipelineState}
           />
@@ -100,26 +142,37 @@ export function MemoryHomeView({
               </Link>
             }
           >
-            <WorkTimeline blocks={activity.data.timeline} />
+            <WorkTimeline blocks={activitySource.data.timeline} />
           </ActivityCard>
 
           {/* When it happened */}
-          <ActivityCard
-            title="When it happened"
-            subtitle="Your day on a 24-hour axis — work above, presence below"
-          >
-            <TemporalRibbon
-              blocks={activity.data.timeline}
-              stateTimeline={activity.data.stateTimeline}
-              viewDate={viewDate}
-            />
-          </ActivityCard>
+          {activitySource.data.stateTimeline?.length ? (
+            <ActivityCard
+              title="When it happened"
+              subtitle="Your day on a 24-hour axis — work above, presence below"
+            >
+              <TemporalRibbon
+                blocks={activitySource.data.timeline}
+                stateTimeline={activitySource.data.stateTimeline}
+                viewDate={viewDate}
+              />
+            </ActivityCard>
+          ) : null}
         </div>
       ) : (
         <EmptyState
           icon={Clock}
           title="Nothing synced for today yet"
-          description="Your day appears here once ScreenPipe captures and syncs new frames."
+          description={
+            isClient && viewDate === calendarToday
+              ? "Your Mac captures activity locally, then publishes a snapshot to the cloud. Click Update to sync now — or wait for the next scheduled sync."
+              : "Your day appears here once ScreenPipe captures and syncs new frames."
+          }
+          action={
+            isClient && viewDate === calendarToday ? (
+              <UpdateTodayButton onSuccess={() => void activity.refetch()} />
+            ) : undefined
+          }
         />
       )}
 
@@ -127,7 +180,7 @@ export function MemoryHomeView({
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-lg tracking-tight">Product momentum</h2>
+            <h2 className="text-[28px] font-semibold tracking-tight">Product momentum</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Which projects are heating up or cooling off — day over day.
             </p>
@@ -143,9 +196,11 @@ export function MemoryHomeView({
 
         {attention.isLoading ? (
           <div className="h-24 animate-pulse rounded-xl bg-surface-2/50" />
-        ) : attention.isError && !isApiNotFound(attention.error) ? (
+        ) : attention.isError &&
+          !isApiNotFound(attention.error) &&
+          productMomentum.length === 0 ? (
           <ErrorState error={attention.error} onRetry={attention.refetch} />
-        ) : !attention.data?.productMomentum?.length ? (
+        ) : productMomentum.length === 0 ? (
           <EmptyState
             icon={TrendingUp}
             title="No project momentum yet"
@@ -154,7 +209,7 @@ export function MemoryHomeView({
         ) : (
           <ActivityCard title="Where is attention moving?" subtitle="Bar = share today · % = vs yesterday">
             <div className="px-5 py-4">
-              <ProductMomentumMap rows={attention.data.productMomentum} compact />
+              <ProductMomentumMap rows={productMomentum} compact />
             </div>
           </ActivityCard>
         )}

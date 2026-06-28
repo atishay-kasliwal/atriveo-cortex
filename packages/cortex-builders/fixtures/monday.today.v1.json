@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "model": "today.facts",
+  "meta": {
+    "generatedAt": "2026-06-16T12:00:00.000Z",
+    "sourceDevice": "fixture-mac",
+    "captureWindow": {
+      "start": "2026-06-16T13:00:00.000Z",
+      "end": "2026-06-16T19:30:00.000Z"
+    },
+    "inputs": {
+      "analyticsVersion": "cortex-analytics-legacy-1",
+      "knowledgeRevision": 591868038,
+      "domainVersion": "cortex-domain-1",
+      "builderVersion": "cortex-builders-1"
+    },
+    "dataQuality": {
+      "captureHealthy": true,
+      "missingMinutes": 0,
+      "confidence": 0.98
+    }
+  },
+  "payload": {
+    "date": "2026-06-16",
+    "focus": {
+      "activeMinutes": 185,
+      "focusedMinutes": 135,
+      "deepWorkMinutes": 135,
+      "meetingMinutes": 20,
+      "interruptionCount": 3,
+      "idleMinutes": 10
+    },
+    "timeline": [
+      {
+        "startTime": "2026-06-16T13:00:00.000Z",
+        "endTime": "2026-06-16T14:30:00.000Z",
+        "durationMinutes": 90,
+        "label": "Deep work on Cortex",
+        "category": "BUILD",
+        "dominantApp": "Cursor",
+        "projectSlug": "cortex"
+      },
+      {
+        "startTime": "2026-06-16T14:45:00.000Z",
+        "endTime": "2026-06-16T15:30:00.000Z",
+        "durationMinutes": 45,
+        "label": "Feature implementation",
+        "category": "BUILD",
+        "dominantApp": "Cursor",
+        "projectSlug": "cortex"
+      },
+      {
+        "startTime": "2026-06-16T18:00:00.000Z",
+        "endTime": "2026-06-16T18:20:00.000Z",
+        "durationMinutes": 20,
+        "label": "Team sync",
+        "category": "COMMUNICATION",
+        "dominantApp": "Slack",
+        "projectSlug": null
+      },
+      {
+        "startTime": "2026-06-16T19:00:00.000Z",
+        "endTime": "2026-06-16T19:30:00.000Z",
+        "durationMinutes": 30,
+        "label": "Docs research",
+        "category": "RESEARCH",
+        "dominantApp": "Google Chrome",
+        "projectSlug": "cortex"
+      }
+    ],
+    "projectMinutes": {
+      "cortex": 165,
+      "unattributed": 20
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { api, type ActionBucket } from "./client";
 import { cortexFetch, isRetryableApiError } from "./cortex-fetch";
 import { fetchDailyTrend, fetchReadiness } from "./health-adapter";
+import { fetchLocalTodayBundle } from "./local-facts-adapter";
 import { fetchRangeActivity } from "./range-adapter";
 import type { HealthPeriod } from "./health-types";
 
@@ -15,6 +16,7 @@ function defaultQueryRetry(failureCount: number, error: unknown): boolean {
 export const qk = {
   overview: ["overview"] as const,
   today: (date?: string) => ["analytics", "today", date ?? "today"] as const,
+  localToday: (date: string) => ["local", "today-facts", date] as const,
   week: (start?: string) => ["analytics", "week", start ?? "current"] as const,
   month: (start?: string) => ["analytics", "month", start ?? "current"] as const,
   range: (start: string, end: string) => ["analytics", "range", start, end] as const,
@@ -69,6 +71,16 @@ export const todayQuery = (date?: string) =>
     queryFn: () => api.analytics.today(date),
     staleTime: STALE,
     retry: defaultQueryRetry,
+  });
+
+/** Local Mac build (`cortex build today` + `cortex serve` on :3921). */
+export const localTodayFactsQuery = (date: string) =>
+  queryOptions({
+    queryKey: qk.localToday(date),
+    queryFn: () => fetchLocalTodayBundle(date),
+    staleTime: 15_000,
+    retry: false,
+    refetchOnMount: "always",
   });
 
 export const weekQuery = (start?: string) =>

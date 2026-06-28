@@ -12,6 +12,8 @@ export type Env = {
   HEALTH_WRITE_TOKEN?: string;
   CORS_ORIGIN?: string;
   AUTH_SECRET?: string;
+  VALID_EMAIL?: string;
+  VALID_PASSWORD?: string;
 };
 
 export function bindDatabase(env: Env): void {
@@ -29,8 +31,6 @@ export function bindDatabase(env: Env): void {
   resetDatabasePool();
 }
 
-const VALID_EMAIL = "katishay@gmail.com";
-const VALID_PASSWORD = "Youcandoit";
 
 /** Sign a simple HMAC-SHA256 JWT-like token using Web Crypto (available in Workers). */
 async function signToken(payload: object, secret: string): Promise<string> {
@@ -66,19 +66,23 @@ export async function verifyToken(token: string, secret: string): Promise<boolea
 
 export async function handleLogin(c: Context<{ Bindings: Env }>): Promise<Response> {
   const secret = c.env.AUTH_SECRET;
-  if (!secret) return c.json({ success: false, error: "Auth not configured" }, 500);
+  const validEmail = c.env.VALID_EMAIL;
+  const validPassword = c.env.VALID_PASSWORD;
+  if (!secret || !validEmail || !validPassword) {
+    return c.json({ success: false, error: "Auth not configured" }, 500);
+  }
   let body: { email?: string; password?: string };
   try { body = await c.req.json(); } catch { return c.json({ success: false, error: "Invalid body" }, 400); }
-  if (body.email?.toLowerCase().trim() !== VALID_EMAIL || body.password !== VALID_PASSWORD) {
+  if (body.email?.toLowerCase().trim() !== validEmail || body.password !== validPassword) {
     return c.json({ success: false, error: "Invalid credentials" }, 401);
   }
-  const token = await signToken({ sub: VALID_EMAIL, exp: Math.floor(Date.now() / 1000) + 90 * 24 * 3600 }, secret);
+  const token = await signToken({ sub: validEmail, exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 }, secret);
   return c.json({ success: true, token });
 }
 
 export async function requireAuth(c: Context<{ Bindings: Env }>): Promise<boolean> {
   const secret = c.env.AUTH_SECRET;
-  if (!secret) return true; // not configured = open (dev mode)
+  if (!secret) return false; // misconfigured = deny, never open
   const auth = c.req.header("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token) return false;

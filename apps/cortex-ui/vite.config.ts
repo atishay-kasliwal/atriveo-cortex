@@ -23,6 +23,11 @@ export default defineConfig({
       port: 5173,
       strictPort: false,
       proxy: {
+        "/local-facts": {
+          target: process.env.VITE_LOCAL_FACTS_PROXY ?? "http://127.0.0.1:3921",
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/local-facts/, "") || "/",
+        },
         "/api": {
           target:
             process.env.VITE_API_PROXY_TARGET ??

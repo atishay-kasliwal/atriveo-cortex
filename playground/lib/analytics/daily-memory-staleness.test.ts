@@ -96,4 +96,19 @@ describe("shouldRefreshDailyMemoryForToday", () => {
       ),
     ).toBe(false);
   });
+
+  it("keeps local-first publish when sync is newer but legacy summary is empty", () => {
+    const cached = emptyCache({
+      generatedAt: "2026-06-19T14:13:26.549Z",
+      activeSec: 960,
+      timeline: [{ id: "1" } as TodayActivityDTO["timeline"][number]],
+    });
+    expect(
+      shouldRefreshDailyMemoryForToday(
+        cached,
+        { date: "2026-06-19", active_minutes: 0, idle_minutes: 0, sleeping_minutes: 0, focused_minutes: 0, meeting_minutes: 0, project_count: 0, open_loop_count: 0 },
+        "2026-06-19T15:04:40.067Z",
+      ),
+    ).toBe(false);
+  });
 });

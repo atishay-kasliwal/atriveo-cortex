@@ -4,6 +4,8 @@ out/
 
 .env
 .env.local
+.env.sync
+.env.neon-archive
 .env.*.local
 
 *.db

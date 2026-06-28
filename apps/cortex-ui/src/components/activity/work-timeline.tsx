@@ -5,12 +5,11 @@
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
+import { AppIcon, Sparkline, StatBadge } from "@/components/premium";
 import { collapseMicroEntertainment } from "@/lib/activity/session-collapse";
 import { sessionContextLabel } from "@/lib/activity/session-context";
 import { SessionDetailPanel } from "@/components/activity/session-detail-panel";
 import type { TimelineBlock } from "@/lib/api/types";
-
-// ── Group blocks by hour ──────────────────────────────────────────────────────
 
 interface HourGroup {
   hour: number;
@@ -29,7 +28,9 @@ function groupByHour(blocks: TimelineBlock[]): HourGroup[] {
     .sort((a, b) => b[0] - a[0])
     .map(([hour, blocks]) => ({
       hour,
-      blocks: [...blocks].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()),
+      blocks: [...blocks].sort(
+        (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+      ),
       totalSec: blocks.reduce((s, b) => s + b.durationSec, 0),
     }));
 }
@@ -39,95 +40,116 @@ function fmtHour(h: number): string {
   return `${ap(h)}–${ap(h + 1)}`;
 }
 
-// ── Category color bar ────────────────────────────────────────────────────────
+function fmtHourLabel(h: number): string {
+  const ap = (n: number) => `${n % 12 === 0 ? 12 : n % 12}${n >= 12 ? "pm" : "am"}`;
+  return ap(h);
+}
+
+function categoryAccent(category: TimelineBlock["category"]): string {
+  const map: Record<string, string> = {
+    build: "#4F8CFF",
+    research: "#2DD4BF",
+    communication: "#F59E0B",
+    entertainment: "#EC4899",
+    idle: "#94A3B8",
+  };
+  return map[category] ?? "#2DD4BF";
+}
 
 function CategoryBar({ blocks }: { blocks: TimelineBlock[] }) {
   const total = blocks.reduce((s, b) => s + b.durationSec, 0);
   if (!total) return null;
   return (
-    <div className="flex h-1 w-full overflow-hidden rounded-full gap-px mt-2">
+    <div className="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-white/[0.04]">
       {blocks.map((b) => (
         <div
           key={b.id}
-          className={categoryStyle[b.category]?.bar + " rounded-full"}
-          style={{ width: `${((b.durationSec / total) * 100).toFixed(2)}%`, minWidth: b.durationSec > 60 ? 3 : 0 }}
+          className={categoryStyle[b.category]?.bar + " first:rounded-l-full last:rounded-r-full"}
+          style={{
+            width: `${((b.durationSec / total) * 100).toFixed(2)}%`,
+            minWidth: b.durationSec > 60 ? 4 : 0,
+          }}
         />
       ))}
     </div>
   );
 }
 
-// ── Single hour card ──────────────────────────────────────────────────────────
+const CARD_W = 340;
+const CARD_H = 360;
 
-const CARD_W = 360;
-const CARD_H = 320;
-const ROW_H = 52; // px per activity row — ~5 rows visible
+function HourCard({
+  group,
+  onSelect,
+}: {
+  group: HourGroup;
+  onSelect: (b: TimelineBlock) => void;
+}) {
+  const accent = categoryAccent(group.blocks[0]?.category ?? "other");
 
-function HourCard({ group, onSelect }: { group: HourGroup; onSelect: (b: TimelineBlock) => void }) {
   return (
     <div
-      className="flex-shrink-0 flex flex-col rounded-2xl border border-border/50 bg-surface-1/30 overflow-hidden"
-      style={{ width: CARD_W, height: CARD_H }}
+      className="group/card flex shrink-0 flex-col overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#121722] transition-all duration-150 hover:-translate-y-1 hover:border-white/[0.1] hover:shadow-[0_16px_48px_-20px_rgba(0,0,0,0.65)]"
+      style={{
+        width: CARD_W,
+        height: CARD_H,
+        boxShadow: `inset 3px 0 0 0 ${accent}`,
+      }}
     >
-      {/* Header */}
-      <div className="px-4 pt-3 pb-2 flex-shrink-0 border-b border-border/30">
+      <div className="shrink-0 border-b border-white/[0.06] px-4 pb-3 pt-4">
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[13px] font-semibold tabular-nums text-foreground">
+          <span className="font-mono text-[15px] font-semibold tabular-nums text-foreground">
             {fmtHour(group.hour)}
           </span>
-          <span className="text-[10px] text-muted-foreground/50">
+          <span className="rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-muted-foreground">
             {group.blocks.length} {group.blocks.length === 1 ? "activity" : "activities"}
           </span>
         </div>
         <CategoryBar blocks={group.blocks} />
       </div>
 
-      {/* Scrollable activity list */}
       <div
-        className="flex-1 overflow-y-auto divide-y divide-border/30 min-h-0"
+        className="min-h-0 flex-1 divide-y divide-white/[0.04] overflow-y-auto"
         style={{ scrollbarWidth: "none" }}
       >
         {group.blocks.map((block) => {
-          const style = categoryStyle[block.category];
           const context = sessionContextLabel(block);
           return (
             <button
               key={block.id}
               type="button"
               onClick={() => onSelect(block)}
-              className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-surface-2/40 transition-colors"
-              style={{ minHeight: ROW_H }}
+              className="group/row flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-white/[0.03]"
             >
-              <span className={"mt-0.5 h-5 w-0.5 shrink-0 rounded-full " + style?.bar} />
+              <AppIcon app={block.app ?? block.applicationsUsed?.[0]} size="sm" />
               <div className="min-w-0 flex-1">
-                <div className="text-[12px] font-medium leading-snug truncate">{block.title}</div>
-                {context && (
-                  <div className="mt-0.5 text-[10px] text-muted-foreground/60 truncate">{context}</div>
-                )}
-                <div className="mt-0.5 font-mono text-[10px] text-muted-foreground/40 tabular-nums">
+                <div className="truncate text-[14px] font-medium leading-snug text-foreground">
+                  {block.title}
+                </div>
+                {context ? (
+                  <div className="mt-0.5 truncate text-[12px] text-muted-foreground">{context}</div>
+                ) : null}
+                <div className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground/70">
                   {fmtClock(block.startedAt)}–{fmtClock(block.endedAt)}
                 </div>
               </div>
-              <div className="shrink-0 flex flex-col items-end gap-1 pt-0.5">
-                <span
-                  className="font-mono text-[11px] tabular-nums text-muted-foreground"
-                  title="Active work time (idle excluded)"
-                >
-                  {fmtDuration(block.durationSec)} <span className="text-muted-foreground/40">active</span>
+              <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
+                <span className="font-mono text-[12px] font-medium tabular-nums text-foreground/90">
+                  {fmtDuration(block.durationSec)}
                 </span>
-                <span className={"rounded px-1.5 py-0.5 text-[9px] font-semibold " + style?.chip}>
-                  {style?.label}
-                </span>
+                <StatBadge category={block.category} />
               </div>
             </button>
           );
         })}
       </div>
+
+      <div className="shrink-0 border-t border-white/[0.06] px-4 py-3 opacity-70 transition-opacity group-hover/card:opacity-100">
+        <Sparkline seed={`hour-${group.hour}`} color={accent} />
+      </div>
     </div>
   );
 }
-
-// ── Main export ───────────────────────────────────────────────────────────────
 
 export function WorkTimeline({ blocks }: { blocks: TimelineBlock[] }) {
   const collapsed = collapseMicroEntertainment(blocks);
@@ -137,31 +159,32 @@ export function WorkTimeline({ blocks }: { blocks: TimelineBlock[] }) {
 
   if (groups.length === 0) {
     return (
-      <p className="px-5 py-6 text-[13px] text-muted-foreground">
+      <p className="px-6 py-8 text-[15px] text-muted-foreground">
         No sessions detected for this day.
       </p>
     );
   }
 
   const totalSec = groups.reduce((s, g) => s + g.totalSec, 0);
+  const hours = [...new Set(groups.map((g) => g.hour))].sort((a, b) => b - a);
 
   function scroll(dir: "left" | "right") {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollLeft += dir === "left" ? -(CARD_W + 12) : (CARD_W + 12);
+    el.scrollLeft += dir === "left" ? -(CARD_W + 16) : CARD_W + 16;
   }
 
   return (
     <>
-      <div className="px-5 py-4">
-        {/* Top bar */}
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <span className="text-[11px] text-muted-foreground/60">
-            One card per hour · scroll inside cards to see more
+      <div className="px-6 py-5 sm:px-8">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span className="text-[13px] text-muted-foreground">
+            Scroll horizontally · tap a session for details
           </span>
-          <div className="flex items-center gap-2">
-            <span className="hidden text-[11px] text-muted-foreground/60 sm:inline">
-              {groups.length} active {groups.length === 1 ? "hour" : "hours"} · {fmtDuration(totalSec)} total
+          <div className="flex items-center gap-3">
+            <span className="hidden text-[13px] text-muted-foreground sm:inline">
+              {groups.length} active {groups.length === 1 ? "hour" : "hours"} ·{" "}
+              {fmtDuration(totalSec)} total
             </span>
             {(["left", "right"] as const).map((dir) => (
               <button
@@ -169,23 +192,35 @@ export function WorkTimeline({ blocks }: { blocks: TimelineBlock[] }) {
                 type="button"
                 aria-label={dir === "left" ? "Scroll left" : "Scroll right"}
                 onClick={() => scroll(dir)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2/60 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] text-muted-foreground transition-all duration-150 hover:border-white/[0.1] hover:bg-white/[0.05] hover:text-foreground"
               >
                 {dir === "left" ? (
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
                 )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Carousel */}
+        <div className="mb-3 hidden overflow-x-auto sm:block" style={{ scrollbarWidth: "none" }}>
+          <div className="flex min-w-max gap-3 px-1">
+            {hours.map((h) => (
+              <div
+                key={h}
+                className="w-[340px] shrink-0 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60"
+              >
+                {fmtHourLabel(h)}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div
           ref={scrollRef}
-          className="flex gap-3"
-          style={{ overflowX: "scroll", scrollbarWidth: "none", msOverflowStyle: "none", scrollBehavior: "smooth" }}
+          className="flex gap-4 scroll-smooth pb-1"
+          style={{ overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {groups.map((g) => (
             <HourCard key={g.hour} group={g} onSelect={setSelected} />
@@ -196,7 +231,9 @@ export function WorkTimeline({ blocks }: { blocks: TimelineBlock[] }) {
       <SessionDetailPanel
         block={selected}
         open={selected != null}
-        onOpenChange={(open) => { if (!open) setSelected(null); }}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null);
+        }}
       />
     </>
   );

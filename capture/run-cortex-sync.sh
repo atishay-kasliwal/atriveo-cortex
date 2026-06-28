@@ -99,7 +99,24 @@ run_with_timeout() {
 
   SYNC_BUNDLE="${REPO_ROOT}/playground/scripts/sync-screenpipe.cjs"
   DERIVED_BUNDLE="${REPO_ROOT}/playground/scripts/pipeline-derived.cjs"
+  REFRESH_SCRIPT="${REPO_ROOT}/playground/scripts/refresh-today-facts.ts"
 
+  # Local-first default: one small Neon write (~daily_memory JSON) instead of full
+  # ScreenPipe → Neon sync (heavy network transfer). Set CORTEX_FULL_NEON_SYNC=1
+  # to restore legacy sync:screenpipe + pipeline:derived.
+  if [[ "${CORTEX_FULL_NEON_SYNC:-0}" != "1" ]]; then
+    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") local-first refresh (skip full Neon sync) ==="
+    if [[ -f "${REFRESH_SCRIPT}" ]]; then
+      run_with_timeout 300 npx tsx "${REFRESH_SCRIPT}" || {
+        code=$?
+        echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") refresh:today-facts FAILED or TIMED OUT (exit ${code}) ==="
+      }
+    fi
+    echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync done (local-first) ==="
+    exit 0
+  fi
+
+  # Legacy full Neon sync path (high network transfer — opt in only)
   # If bundles are missing (e.g. node_modules was wiped), reinstall and rebuild.
   if [[ ! -f "${SYNC_BUNDLE}" ]] || [[ ! -f "${DERIVED_BUNDLE}" ]]; then
     echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") bundles missing — reinstalling and rebuilding ==="
@@ -128,5 +145,19 @@ run_with_timeout() {
   else
     echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: no derived bundle, skipping derived layers ==="
   fi
+
+  REFRESH_BUNDLE="${REPO_ROOT}/playground/scripts/refresh-today-facts.cjs"
+  if [[ -f "${REFRESH_BUNDLE}" ]]; then
+    run_with_timeout 300 node "${REFRESH_BUNDLE}" || {
+      code=$?
+      echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") refresh:today-facts FAILED or TIMED OUT (exit ${code}) ==="
+    }
+  elif [[ -f "${REPO_ROOT}/playground/scripts/refresh-today-facts.ts" ]]; then
+    run_with_timeout 300 npx tsx "${REPO_ROOT}/playground/scripts/refresh-today-facts.ts" || {
+      code=$?
+      echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") refresh:today-facts FAILED or TIMED OUT (exit ${code}) ==="
+    }
+  fi
+
   echo "=== $(date -u +"%Y-%m-%dT%H:%M:%SZ") cortex-sync done ==="
 } >> "${SYNC_LOG}" 2>&1

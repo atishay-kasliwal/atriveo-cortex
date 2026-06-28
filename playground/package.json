@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3456",
+    "dev:archive": "tsx scripts/dev-archive.ts",
     "dev:watchdog": "tsx scripts/start-watchdog.ts",
     "build": "next build",
     "start": "next start -p 3456",
@@ -15,6 +16,9 @@
     "db:migrate": "tsx scripts/migrate-cortex-to-neon.ts",
     "db:verify": "tsx scripts/verify-neon.ts",
     "sync:screenpipe": "tsx scripts/sync-screenpipe.ts",
+    "capture:local": "tsx scripts/capture-to-local-knowledge.ts",
+    "refresh:today-facts": "tsx scripts/refresh-today-facts.ts",
+    "publish:today-facts": "tsx scripts/publish-today-facts-to-neon.ts",
     "pipeline:derived": "tsx scripts/pipeline-derived.ts",
     "build:sync": "esbuild scripts/sync-screenpipe.ts scripts/pipeline-derived.ts --bundle --platform=node --target=node20 --format=cjs --alias:@=. --external:better-sqlite3 --outdir=scripts --out-extension:.js=.cjs \"--banner:js=Object.defineProperty(globalThis,'__importMetaUrl',{get(){return require('url').pathToFileURL(__filename).href}});\" --define:import.meta.url=__importMetaUrl --log-level=warning",
     "build:derived": "npm run build:sync",
@@ -46,6 +50,9 @@
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {
+    "@cortex/builders": "*",
+    "@cortex/knowledge": "*",
+    "@cortex/models": "*",
     "better-sqlite3": "^11.9.0",
     "drizzle-orm": "^0.45.2",
     "next": "^15.3.3",

@@ -18,8 +18,11 @@ import { apiSuccess } from "./env";
  * shows real data instead of "Couldn't reach Cortex".
  */
 
-/** Thrown by a cached loader to signal a 404 (don't cache, don't 500). */
-export class ApiNotFound extends Error {}
+import { ApiNotFound } from "@/lib/api/api-not-found";
+export { ApiNotFound };
+
+const CACHE_SCHEMA_VERSION = "v2";
+const MAX_STALE_AGE_MS = 24 * 60 * 60 * 1000; // never serve data older than 24h
 
 type CacheEntry<T> = { data: T; cachedAt: number };
 
@@ -30,7 +33,7 @@ function cacheKey(c: Context): Request {
   // (a ?fresh=1 bypass must write to the same key a normal read looks up).
   url.searchParams.delete("_");
   url.searchParams.delete("fresh");
-  return new Request(`https://cortex-cache${url.pathname}${url.search}`, {
+  return new Request(`https://cortex-cache/${CACHE_SCHEMA_VERSION}${url.pathname}${url.search}`, {
     method: "GET",
   });
 }
@@ -93,8 +96,11 @@ export async function cachedRead<T>(
   } catch (err) {
     // A genuine 404 is not a DB blip — propagate it, never serve stale.
     if (err instanceof ApiNotFound) throw err;
-    // DB blip (503 etc.) — serve the last-good cached copy instead of erroring.
-    if (cached) return apiSuccess(c, cached.data);
+    // DB blip (503 etc.) — serve the last-good cached copy, but never older than 24h.
+    if (cached && (Date.now() - cached.cachedAt) < MAX_STALE_AGE_MS) {
+      console.warn(`[cache] stale-on-error: serving ${Math.round((Date.now() - cached.cachedAt) / 60_000)}min old cache`);
+      return apiSuccess(c, cached.data);
+    }
     throw err;
   }
 }

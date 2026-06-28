@@ -4,6 +4,7 @@
 
 import { runUnsafe, runUnsafeOne } from "@/lib/db/client";
 import type { TodayActivityDTO } from "@/lib/api/analytics-dtos";
+import { shouldBlockDailyMemoryUpsert } from "@/lib/analytics/daily-memory-guard";
 
 export type DailyMemoryRow = {
   date: string;
@@ -69,9 +70,17 @@ export class DailyMemoryRepository {
     sourceJobId?: string | null,
   ): Promise<void> {
     await ensureTables();
+    const existing = await this.get(date);
     const generatedAt = new Date().toISOString();
-    const summary = buildSummary(dto);
-    const payload = JSON.stringify({ ...dto, generatedAt });
+    const payloadDto: TodayActivityDTO = { ...dto, generatedAt };
+    if (shouldBlockDailyMemoryUpsert(existing, payloadDto)) {
+      console.warn(
+        `[daily_memory] blocked empty upsert for ${date} (source=${sourceJobId ?? "unknown"})`,
+      );
+      return;
+    }
+    const summary = buildSummary(payloadDto);
+    const payload = JSON.stringify(payloadDto);
     await runUnsafe(
       `INSERT INTO daily_memory (date, summary, payload, generated_at, source_job_id)
        VALUES ($1, $2, $3, $4, $5)
@@ -79,9 +88,12 @@ export class DailyMemoryRepository {
          summary = EXCLUDED.summary,
          payload = EXCLUDED.payload,
          generated_at = EXCLUDED.generated_at,
-         source_job_id = EXCLUDED.source_job_id`,
+         source_job_id = EXCLUDED.source_job_id
+       WHERE daily_memory.generated_at < EXCLUDED.generated_at`,
       [date, summary, payload, generatedAt, sourceJobId ?? null],
     );
+    console.log(`[daily_memory] upsert ok: ${date} (source=${sourceJobId ?? "unknown"}, activeSec=${dto.activeSec})`);
+
   }
 
   async delete(date: string): Promise<void> {

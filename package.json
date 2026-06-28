@@ -1,6 +1,9 @@
 {
   "name": "cortex",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build --prefix playground && npm run build --prefix apps/cortex-ui",
     "start": "docker compose up -d",
@@ -13,6 +16,13 @@
     "worker:parity": "npm run parity --prefix workers/cortex-api",
     "pages:build": "npm run build:pages --prefix apps/cortex-ui",
     "pages:deploy": "npm run deploy:pages --prefix apps/cortex-ui",
-    "sync:screenpipe": "npm run sync:screenpipe --prefix playground"
+    "sync:screenpipe": "npm run sync:screenpipe --prefix playground",
+    "cortex:sync-local": "npm run capture:local --prefix playground",
+    "cortex:publish:today": "npm run publish:today-facts --prefix playground",
+    "cortex:refresh:today": "npm run refresh:today-facts --prefix playground",
+    "cortex:build:today": "tsx packages/cortex-cli/src/main.ts build today",
+    "cortex:serve": "tsx packages/cortex-cli/src/main.ts serve",
+    "cortex:test": "npm run test -w @cortex/models && npm run test -w @cortex/domain && npm run test -w @cortex/builders",
+    "cortex:fixtures": "node packages/cortex-builders/fixtures/create-monday-fixture.mjs"
   }
 }

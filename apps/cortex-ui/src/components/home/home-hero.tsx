@@ -6,6 +6,7 @@ import { categoryStyle, fmtDuration } from "@/components/dashboard/time";
 import { HomeKpiStrip } from "@/components/home/home-kpi-strip";
 import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
 import { syncPipelineStyles } from "@/lib/api/sync-adapter";
+import { greetingForNow } from "@/lib/premium/greeting";
 import type { ActivityPipelineState } from "@/lib/activity/activity-state";
 import type { ActivityCategory, TodayActivity } from "@/lib/api/types";
 
@@ -22,11 +23,6 @@ const CATEGORY_ORDER: ActivityCategory[] = [
   "health", "personal", "other",
 ];
 
-/**
- * The daily command-center hero: big headline stats + a proportional "where your
- * time went" bar. This is the 5-second answer to "what did I do today and how am
- * I doing", powered by the attention-corrected pipeline.
- */
 export function HomeHero({
   data,
   dateLabel,
@@ -36,17 +32,15 @@ export function HomeHero({
   dateLabel: string;
   pipelineState?: ActivityPipelineState;
 }) {
+  const { greeting } = greetingForNow();
   const totals = new Map<string, number>();
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
   }
-  // Build rows from actual data so any tag the user assigns shows up.
   const workRows: { category: ActivityCategory; sec: number }[] = CATEGORY_ORDER
     .map((c) => ({ category: c, sec: totals.get(c) ?? 0 }))
     .filter((r) => r.sec > 0);
 
-  // Idle is presence (away) time, not a work session — include it so the bar
-  // reflects the whole day, shown last with the muted idle color.
   const idleSec = data.idleSec ?? 0;
   const rows = [...workRows]
     .sort((a, b) => b.sec - a.sec)
@@ -56,16 +50,16 @@ export function HomeHero({
   const top = workRows.slice().sort((a, b) => b.sec - a.sec)[0];
 
   return (
-    <section className="surface-card overflow-hidden rounded-2xl">
-      <div className="px-6 pt-5 pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+    <section className="surface-card overflow-hidden">
+      <div className="px-6 pb-2 pt-6 sm:px-8 sm:pt-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-[13px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                 {dateLabel}
               </p>
               {pipelineState ? (
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[11px] text-muted-foreground">
                   <span
                     className={"h-1.5 w-1.5 rounded-full " + syncPipelineStyles[pipelineState].dot}
                   />
@@ -73,64 +67,68 @@ export function HomeHero({
                 </span>
               ) : null}
             </div>
-            <h1 className="mt-1 font-display text-2xl tracking-tight">
-              {top ? (
-                <>
-                  Mostly{" "}
-                  <span className={categoryStyle[top.category].chip.split(" ")[0]}>
-                    {categoryStyle[top.category].label.toLowerCase()}
-                  </span>{" "}
-                  today
-                </>
-              ) : (
-                "Your day so far"
-              )}
-            </h1>
+            <div>
+              <h1 className="text-[32px] font-semibold tracking-tight text-foreground sm:text-[40px]">
+                {greeting} <span aria-hidden>👋</span>
+              </h1>
+              <p className="mt-2 text-[18px] text-muted-foreground">
+                {top ? (
+                  <>
+                    Mostly{" "}
+                    <span className="font-medium text-[#2DD4BF]">
+                      {categoryStyle[top.category].label.toLowerCase()}
+                    </span>{" "}
+                    today
+                  </>
+                ) : (
+                  "Your day so far"
+                )}
+              </p>
+            </div>
           </div>
           {data.presenceScore != null ? (
-            <div className="shrink-0 text-right">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <div className="premium-card shrink-0 px-5 py-4 text-right">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Presence
               </div>
-              <div className="font-mono text-lg font-semibold tabular-nums">
+              <div className="mt-1 font-mono text-[32px] font-semibold tabular-nums text-[#2DD4BF]">
                 {data.presenceScore}%
               </div>
             </div>
           ) : null}
         </div>
 
-        {/* Unified KPI strip — work + calendar live, email + analytics light up when wired */}
-        <div className="mt-4">
+        <div className="mt-8">
           <HomeKpiStrip data={data} />
         </div>
       </div>
 
-      {/* Where time went — proportional bar + inline legend */}
       {rows.length > 0 ? (
-        <div className="border-t border-border/60 bg-surface-1/30 px-6 py-4">
-          <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+        <div className="border-t border-white/[0.06] bg-[#0f131a]/50 px-6 py-6 sm:px-8">
+          <div className="group/bar flex h-3 w-full overflow-hidden rounded-full bg-white/[0.04] shadow-inner">
             {rows.map((r) => (
               <div
                 key={r.category}
-                className={categoryStyle[r.category].bar}
+                className={
+                  categoryStyle[r.category].bar +
+                  " transition-all duration-300 first:rounded-l-full last:rounded-r-full hover:brightness-110"
+                }
                 style={{ width: `${(r.sec / totalCat) * 100}%` }}
                 title={`${categoryStyle[r.category].label}: ${fmtDuration(r.sec)}`}
               />
             ))}
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
             {rows.map((r) => (
-              <div key={r.category} className="flex items-center gap-1.5">
-                <span
-                  className={"size-2 shrink-0 rounded-full " + categoryStyle[r.category].dot}
-                />
-                <span className="text-[12px] text-muted-foreground">
+              <div key={r.category} className="flex items-center gap-2">
+                <span className={"size-2.5 shrink-0 rounded-full " + categoryStyle[r.category].dot} />
+                <span className="text-[13px] text-muted-foreground">
                   {categoryStyle[r.category].label}
                 </span>
-                <span className="font-mono text-[12px] font-medium tabular-nums">
+                <span className="font-mono text-[13px] font-medium tabular-nums text-foreground">
                   {fmtDuration(r.sec)}
                 </span>
-                <span className="font-mono text-[10px] text-muted-foreground/50 tabular-nums">
+                <span className="font-mono text-[12px] tabular-nums text-muted-foreground/60">
                   {Math.round((r.sec / totalCat) * 100)}%
                 </span>
               </div>
@@ -139,8 +137,7 @@ export function HomeHero({
         </div>
       ) : null}
 
-      {/* Upcoming — folded in (next meeting is also a KPI tile; this is the wider view) */}
-      <div className="border-t border-border/60 px-6 py-3">
+      <div className="border-t border-white/[0.06] px-6 py-4 sm:px-8">
         <CalendarUpcoming />
       </div>
     </section>

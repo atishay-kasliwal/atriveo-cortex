@@ -1,0 +1,20 @@
+{
+  "name": "@cortex/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "cortex": "./src/main.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cortex/builders": "0.1.0",
+    "@cortex/publish": "0.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4",
+    "typescript": "^5.8.3"
+  }
+}

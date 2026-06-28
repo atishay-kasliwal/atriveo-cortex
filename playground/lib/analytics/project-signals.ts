@@ -63,6 +63,28 @@ function mergeUnique(base: string[], extra: string[]): string[] {
   return [...new Set([...base, ...extra].map((s) => s.trim()).filter(Boolean))];
 }
 
+/** Local-first sync: built-in signals only — no Neon project DB required. */
+export function buildBuiltinProjectSignalIndex(): ProjectSignalIndex {
+  const byProject = new Map<string, ProjectSignalProfile>();
+  const aliasToProject = new Map<string, string>();
+  for (const builtin of BUILTIN_PROJECT_SIGNALS) {
+    byProject.set(builtin.canonicalProject, { ...builtin });
+    for (const kw of builtin.keywords) {
+      aliasToProject.set(kw.toLowerCase(), builtin.canonicalProject);
+    }
+  }
+  return { byProject, aliasToProject };
+}
+
+export function builtinProjectNames(): string[] {
+  const names = new Set<string>();
+  for (const profile of BUILTIN_PROJECT_SIGNALS) {
+    names.add(profile.canonicalProject);
+    for (const kw of profile.keywords) names.add(kw);
+  }
+  return [...names];
+}
+
 export async function buildProjectSignalIndex(): Promise<ProjectSignalIndex> {
   await projectRepository.seedAliases();
   const aliases = await projectRepository.listAliases();

@@ -32,10 +32,12 @@ export function shouldRefreshDailyMemoryForToday(
   liveSummary: DailySummaryRow | null,
   lastSyncAt: string | null,
 ): boolean {
-  if (!cached.generatedAt) return true;
+  if (!cached.generatedAt) return summaryHasActivity(liveSummary);
 
   if (lastSyncAt && cached.generatedAt < lastSyncAt) {
-    return true;
+    // Local-first publish writes daily_memory without filling daily_activity_summary.
+    // Don't clobber a good publish with an empty legacy materialize.
+    return summaryHasActivity(liveSummary);
   }
 
   if (!dtoHasActivity(cached) && summaryHasActivity(liveSummary)) {

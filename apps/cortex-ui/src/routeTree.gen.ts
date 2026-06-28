@@ -37,6 +37,7 @@ import { Route as ProjectsHealthRouteImport } from './routes/projects.health'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
 import { Route as OpenLoopsIdRouteImport } from './routes/open-loops.$id'
 import { Route as IdeasIdRouteImport } from './routes/ideas.$id'
+import { Route as DebugTodayFactsRouteImport } from './routes/debug.today-facts'
 import { Route as DebugTelemetryRouteImport } from './routes/debug.telemetry'
 import { Route as DebugAnalyticsRouteImport } from './routes/debug.analytics'
 import { Route as ActionsIdRouteImport } from './routes/actions.$id'
@@ -181,6 +182,11 @@ const IdeasIdRoute = IdeasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => IdeasRoute,
 } as any)
+const DebugTodayFactsRoute = DebugTodayFactsRouteImport.update({
+  id: '/debug/today-facts',
+  path: '/debug/today-facts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DebugTelemetryRoute = DebugTelemetryRouteImport.update({
   id: '/debug/telemetry',
   path: '/debug/telemetry',
@@ -225,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
+  '/debug/today-facts': typeof DebugTodayFactsRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
@@ -258,6 +265,7 @@ export interface FileRoutesByTo {
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
+  '/debug/today-facts': typeof DebugTodayFactsRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/debug/telemetry': typeof DebugTelemetryRoute
+  '/debug/today-facts': typeof DebugTodayFactsRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
+    | '/debug/today-facts'
     | '/ideas/$id'
     | '/open-loops/$id'
     | '/projects/$id'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
+    | '/debug/today-facts'
     | '/ideas/$id'
     | '/open-loops/$id'
     | '/projects/$id'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/actions/$id'
     | '/debug/analytics'
     | '/debug/telemetry'
+    | '/debug/today-facts'
     | '/ideas/$id'
     | '/open-loops/$id'
     | '/projects/$id'
@@ -426,6 +438,7 @@ export interface RootRouteChildren {
   WeeklyReviewRoute: typeof WeeklyReviewRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
   DebugTelemetryRoute: typeof DebugTelemetryRoute
+  DebugTodayFactsRoute: typeof DebugTodayFactsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -626,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdeasIdRouteImport
       parentRoute: typeof IdeasRoute
     }
+    '/debug/today-facts': {
+      id: '/debug/today-facts'
+      path: '/debug/today-facts'
+      fullPath: '/debug/today-facts'
+      preLoaderRoute: typeof DebugTodayFactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/debug/telemetry': {
       id: '/debug/telemetry'
       path: '/debug/telemetry'
@@ -724,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
   WeeklyReviewRoute: WeeklyReviewRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
   DebugTelemetryRoute: DebugTelemetryRoute,
+  DebugTodayFactsRoute: DebugTodayFactsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
