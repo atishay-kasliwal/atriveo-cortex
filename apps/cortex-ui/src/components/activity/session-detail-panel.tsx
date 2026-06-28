@@ -6,6 +6,8 @@ import { Link } from "@tanstack/react-router";
 import {
   Bookmark,
   ExternalLink,
+  GitBranch,
+  Globe,
   Share2,
   Sparkles,
 } from "lucide-react";
@@ -22,7 +24,6 @@ import {
   ConfidenceBar,
   DrawerSection,
   EvidenceCard,
-  StatBadge,
 } from "@/components/premium";
 import {
   sessionAppsLine,
@@ -44,10 +45,13 @@ export function SessionDetailPanel({
   if (!block) return null;
   const confidence = block.projectConfidence ?? block.confidence ?? 0;
   const evidence = block.attributionEvidence ?? [];
-  const contextEntries = sessionContextEntries(block);
-  const apps = sessionAppsLine(block);
-  const distractions = block.briefDistractions ?? [];
+  const contextEntries = sessionContextEntries(block).slice(0, 4);
   const headlineContext = sessionContextHeadline(block);
+  const distractions = block.briefDistractions ?? [];
+
+  const allApps = block.applicationsUsed?.filter(Boolean) ?? (block.app ? [block.app] : []);
+  const websites = block.websitesUsed ?? [];
+  const repos = block.repoPathsUsed ?? [];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -69,13 +73,14 @@ export function SessionDetailPanel({
                 </SheetDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <StatBadge category={block.category} />
-              <SessionCategoryPicker title={block.title} category={block.category} />
-            </div>
+
+            {/* Single category row — picker already shows the label+chip */}
+            <SessionCategoryPicker title={block.title} category={block.category} />
           </SheetHeader>
 
           <div className="mt-8 space-y-8">
+
+            {/* Project */}
             <DrawerSection title="Project">
               {block.projectName ? (
                 <div className="premium-card space-y-4 p-4">
@@ -96,10 +101,13 @@ export function SessionDetailPanel({
                   {confidence > 0 ? <ConfidenceBar value={confidence} /> : null}
                 </div>
               ) : (
-                <p className="text-[14px] text-muted-foreground">No project attributed yet.</p>
+                <p className="text-[14px] text-muted-foreground/60 italic">
+                  No project attributed yet.
+                </p>
               )}
             </DrawerSection>
 
+            {/* Evidence */}
             {evidence.length > 0 ? (
               <DrawerSection title="Evidence">
                 <div className="space-y-2">
@@ -115,25 +123,79 @@ export function SessionDetailPanel({
               </DrawerSection>
             ) : null}
 
-            {contextEntries.length > 0 || block.repoPathsUsed?.length ? (
-              <DrawerSection title="Context">
+            {/* Apps used */}
+            {allApps.length > 0 ? (
+              <DrawerSection title="Applications">
                 <div className="flex flex-wrap gap-2">
+                  {allApps.map((app) => (
+                    <div
+                      key={app}
+                      className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#121722] px-3 py-2"
+                    >
+                      <AppIcon app={app} size="sm" />
+                      <span className="text-[13px] font-medium text-foreground">{app}</span>
+                    </div>
+                  ))}
+                </div>
+              </DrawerSection>
+            ) : null}
+
+            {/* Context (window snippets) — deduplicated, max 4 */}
+            {contextEntries.length > 0 ? (
+              <DrawerSection title="Context">
+                <div className="space-y-2">
                   {contextEntries.map((entry) => (
                     <div
                       key={entry.headline}
-                      className="max-w-full rounded-xl border border-white/[0.06] bg-[#121722] px-3.5 py-2.5"
+                      className="rounded-xl border border-white/[0.06] bg-[#121722] px-3.5 py-2.5"
                     >
-                      <div className="text-[14px] font-medium text-foreground">{entry.headline}</div>
+                      <div className="text-[13px] font-medium text-foreground leading-snug">
+                        {entry.headline}
+                      </div>
                       {entry.detail ? (
-                        <p className="mt-0.5 text-[12px] text-muted-foreground">{entry.detail}</p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">{entry.detail}</p>
                       ) : null}
                     </div>
                   ))}
-                  {block.repoPathsUsed?.map((repo) => (
+                </div>
+              </DrawerSection>
+            ) : headlineContext &&
+              headlineContext !== block.title &&
+              !block.title.toLowerCase().includes(headlineContext.toLowerCase()) ? (
+              <DrawerSection title="Context">
+                <div className="rounded-xl border border-white/[0.06] bg-[#121722] px-3.5 py-2.5">
+                  <div className="text-[13px] font-medium text-foreground">{headlineContext}</div>
+                </div>
+              </DrawerSection>
+            ) : null}
+
+            {/* Websites */}
+            {websites.length > 0 ? (
+              <DrawerSection title="Websites">
+                <div className="flex flex-wrap gap-2">
+                  {websites.map((site) => (
+                    <span
+                      key={site}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[12px] text-[#4F8CFF]"
+                    >
+                      <Globe className="h-3 w-3 shrink-0" strokeWidth={1.75} />
+                      {site}
+                    </span>
+                  ))}
+                </div>
+              </DrawerSection>
+            ) : null}
+
+            {/* Repos */}
+            {repos.length > 0 ? (
+              <DrawerSection title="Repositories">
+                <div className="flex flex-wrap gap-2">
+                  {repos.map((repo) => (
                     <span
                       key={repo}
-                      className="inline-flex rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 font-mono text-[12px] text-muted-foreground"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 font-mono text-[12px] text-muted-foreground"
                     >
+                      <GitBranch className="h-3 w-3 shrink-0" strokeWidth={1.75} />
                       {repo}
                     </span>
                   ))}
@@ -141,15 +203,16 @@ export function SessionDetailPanel({
               </DrawerSection>
             ) : null}
 
+            {/* Brief distractions */}
             {distractions.length > 0 ? (
               <DrawerSection title="Brief distractions">
                 <div className="space-y-2">
                   {distractions.map((item) => (
                     <div
                       key={`${item.title}-${item.durationSec}`}
-                      className="premium-card px-3.5 py-3 text-[14px]"
+                      className="premium-card px-3.5 py-3"
                     >
-                      <div>{item.title}</div>
+                      <div className="text-[13px] font-medium">{item.title}</div>
                       <div className="mt-0.5 text-[12px] text-muted-foreground">
                         {fmtDuration(item.durationSec)}
                         {item.websitesUsed?.length ? ` · ${item.websitesUsed.join(", ")}` : ""}
@@ -160,44 +223,10 @@ export function SessionDetailPanel({
               </DrawerSection>
             ) : null}
 
-            <DrawerSection title="Activity">
-              <div className="premium-card space-y-3 p-4">
-                {apps ? (
-                  <div className="flex items-center gap-3">
-                    <AppIcon app={apps.split(",")[0]?.trim()} size="sm" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        Application
-                      </div>
-                      <div className="text-[14px] font-medium">{apps}</div>
-                    </div>
-                  </div>
-                ) : null}
-                {headlineContext &&
-                headlineContext !== block.title &&
-                !block.title.toLowerCase().includes(headlineContext.toLowerCase()) ? (
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      Window
-                    </div>
-                    <div className="mt-0.5 text-[14px]">{headlineContext}</div>
-                  </div>
-                ) : null}
-                {block.websitesUsed?.length ? (
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      Source
-                    </div>
-                    <div className="mt-0.5 text-[14px] text-[#4F8CFF]">
-                      {block.websitesUsed.join(", ")}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </DrawerSection>
           </div>
         </div>
 
+        {/* Bottom action bar */}
         <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.06] bg-[#0f131a]/95 px-4 py-4 backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <button

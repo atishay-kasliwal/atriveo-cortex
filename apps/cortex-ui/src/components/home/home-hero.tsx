@@ -6,7 +6,6 @@ import { categoryStyle, fmtDuration } from "@/components/dashboard/time";
 import { HomeKpiStrip } from "@/components/home/home-kpi-strip";
 import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
 import { syncPipelineStyles } from "@/lib/api/sync-adapter";
-import { greetingForNow } from "@/lib/premium/greeting";
 import type { ActivityPipelineState } from "@/lib/activity/activity-state";
 import type { ActivityCategory, TodayActivity } from "@/lib/api/types";
 
@@ -32,7 +31,6 @@ export function HomeHero({
   dateLabel: string;
   pipelineState?: ActivityPipelineState;
 }) {
-  const { greeting } = greetingForNow();
   const totals = new Map<string, number>();
   for (const b of data.timeline) {
     totals.set(b.category, (totals.get(b.category) ?? 0) + b.durationSec);
@@ -67,24 +65,17 @@ export function HomeHero({
                 </span>
               ) : null}
             </div>
-            <div>
-              <h1 className="text-[32px] font-semibold tracking-tight text-foreground sm:text-[40px]">
-                {greeting} <span aria-hidden>👋</span>
-              </h1>
-              <p className="mt-2 text-[18px] text-muted-foreground">
-                {top ? (
-                  <>
-                    Mostly{" "}
-                    <span className="font-medium text-[#2DD4BF]">
-                      {categoryStyle[top.category].label.toLowerCase()}
-                    </span>{" "}
-                    today
-                  </>
-                ) : (
-                  "Your day so far"
-                )}
+            {top ? (
+              <p className="text-[18px] text-muted-foreground">
+                Mostly{" "}
+                <span className="font-medium text-[#2DD4BF]">
+                  {categoryStyle[top.category].label.toLowerCase()}
+                </span>{" "}
+                today
               </p>
-            </div>
+            ) : (
+              <p className="text-[18px] text-muted-foreground">Your day so far</p>
+            )}
           </div>
           {data.presenceScore != null ? (
             <div className="premium-card shrink-0 px-5 py-4 text-right">

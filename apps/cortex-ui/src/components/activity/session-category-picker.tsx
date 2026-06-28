@@ -61,11 +61,11 @@ export function SessionCategoryPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="inline-flex items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           aria-label="Change category"
           disabled={mutation.isPending}
         >
-          <span className={"inline-block rounded px-1.5 py-0.5 text-[10px] font-medium " + style?.chip}>
+          <span className={"inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold " + style?.chip}>
             {style?.label ?? current}
           </span>
           <Pencil className="h-3 w-3 text-muted-foreground" />
