@@ -49,77 +49,63 @@ export function HomeHero({
 
   return (
     <section className="surface-card overflow-hidden">
-      <div className="px-6 pb-2 pt-6 sm:px-8 sm:pt-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-[13px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {dateLabel}
-              </p>
-              {pipelineState ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[11px] text-muted-foreground">
-                  <span
-                    className={"h-1.5 w-1.5 rounded-full " + syncPipelineStyles[pipelineState].dot}
-                  />
-                  {PIPELINE_LABEL[pipelineState]}
-                </span>
-              ) : null}
-            </div>
-            {top ? (
-              <p className="text-[18px] text-muted-foreground">
-                Mostly{" "}
-                <span className="font-medium text-[#2DD4BF]">
-                  {categoryStyle[top.category].label.toLowerCase()}
-                </span>{" "}
-                today
-              </p>
-            ) : (
-              <p className="text-[18px] text-muted-foreground">Your day so far</p>
-            )}
-          </div>
-          {data.presenceScore != null ? (
-            <div className="premium-card shrink-0 px-5 py-4 text-right">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Presence
-              </div>
-              <div className="mt-1 font-mono text-[32px] font-semibold tabular-nums text-[#2DD4BF]">
-                {data.presenceScore}%
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-8">
-          <HomeKpiStrip data={data} />
-        </div>
+      {/* Header row: date + pipeline badge + tagline */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-4 pb-3 sm:px-6">
+        <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          {dateLabel}
+        </p>
+        {pipelineState ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[11px] text-muted-foreground">
+            <span className={"h-1.5 w-1.5 rounded-full " + syncPipelineStyles[pipelineState].dot} />
+            {PIPELINE_LABEL[pipelineState]}
+          </span>
+        ) : null}
+        <span className="hidden sm:block h-3.5 w-px bg-white/[0.06]" />
+        {top ? (
+          <p className="text-[13px] text-muted-foreground">
+            Mostly{" "}
+            <span className="font-medium text-[#2DD4BF]">
+              {categoryStyle[top.category].label.toLowerCase()}
+            </span>{" "}
+            today
+          </p>
+        ) : (
+          <p className="text-[13px] text-muted-foreground">Your day so far</p>
+        )}
       </div>
 
+      {/* KPI strip */}
+      <div className="px-5 pb-4 sm:px-6">
+        <HomeKpiStrip data={data} />
+      </div>
+
+      {/* Category bar */}
       {rows.length > 0 ? (
-        <div className="border-t border-white/[0.06] bg-[#0f131a]/50 px-6 py-6 sm:px-8">
-          <div className="group/bar flex h-3 w-full overflow-hidden rounded-full bg-white/[0.04] shadow-inner">
+        <div className="border-t border-white/[0.06] px-5 py-3 sm:px-6">
+          <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/[0.04]">
             {rows.map((r) => (
               <div
                 key={r.category}
                 className={
                   categoryStyle[r.category].bar +
-                  " transition-all duration-300 first:rounded-l-full last:rounded-r-full hover:brightness-110"
+                  " transition-all duration-300 first:rounded-l-full last:rounded-r-full"
                 }
                 style={{ width: `${(r.sec / totalCat) * 100}%` }}
                 title={`${categoryStyle[r.category].label}: ${fmtDuration(r.sec)}`}
               />
             ))}
           </div>
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
             {rows.map((r) => (
-              <div key={r.category} className="flex items-center gap-2">
-                <span className={"size-2.5 shrink-0 rounded-full " + categoryStyle[r.category].dot} />
-                <span className="text-[13px] text-muted-foreground">
+              <div key={r.category} className="flex items-center gap-1.5">
+                <span className={"size-2 shrink-0 rounded-full " + categoryStyle[r.category].dot} />
+                <span className="text-[12px] text-muted-foreground">
                   {categoryStyle[r.category].label}
                 </span>
-                <span className="font-mono text-[13px] font-medium tabular-nums text-foreground">
+                <span className="font-mono text-[12px] font-medium tabular-nums text-foreground">
                   {fmtDuration(r.sec)}
                 </span>
-                <span className="font-mono text-[12px] tabular-nums text-muted-foreground/60">
+                <span className="font-mono text-[11px] tabular-nums text-muted-foreground/50">
                   {Math.round((r.sec / totalCat) * 100)}%
                 </span>
               </div>
@@ -128,7 +114,8 @@ export function HomeHero({
         </div>
       ) : null}
 
-      <div className="border-t border-white/[0.06] px-6 py-4 sm:px-8">
+      {/* Upcoming calendar */}
+      <div className="border-t border-white/[0.06] px-5 py-2.5 sm:px-6">
         <CalendarUpcoming />
       </div>
     </section>

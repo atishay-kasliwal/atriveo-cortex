@@ -171,18 +171,18 @@ export function HomeKpiStrip({
   };
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-end">
-        <div className="inline-flex rounded-full border border-white/[0.06] bg-[#0f131a] p-1">
+    <div className="space-y-2">
+      <div className="flex items-center justify-end">
+        <div className="inline-flex rounded-full border border-white/[0.06] bg-[#0f131a] p-0.5">
           {(["today", "week"] as const).map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => setPeriod(p)}
               className={
-                "rounded-full px-4 py-1.5 text-[13px] font-medium capitalize transition-all duration-150 " +
+                "rounded-full px-3 py-1 text-[11px] font-medium capitalize transition-all duration-150 " +
                 (period === p
-                  ? "bg-[#2DD4BF] text-[#07090c] shadow-[0_0_20px_rgba(45,212,191,0.25)]"
+                  ? "bg-[#2DD4BF] text-[#07090c]"
                   : "text-muted-foreground hover:text-foreground")
               }
             >
@@ -192,7 +192,7 @@ export function HomeKpiStrip({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7">
         {tiles.map((t) => (
           <MetricCard
             key={t.label}
