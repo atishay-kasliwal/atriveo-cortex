@@ -125,25 +125,23 @@ export function MemoryHomeView({
             data={activitySource.data}
             dateLabel={dateLabel}
             pipelineState={pipelineState}
-          />
-
-          {/* Timeline of work */}
-          <ActivityCard
-            title="Timeline of work"
-            subtitle="What you worked on, hour by hour — scroll through the day"
-            action={
+          >
+            {/* Timeline merged into hero card — saves a card border + full SectionHeader */}
+            <div className="flex items-center justify-between px-5 py-2.5 sm:px-6">
+              <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+                Timeline of work
+              </span>
               <Link
                 to="/activity"
                 search={{ date: viewDate }}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
               >
                 Full log
                 <ArrowUpRight className="h-3 w-3" />
               </Link>
-            }
-          >
+            </div>
             <WorkTimeline blocks={activitySource.data.timeline} />
-          </ActivityCard>
+          </HomeHero>
 
           {/* When it happened */}
           {activitySource.data.stateTimeline?.length ? (

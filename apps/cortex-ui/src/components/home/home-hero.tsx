@@ -26,10 +26,12 @@ export function HomeHero({
   data,
   dateLabel,
   pipelineState,
+  children,
 }: {
   data: TodayActivity;
   dateLabel: string;
   pipelineState?: ActivityPipelineState;
+  children?: React.ReactNode;
 }) {
   const totals = new Map<string, number>();
   for (const b of data.timeline) {
@@ -118,6 +120,13 @@ export function HomeHero({
       <div className="border-t border-white/[0.06] px-5 py-2.5 sm:px-6">
         <CalendarUpcoming />
       </div>
+
+      {/* Inlined slot — WorkTimeline lives here to avoid a second card */}
+      {children ? (
+        <div className="border-t border-white/[0.06]">
+          {children}
+        </div>
+      ) : null}
     </section>
   );
 }
