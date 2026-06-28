@@ -50,9 +50,9 @@
     "healthcheck": "node ../scripts/healthcheck.mjs"
   },
   "dependencies": {
-    "@cortex/builders": "*",
-    "@cortex/knowledge": "*",
-    "@cortex/models": "*",
+    "@cortex/builders": "file:../packages/cortex-builders",
+    "@cortex/knowledge": "file:../packages/cortex-knowledge",
+    "@cortex/models": "file:../packages/cortex-models",
     "better-sqlite3": "^11.9.0",
     "drizzle-orm": "^0.45.2",
     "next": "^15.3.3",
