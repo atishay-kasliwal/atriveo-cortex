@@ -195,8 +195,8 @@ function HourCard({
           <span className="font-mono text-[14px] font-semibold tabular-nums text-foreground">
             {fmtHour(group.hour)}
           </span>
-          <span className="rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-muted-foreground">
-            {group.blocks.length} {group.blocks.length === 1 ? "activity" : "activities"}
+          <span className="rounded-full bg-white/[0.04] px-2.5 py-0.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+            {fmtDuration(group.totalSec)}
           </span>
         </div>
         <CategoryBar blocks={group.blocks} />
