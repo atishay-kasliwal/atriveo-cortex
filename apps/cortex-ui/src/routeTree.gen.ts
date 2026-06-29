@@ -16,16 +16,13 @@ import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RecurrenceRouteImport } from './routes/recurrence'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PlatformHealthRouteImport } from './routes/platform-health'
-import { Route as PatternsRouteImport } from './routes/patterns'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as OpenLoopsRouteImport } from './routes/open-loops'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IdeasRouteImport } from './routes/ideas'
-import { Route as HealthRouteImport } from './routes/health'
 import { Route as GlanceRouteImport } from './routes/glance'
 import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as CaptureDoctorRouteImport } from './routes/capture-doctor'
-import { Route as BioRouteImport } from './routes/bio'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AttentionRouteImport } from './routes/attention'
 import { Route as AskRouteImport } from './routes/ask'
@@ -77,11 +74,6 @@ const PlatformHealthRoute = PlatformHealthRouteImport.update({
   path: '/platform-health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PatternsRoute = PatternsRouteImport.update({
-  id: '/patterns',
-  path: '/patterns',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OverviewRoute = OverviewRouteImport.update({
   id: '/overview',
   path: '/overview',
@@ -102,11 +94,6 @@ const IdeasRoute = IdeasRouteImport.update({
   path: '/ideas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HealthRoute = HealthRouteImport.update({
-  id: '/health',
-  path: '/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const GlanceRoute = GlanceRouteImport.update({
   id: '/glance',
   path: '/glance',
@@ -120,11 +107,6 @@ const DecisionsRoute = DecisionsRouteImport.update({
 const CaptureDoctorRoute = CaptureDoctorRouteImport.update({
   id: '/capture-doctor',
   path: '/capture-doctor',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BioRoute = BioRouteImport.update({
-  id: '/bio',
-  path: '/bio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -211,16 +193,13 @@ export interface FileRoutesByFullPath {
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
-  '/bio': typeof BioRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/glance': typeof GlanceRoute
-  '/health': typeof HealthRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/login': typeof LoginRoute
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
-  '/patterns': typeof PatternsRoute
   '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
@@ -245,16 +224,13 @@ export interface FileRoutesByTo {
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
-  '/bio': typeof BioRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/glance': typeof GlanceRoute
-  '/health': typeof HealthRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/login': typeof LoginRoute
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
-  '/patterns': typeof PatternsRoute
   '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
@@ -280,16 +256,13 @@ export interface FileRoutesById {
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/audit': typeof AuditRoute
-  '/bio': typeof BioRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/decisions': typeof DecisionsRoute
   '/glance': typeof GlanceRoute
-  '/health': typeof HealthRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/login': typeof LoginRoute
   '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
-  '/patterns': typeof PatternsRoute
   '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
@@ -316,16 +289,13 @@ export interface FileRouteTypes {
     | '/ask'
     | '/attention'
     | '/audit'
-    | '/bio'
     | '/capture-doctor'
     | '/decisions'
     | '/glance'
-    | '/health'
     | '/ideas'
     | '/login'
     | '/open-loops'
     | '/overview'
-    | '/patterns'
     | '/platform-health'
     | '/projects'
     | '/recurrence'
@@ -350,16 +320,13 @@ export interface FileRouteTypes {
     | '/ask'
     | '/attention'
     | '/audit'
-    | '/bio'
     | '/capture-doctor'
     | '/decisions'
     | '/glance'
-    | '/health'
     | '/ideas'
     | '/login'
     | '/open-loops'
     | '/overview'
-    | '/patterns'
     | '/platform-health'
     | '/projects'
     | '/recurrence'
@@ -384,16 +351,13 @@ export interface FileRouteTypes {
     | '/ask'
     | '/attention'
     | '/audit'
-    | '/bio'
     | '/capture-doctor'
     | '/decisions'
     | '/glance'
-    | '/health'
     | '/ideas'
     | '/login'
     | '/open-loops'
     | '/overview'
-    | '/patterns'
     | '/platform-health'
     | '/projects'
     | '/recurrence'
@@ -419,16 +383,13 @@ export interface RootRouteChildren {
   AskRoute: typeof AskRoute
   AttentionRoute: typeof AttentionRoute
   AuditRoute: typeof AuditRoute
-  BioRoute: typeof BioRoute
   CaptureDoctorRoute: typeof CaptureDoctorRoute
   DecisionsRoute: typeof DecisionsRoute
   GlanceRoute: typeof GlanceRoute
-  HealthRoute: typeof HealthRoute
   IdeasRoute: typeof IdeasRouteWithChildren
   LoginRoute: typeof LoginRoute
   OpenLoopsRoute: typeof OpenLoopsRouteWithChildren
   OverviewRoute: typeof OverviewRoute
-  PatternsRoute: typeof PatternsRoute
   PlatformHealthRoute: typeof PlatformHealthRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RecurrenceRoute: typeof RecurrenceRoute
@@ -492,13 +453,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/patterns': {
-      id: '/patterns'
-      path: '/patterns'
-      fullPath: '/patterns'
-      preLoaderRoute: typeof PatternsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/overview': {
       id: '/overview'
       path: '/overview'
@@ -527,13 +481,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdeasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/health': {
-      id: '/health'
-      path: '/health'
-      fullPath: '/health'
-      preLoaderRoute: typeof HealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/glance': {
       id: '/glance'
       path: '/glance'
@@ -553,13 +500,6 @@ declare module '@tanstack/react-router' {
       path: '/capture-doctor'
       fullPath: '/capture-doctor'
       preLoaderRoute: typeof CaptureDoctorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bio': {
-      id: '/bio'
-      path: '/bio'
-      fullPath: '/bio'
-      preLoaderRoute: typeof BioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -725,16 +665,13 @@ const rootRouteChildren: RootRouteChildren = {
   AskRoute: AskRoute,
   AttentionRoute: AttentionRoute,
   AuditRoute: AuditRoute,
-  BioRoute: BioRoute,
   CaptureDoctorRoute: CaptureDoctorRoute,
   DecisionsRoute: DecisionsRoute,
   GlanceRoute: GlanceRoute,
-  HealthRoute: HealthRoute,
   IdeasRoute: IdeasRouteWithChildren,
   LoginRoute: LoginRoute,
   OpenLoopsRoute: OpenLoopsRouteWithChildren,
   OverviewRoute: OverviewRoute,
-  PatternsRoute: PatternsRoute,
   PlatformHealthRoute: PlatformHealthRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   RecurrenceRoute: RecurrenceRoute,

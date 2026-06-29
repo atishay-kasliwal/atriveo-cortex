@@ -1,10 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, type ActionBucket } from "./client";
 import { cortexFetch, isRetryableApiError } from "./cortex-fetch";
-import { fetchDailyTrend, fetchReadiness } from "./health-adapter";
 import { fetchLocalTodayBundle } from "./local-facts-adapter";
 import { fetchRangeActivity } from "./range-adapter";
-import type { HealthPeriod } from "./health-types";
 
 const STALE = 30_000;
 
@@ -55,7 +53,6 @@ export const qk = {
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
     ["analytics", "validation", date ?? "today"] as const,
-  healthTimeline: (period: HealthPeriod) => ["health", "timeline", period] as const,
   aiSettings: ["settings", "ai"] as const,
 };
 
@@ -323,29 +320,6 @@ export const accuracyDashboardQuery = queryOptions({
   queryKey: qk.accuracyDashboard,
   queryFn: () => api.accuracy.dashboard(),
   staleTime: STALE,
-});
-
-export const healthTimelineQuery = (period: HealthPeriod) =>
-  queryOptions({
-    queryKey: qk.healthTimeline(period),
-    queryFn: () => api.health.timeline(period),
-    staleTime: STALE,
-    retry: defaultQueryRetry,
-  });
-
-export const dailyTrendQuery = (days = 30) =>
-  queryOptions({
-    queryKey: ["health", "trend", "daily", days] as const,
-    queryFn: () => fetchDailyTrend(undefined, days),
-    staleTime: 5 * 60_000,
-    retry: defaultQueryRetry,
-  });
-
-export const readinessQuery = queryOptions({
-  queryKey: ["health", "readiness"] as const,
-  queryFn: () => fetchReadiness(),
-  staleTime: 5 * 60_000,
-  retry: defaultQueryRetry,
 });
 
 export const aiSettingsQuery = queryOptions({

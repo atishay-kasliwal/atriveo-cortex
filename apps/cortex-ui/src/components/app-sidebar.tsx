@@ -27,7 +27,6 @@ import {
   Search,
   Settings,
   Sparkles,
-  Watch,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -84,14 +83,6 @@ const moreNav = [
       { title: "Decision Center", url: "/decisions", icon: Crosshair },
       { title: "Open Loops", url: "/open-loops", icon: CircleDashed },
       { title: "Attention", url: "/attention", icon: Brain },
-    ],
-  },
-  {
-    group: "Bio",
-    items: [
-      { title: "Today", url: "/bio", icon: Sparkles },
-      { title: "Health Timeline", url: "/health", icon: Watch },
-      { title: "Patterns", url: "/patterns", icon: BarChart2 },
     ],
   },
   {
