@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { api, type ActionBucket } from "./client";
+import { api } from "./client";
 import { cortexFetch, isRetryableApiError } from "./cortex-fetch";
 import { fetchLocalTodayBundle } from "./local-facts-adapter";
 import { fetchRangeActivity } from "./range-adapter";
@@ -23,8 +23,6 @@ export const qk = {
   projectsHealth: (date?: string) => ["projects", "health", date ?? "today"] as const,
   projectsHealthTrends: (days?: number) => ["projects", "health", "trends", days ?? 30] as const,
   project: (id: string) => ["projects", id] as const,
-  actions: (bucket?: ActionBucket) => ["actions", bucket ?? "unresolved"] as const,
-  action: (id: string) => ["actions", id] as const,
   ideas: ["ideas"] as const,
   idea: (id: string) => ["ideas", id] as const,
   search: (q: string) => ["search", q] as const,
@@ -128,24 +126,6 @@ export const projectQuery = (id: string) =>
     staleTime: STALE,
   });
 
-export const actionsQuery = (bucket: ActionBucket = "unresolved") =>
-  queryOptions({
-    queryKey: qk.actions(bucket),
-    queryFn: () => api.actions.list(bucket),
-    staleTime: STALE,
-  });
-
-export const actionQuery = (id: string) =>
-  queryOptions({
-    queryKey: qk.action(id),
-    queryFn: async () => {
-      const detail = await api.actions.get(id);
-      if (!detail) throw new Error("Action not found");
-      return detail;
-    },
-    staleTime: STALE,
-  });
-
 export const ideasQuery = queryOptions({
   queryKey: qk.ideas,
   queryFn: () => api.ideas.list(),
@@ -170,12 +150,6 @@ export const memorySearchQuery = (q: string) =>
     enabled: q.trim().length >= 2,
     staleTime: 10_000,
   });
-
-export const recurrenceQuery = queryOptions({
-  queryKey: qk.recurrence,
-  queryFn: () => api.recurrence.list(),
-  staleTime: STALE,
-});
 
 export const screenpipeHealthQuery = queryOptions({
   queryKey: qk.screenpipeHealth,

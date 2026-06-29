@@ -6,16 +6,13 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BarChart2,
   CalendarDays,
-  CheckSquare,
   FolderKanban,
   History,
   Home,
   LayoutDashboard,
   Lightbulb,
   LogOut,
-  MessageSquare,
   Monitor,
-  Repeat,
   Search,
   Settings,
 } from "lucide-react";
@@ -50,15 +47,12 @@ const moreNav = [
     items: [
       { title: "Glance", url: "/glance", icon: CalendarDays },
       { title: "Screens", url: "/screens", icon: Monitor },
-      { title: "Ask Cortex", url: "/ask", icon: MessageSquare },
     ],
   },
   {
     group: "Memory",
     items: [
-      { title: "Actions", url: "/actions", icon: CheckSquare },
       { title: "Ideas", url: "/ideas", icon: Lightbulb },
-      { title: "Recurrence", url: "/recurrence", icon: Repeat },
     ],
   },
 ];

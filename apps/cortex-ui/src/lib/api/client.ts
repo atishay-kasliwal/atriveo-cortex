@@ -1,15 +1,11 @@
 // Typed Cortex API client — routes through cortex-adapter to the engine backend.
 
 import {
-  fetchActionDetail,
-  fetchActions,
   fetchIdeaDetail,
   fetchIdeas,
   fetchOverview,
   fetchProjectDetail,
   fetchProjects,
-  fetchRecurrence,
-  type ActionBucket,
 } from "./cortex-adapter";
 import {
   fetchMonthActivity,
@@ -18,7 +14,6 @@ import {
 } from "./analytics-adapter";
 import { fetchScreenpipeHealth } from "./system-adapter";
 import { fetchAnalyticsValidation } from "./analytics-validation-adapter";
-import { fetchChat } from "./chat-adapter";
 import {
   fetchAttentionTrends,
   fetchDayAttention,
@@ -34,7 +29,6 @@ import { fetchMemorySearch } from "./search-adapter";
 import { fetchProjectsHealth, fetchProjectHealthTrends } from "./project-health-adapter";
 import { fetchAnalyticsHistory } from "./analytics-history-adapter";
 export { ApiError, isApiNotFound, isRetryableApiError } from "./cortex-fetch";
-export type { ActionBucket };
 
 export const api = {
   overview: () => fetchOverview(),
@@ -54,18 +48,9 @@ export const api = {
       fetchProjectHealthTrends(params),
   },
 
-  actions: {
-    list: (bucket: ActionBucket = "unresolved") => fetchActions(bucket),
-    get: (id: string) => fetchActionDetail(id),
-  },
-
   ideas: {
     list: () => fetchIdeas(),
     get: (id: string) => fetchIdeaDetail(id),
-  },
-
-  recurrence: {
-    list: () => fetchRecurrence(),
   },
 
   system: {
@@ -78,8 +63,6 @@ export const api = {
     q: string,
     options?: { type?: string; project?: string; start?: string; end?: string },
   ) => fetchMemorySearch(q, options),
-
-  chat: (question: string) => fetchChat(question),
 
   attention: {
     day: (date?: string) => fetchDayAttention(date),

@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScreensRouteImport } from './routes/screens'
-import { Route as RecurrenceRouteImport } from './routes/recurrence'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as LoginRouteImport } from './routes/login'
@@ -19,14 +18,11 @@ import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as GlanceRouteImport } from './routes/glance'
 import { Route as CaptureDoctorRouteImport } from './routes/capture-doctor'
 import { Route as AttentionRouteImport } from './routes/attention'
-import { Route as AskRouteImport } from './routes/ask'
 import { Route as ActivityRouteImport } from './routes/activity'
-import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
 import { Route as IdeasIdRouteImport } from './routes/ideas.$id'
 import { Route as DebugAnalyticsRouteImport } from './routes/debug.analytics'
-import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -36,11 +32,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const ScreensRoute = ScreensRouteImport.update({
   id: '/screens',
   path: '/screens',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecurrenceRoute = RecurrenceRouteImport.update({
-  id: '/recurrence',
-  path: '/recurrence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsRoute = ProjectsRouteImport.update({
@@ -78,19 +69,9 @@ const AttentionRoute = AttentionRouteImport.update({
   path: '/attention',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AskRoute = AskRouteImport.update({
-  id: '/ask',
-  path: '/ask',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ActionsRoute = ActionsRouteImport.update({
-  id: '/actions',
-  path: '/actions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -113,17 +94,10 @@ const DebugAnalyticsRoute = DebugAnalyticsRouteImport.update({
   path: '/debug/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ActionsIdRoute = ActionsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ActionsRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
-  '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/glance': typeof GlanceRoute
@@ -131,19 +105,15 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/overview': typeof OverviewRoute
   '/projects': typeof ProjectsRouteWithChildren
-  '/recurrence': typeof RecurrenceRoute
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
-  '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/projects/$id': typeof ProjectsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
-  '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/glance': typeof GlanceRoute
@@ -151,10 +121,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/overview': typeof OverviewRoute
   '/projects': typeof ProjectsRouteWithChildren
-  '/recurrence': typeof RecurrenceRoute
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
-  '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/projects/$id': typeof ProjectsIdRoute
@@ -162,9 +130,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
-  '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
   '/capture-doctor': typeof CaptureDoctorRoute
   '/glance': typeof GlanceRoute
@@ -172,10 +138,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/overview': typeof OverviewRoute
   '/projects': typeof ProjectsRouteWithChildren
-  '/recurrence': typeof RecurrenceRoute
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
-  '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
   '/ideas/$id': typeof IdeasIdRoute
   '/projects/$id': typeof ProjectsIdRoute
@@ -184,9 +148,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/actions'
     | '/activity'
-    | '/ask'
     | '/attention'
     | '/capture-doctor'
     | '/glance'
@@ -194,19 +156,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/overview'
     | '/projects'
-    | '/recurrence'
     | '/screens'
     | '/settings'
-    | '/actions/$id'
     | '/debug/analytics'
     | '/ideas/$id'
     | '/projects/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/actions'
     | '/activity'
-    | '/ask'
     | '/attention'
     | '/capture-doctor'
     | '/glance'
@@ -214,19 +172,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/overview'
     | '/projects'
-    | '/recurrence'
     | '/screens'
     | '/settings'
-    | '/actions/$id'
     | '/debug/analytics'
     | '/ideas/$id'
     | '/projects/$id'
   id:
     | '__root__'
     | '/'
-    | '/actions'
     | '/activity'
-    | '/ask'
     | '/attention'
     | '/capture-doctor'
     | '/glance'
@@ -234,10 +188,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/overview'
     | '/projects'
-    | '/recurrence'
     | '/screens'
     | '/settings'
-    | '/actions/$id'
     | '/debug/analytics'
     | '/ideas/$id'
     | '/projects/$id'
@@ -245,9 +197,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ActionsRoute: typeof ActionsRouteWithChildren
   ActivityRoute: typeof ActivityRoute
-  AskRoute: typeof AskRoute
   AttentionRoute: typeof AttentionRoute
   CaptureDoctorRoute: typeof CaptureDoctorRoute
   GlanceRoute: typeof GlanceRoute
@@ -255,7 +205,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OverviewRoute: typeof OverviewRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
-  RecurrenceRoute: typeof RecurrenceRoute
   ScreensRoute: typeof ScreensRoute
   SettingsRoute: typeof SettingsRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
@@ -275,13 +224,6 @@ declare module '@tanstack/react-router' {
       path: '/screens'
       fullPath: '/screens'
       preLoaderRoute: typeof ScreensRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recurrence': {
-      id: '/recurrence'
-      path: '/recurrence'
-      fullPath: '/recurrence'
-      preLoaderRoute: typeof RecurrenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects': {
@@ -333,25 +275,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AttentionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ask': {
-      id: '/ask'
-      path: '/ask'
-      fullPath: '/ask'
-      preLoaderRoute: typeof AskRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/activity': {
       id: '/activity'
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof ActivityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/actions': {
-      id: '/actions'
-      path: '/actions'
-      fullPath: '/actions'
-      preLoaderRoute: typeof ActionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -382,26 +310,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/actions/$id': {
-      id: '/actions/$id'
-      path: '/$id'
-      fullPath: '/actions/$id'
-      preLoaderRoute: typeof ActionsIdRouteImport
-      parentRoute: typeof ActionsRoute
-    }
   }
 }
-
-interface ActionsRouteChildren {
-  ActionsIdRoute: typeof ActionsIdRoute
-}
-
-const ActionsRouteChildren: ActionsRouteChildren = {
-  ActionsIdRoute: ActionsIdRoute,
-}
-
-const ActionsRouteWithChildren =
-  ActionsRoute._addFileChildren(ActionsRouteChildren)
 
 interface IdeasRouteChildren {
   IdeasIdRoute: typeof IdeasIdRoute
@@ -427,9 +337,7 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ActionsRoute: ActionsRouteWithChildren,
   ActivityRoute: ActivityRoute,
-  AskRoute: AskRoute,
   AttentionRoute: AttentionRoute,
   CaptureDoctorRoute: CaptureDoctorRoute,
   GlanceRoute: GlanceRoute,
@@ -437,7 +345,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OverviewRoute: OverviewRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
-  RecurrenceRoute: RecurrenceRoute,
   ScreensRoute: ScreensRoute,
   SettingsRoute: SettingsRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
