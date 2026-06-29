@@ -11,7 +11,6 @@ import { HourDeepDive } from "@/components/activity/hour-deep-dive";
 import type { HourGroup } from "@/components/activity/hour-deep-dive";
 import type { ActivityCategory, TimelineBlock } from "@/lib/api/types";
 
-
 function groupByHour(blocks: TimelineBlock[]): HourGroup[] {
   const map = new Map<number, TimelineBlock[]>();
   for (const b of blocks) {
@@ -23,9 +22,7 @@ function groupByHour(blocks: TimelineBlock[]): HourGroup[] {
     .sort((a, b) => b[0] - a[0])
     .map(([hour, blocks]) => ({
       hour,
-      blocks: [...blocks].sort(
-        (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
-      ),
+      blocks: [...blocks].sort((a, b) => b.durationSec - a.durationSec),
       totalSec: blocks.reduce((s, b) => s + b.durationSec, 0),
     }));
 }
@@ -46,32 +43,13 @@ function categoryAccent(category: TimelineBlock["category"]): string {
     research: "#2DD4BF",
     communication: "#F59E0B",
     entertainment: "#8B5CF6",
-    idle: "#94A3B8",
+    idle: "#64748B",
   };
   return map[category] ?? "#2DD4BF";
 }
 
-function CategoryBar({ blocks }: { blocks: TimelineBlock[] }) {
-  const total = blocks.reduce((s, b) => s + b.durationSec, 0);
-  if (!total) return null;
-  return (
-    <div className="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-white/[0.04]">
-      {blocks.map((b) => (
-        <div
-          key={b.id}
-          className={categoryStyle[b.category]?.bar + " first:rounded-l-full last:rounded-r-full"}
-          style={{
-            width: `${((b.durationSec / total) * 100).toFixed(2)}%`,
-            minWidth: b.durationSec > 60 ? 4 : 0,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-const CARD_W = 300;
-const CARD_H = 320;
+const CARD_W = 310;
+const CARD_H = 360;
 
 function HourCard({
   group,
@@ -82,19 +60,23 @@ function HourCard({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const dominantCategory = (() => {
-    const sums = new Map<string, number>();
-    for (const b of group.blocks) {
-      sums.set(b.category, (sums.get(b.category) ?? 0) + b.durationSec);
-    }
-    let top = group.blocks[0]?.category ?? "other";
-    let max = 0;
-    for (const [cat, sec] of sums) {
-      if (sec > max) { max = sec; top = cat; }
-    }
-    return top;
-  })();
+  const sums = new Map<string, number>();
+  for (const b of group.blocks) {
+    sums.set(b.category, (sums.get(b.category) ?? 0) + b.durationSec);
+  }
+  let dominantCategory = group.blocks[0]?.category ?? "other";
+  let maxSumSec = 0;
+  for (const [cat, sec] of sums) {
+    if (sec > maxSumSec) { maxSumSec = sec; dominantCategory = cat; }
+  }
   const accent = categoryAccent(dominantCategory);
+
+  // Top sessions sorted by duration descending (already sorted by groupByHour)
+  const topBlocks = group.blocks.slice(0, 5);
+  const longestSec = topBlocks[0]?.durationSec ?? 1;
+
+  // Category breakdown for the segmented bar
+  const catEntries = [...sums.entries()].sort((a, b) => b[1] - a[1]);
 
   return (
     <div
@@ -103,85 +85,125 @@ function HourCard({
       onClick={onClick}
       onKeyDown={(e) => e.key === "Enter" && onClick()}
       className={
-        "group/card flex shrink-0 cursor-pointer flex-col overflow-hidden rounded-[18px] border transition-all duration-150 " +
+        "group/card relative flex shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl border transition-all duration-200 " +
         (isSelected
-          ? "border-[#2DD4BF]/40 bg-[#121722]"
-          : "border-white/[0.06] bg-[#121722] hover:-translate-y-0.5 hover:border-white/[0.1]")
+          ? "border-white/[0.12] bg-[#111520]"
+          : "border-white/[0.06] bg-[#111520] hover:-translate-y-1 hover:border-white/[0.10]")
       }
       style={{
         width: CARD_W,
         height: CARD_H,
         boxShadow: isSelected
-          ? `inset 3px 0 0 0 ${accent}, 0 0 0 1px rgba(45,212,191,0.12)`
-          : `inset 3px 0 0 0 ${accent}`,
+          ? `0 0 0 1px ${accent}40, 0 8px 32px ${accent}18`
+          : `0 2px 12px rgba(0,0,0,0.4)`,
       }}
     >
+      {/* Accent top bar */}
+      <div
+        className="h-[3px] w-full shrink-0"
+        style={{
+          background: `linear-gradient(90deg, ${accent} 0%, ${accent}60 60%, transparent 100%)`,
+        }}
+      />
+
       {/* Header */}
-      <div className="shrink-0 border-b border-white/[0.06] px-4 pb-3 pt-4">
-        <div className="flex items-center justify-between">
-          <span className="font-mono text-[14px] font-semibold tabular-nums text-foreground">
+      <div className="shrink-0 px-4 pb-3 pt-3">
+        <div className="flex items-baseline justify-between">
+          <span
+            className="font-mono text-[16px] font-bold tabular-nums"
+            style={{ color: accent }}
+          >
             {fmtHour(group.hour)}
           </span>
-          <span className="rounded-full bg-white/[0.04] px-2.5 py-0.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+          <span
+            className="rounded-md px-2 py-0.5 font-mono text-[11px] font-medium tabular-nums"
+            style={{ background: `${accent}18`, color: `${accent}cc` }}
+          >
             {fmtDuration(group.totalSec)}
           </span>
         </div>
-        <CategoryBar blocks={group.blocks} />
+
+        {/* Segmented category breakdown bar */}
+        <div className="mt-2.5 flex h-[6px] w-full gap-0.5 overflow-hidden rounded-full">
+          {catEntries.map(([cat, sec]) => (
+            <div
+              key={cat}
+              className={categoryStyle[cat as ActivityCategory]?.bar ?? "bg-white/20"}
+              style={{
+                width: `${(sec / group.totalSec) * 100}%`,
+                borderRadius: 99,
+                minWidth: sec > 30 ? 6 : 0,
+              }}
+              title={`${categoryStyle[cat as ActivityCategory]?.label ?? cat}: ${fmtDuration(sec)}`}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Session list */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2" style={{ scrollbarWidth: "none" }}>
-        <div className="space-y-1">
-          {group.blocks.slice(0, 6).map((block) => {
+      {/* Session rows with duration bars */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-3" style={{ scrollbarWidth: "none" }}>
+        <div className="space-y-[3px]">
+          {topBlocks.map((block) => {
             const style = categoryStyle[block.category as ActivityCategory];
+            const barPct = (block.durationSec / longestSec) * 100;
             return (
-              <div
-                key={block.id}
-                className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.03]"
-              >
-                <div className={"h-[14px] w-[3px] shrink-0 rounded-full " + (style?.bar ?? "bg-white/20")} />
-                <AppIcon app={block.app ?? block.applicationsUsed?.[0]} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12px] font-medium text-foreground/90">
+              <div key={block.id} className="rounded-xl p-2 transition-colors hover:bg-white/[0.03]">
+                {/* Row: icon + title + duration */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={"h-[12px] w-[3px] shrink-0 rounded-full " + (style?.bar ?? "bg-white/20")}
+                  />
+                  <AppIcon app={block.app ?? block.applicationsUsed?.[0]} size="sm" />
+                  <p className="min-w-0 flex-1 truncate text-[12px] font-medium text-foreground/85">
                     {block.title}
                   </p>
+                  <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground/50">
+                    {fmtDuration(block.durationSec)}
+                  </span>
                 </div>
-                <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground/50">
-                  {fmtDuration(block.durationSec)}
-                </span>
+                {/* Proportional fill bar */}
+                <div className="mt-1.5 ml-[23px] h-[3px] overflow-hidden rounded-full bg-white/[0.04]">
+                  <div
+                    className={(style?.bar ?? "bg-white/20") + " h-full rounded-full opacity-50 transition-all duration-300"}
+                    style={{ width: `${barPct}%` }}
+                  />
+                </div>
               </div>
             );
           })}
-          {group.blocks.length > 6 ? (
-            <p className="px-2 py-1 text-[11px] text-muted-foreground/30">
-              +{group.blocks.length - 6} more
+          {group.blocks.length > 5 ? (
+            <p className="px-2 py-1.5 text-[11px] text-muted-foreground/30">
+              +{group.blocks.length - 5} more sessions
             </p>
           ) : null}
         </div>
       </div>
 
-      {/* Time ticks footer */}
-      <div className="shrink-0 border-t border-white/[0.06] px-3 pb-3 pt-2">
-        <div className="relative mb-1 h-1 overflow-hidden rounded-full bg-white/[0.04]">
+      {/* Mini timeline footer */}
+      <div className="shrink-0 px-3 pb-3 pt-2">
+        {/* Activity bar */}
+        <div className="relative h-[5px] overflow-hidden rounded-full bg-white/[0.05]">
           {group.blocks.map((b) => {
             const startMin = new Date(b.startedAt).getMinutes();
-            const pct = (startMin / 60) * 100;
-            const widthPct = Math.max(0.5, ((b.durationSec / 60) / 60) * 100);
+            const left = (startMin / 60) * 100;
+            const width = Math.max(1, ((b.durationSec / 60) / 60) * 100);
+            const style = categoryStyle[b.category as ActivityCategory];
             return (
               <div
                 key={b.id}
-                className={"absolute top-0 bottom-0 rounded-full " + (categoryStyle[b.category as ActivityCategory]?.bar ?? "bg-white/20")}
-                style={{ left: `${pct}%`, width: `${widthPct}%` }}
+                className={"absolute top-0 bottom-0 " + (style?.bar ?? "bg-white/20")}
+                style={{ left: `${left}%`, width: `${width}%`, opacity: 0.75 }}
               />
             );
           })}
         </div>
-        <div className="flex justify-between font-mono text-[9px] tabular-nums text-muted-foreground/30">
+        {/* 10-minute tick labels */}
+        <div className="mt-1.5 flex justify-between font-mono text-[9px] tabular-nums text-muted-foreground/25">
           {[0, 10, 20, 30, 40, 50, 60].map((m) => {
-            const absH = m === 60 ? group.hour + 1 : group.hour;
+            const h = m === 60 ? group.hour + 1 : group.hour;
+            const h12 = h % 12 === 0 ? 12 : h % 12;
+            const ap = h >= 12 ? "pm" : "am";
             const absM = m === 60 ? 0 : m;
-            const h12 = absH % 12 === 0 ? 12 : absH % 12;
-            const ap = absH >= 12 ? "pm" : "am";
             return (
               <span key={m}>
                 {absM === 0 ? `${h12}${ap}` : `:${String(absM).padStart(2, "0")}`}
@@ -204,7 +226,6 @@ export function WorkTimeline({
   const collapsed = collapseMicroEntertainment(blocks);
   const groups = groupByHour(collapsed);
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Default to the most recent hour (first group, sorted desc)
   const [selectedHour, setSelectedHour] = useState<number | null>(
     groups[0]?.hour ?? null,
   );
@@ -266,7 +287,7 @@ export function WorkTimeline({
             {hours.map((h) => (
               <div
                 key={h}
-                className="shrink-0 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60"
+                className="shrink-0 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/40"
                 style={{ width: CARD_W }}
               >
                 {fmtHourLabel(h)}
@@ -278,7 +299,7 @@ export function WorkTimeline({
         {/* Horizontal scroll of hour cards */}
         <div
           ref={scrollRef}
-          className="flex gap-4 scroll-smooth pb-1"
+          className="flex gap-3 scroll-smooth pb-1"
           style={{ overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {groups.map((g) => (
@@ -286,15 +307,12 @@ export function WorkTimeline({
               key={g.hour}
               group={g}
               isSelected={g.hour === selectedHour}
-              onClick={() =>
-                setSelectedHour(g.hour === selectedHour ? null : g.hour)
-              }
+              onClick={() => setSelectedHour(g.hour === selectedHour ? null : g.hour)}
             />
           ))}
         </div>
       </div>
 
-      {/* Hour deep dive — expands below the scroll inside the same card */}
       {selectedGroup ? (
         <HourDeepDive key={selectedGroup.hour} group={selectedGroup} />
       ) : null}
