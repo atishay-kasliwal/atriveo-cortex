@@ -9,7 +9,7 @@ import {
   Clock,
   Focus,
   Globe,
-  Inbox,
+  Tv,
   Timer,
   Video,
 } from "lucide-react";
@@ -17,7 +17,7 @@ import { fmtDuration } from "@/components/dashboard/time";
 import { MetricCard } from "@/components/premium/metric-card";
 import type { KpiTileProps } from "@/components/home/kpi-tile";
 import { fetchUpcomingEvents } from "@/lib/api/calendar-adapter";
-import { needsYouQuery, siteAnalyticsQuery, weekQuery } from "@/lib/api/queries";
+import { siteAnalyticsQuery, weekQuery } from "@/lib/api/queries";
 import type { TodayActivity } from "@/lib/api/types";
 
 type Period = "today" | "week";
@@ -26,7 +26,7 @@ const ICONS: Record<string, typeof Activity> = {
   Active: Activity,
   Focused: Focus,
   Idle: Timer,
-  "Needs you": Inbox,
+  Entertainment: Tv,
   "Next meeting": Video,
   Meetings: Video,
   "atriveo.com": Globe,
@@ -65,7 +65,6 @@ export function HomeKpiStrip({
     enabled: period === "week",
   });
 
-  const needsYou = useQuery(needsYouQuery);
   const sites = useQuery(siteAnalyticsQuery);
 
   function siteTile(key: string, label: string): KpiTileProps {
@@ -94,6 +93,18 @@ export function HomeKpiStrip({
   const idleSec = period === "today" ? data.idleSec : week.data?.idleSec;
   const dayTotal = Math.max(activeSec ?? 0, 1);
 
+  const entertainSec = useMemo(() => {
+    if (period === "today") {
+      return data.timeline
+        .filter((b) => b.category === "entertainment")
+        .reduce((s, b) => s + b.durationSec, 0);
+    }
+    return week.data?.days
+      ?.flatMap((d) => d.byCategory)
+      .filter((c) => c.category === "entertainment")
+      .reduce((s, c) => s + c.durationSec, 0) ?? 0;
+  }, [period, data.timeline, week.data]);
+
   const tiles: KpiTileProps[] = [
     {
       label: "Active",
@@ -118,19 +129,13 @@ export function HomeKpiStrip({
       higherIsBetter: false,
       state: period === "week" && week.isLoading ? "loading" : "live",
     },
-    (() => {
-      if (needsYou.isLoading) return { label: "Needs you", sub: "email", state: "loading" as const };
-      if (!needsYou.data) return { label: "Needs you", sub: "email", state: "unconnected" as const };
-      const count = period === "today" ? needsYou.data.todayCount : needsYou.data.weekCount;
-      const top = needsYou.data.items[0];
-      return {
-        label: "Needs you",
-        value: String(count),
-        sub: count === 0 ? "All clear 🎉" : top ? top.fromName : "email",
-        higherIsBetter: false,
-        state: "live" as const,
-      };
-    })(),
+    {
+      label: "Entertainment",
+      value: fmtDuration(entertainSec),
+      sub: `${Math.round((entertainSec / dayTotal) * 100)}% of active`,
+      higherIsBetter: false,
+      state: (period === "week" && week.isLoading ? "loading" : "live") as const,
+    },
     {
       label: period === "today" ? "Next meeting" : "Meetings",
       value:
@@ -163,7 +168,7 @@ export function HomeKpiStrip({
     Active: "#2DD4BF",
     Focused: "#2DD4BF",
     Idle: "#94A3B8",
-    "Needs you": "#F59E0B",
+    Entertainment: "#EC4899",
     "Next meeting": "#4F8CFF",
     Meetings: "#4F8CFF",
     "atriveo.com": "#4F8CFF",
