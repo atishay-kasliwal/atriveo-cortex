@@ -91,3 +91,4 @@ jobs:
         working-directory: apps/cortex-ui
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CI: "false"
