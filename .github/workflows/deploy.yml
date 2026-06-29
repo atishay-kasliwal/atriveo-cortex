@@ -60,6 +60,15 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Configure wrangler OAuth (has pages:write; avoids token permission issues)
+        run: |
+          mkdir -p ~/.wrangler/config
+          cat > ~/.wrangler/config/default.toml <<EOF
+          oauth_token = "${{ secrets.WRANGLER_OAUTH_TOKEN }}"
+          refresh_token = "${{ secrets.WRANGLER_REFRESH_TOKEN }}"
+          scopes = ["account:read","user:read","workers:write","workers_kv:write","workers_routes:write","workers_scripts:write","workers_tail:read","d1:write","pages:write","zone:read","ssl_certs:write","ai:write","queues:write","offline_access"]
+          EOF
+
       - name: Install UI dependencies
         run: npm install
         working-directory: apps/cortex-ui
@@ -77,7 +86,6 @@ jobs:
       - name: Deploy Pages
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/cortex-ui
           command: pages deploy dist --project-name=cortex-ui --branch=production
