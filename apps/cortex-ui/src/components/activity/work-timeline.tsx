@@ -167,7 +167,19 @@ function HourCard({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const accent = categoryAccent(group.blocks[0]?.category ?? "other");
+  const dominantCategory = (() => {
+    const sums = new Map<string, number>();
+    for (const b of group.blocks) {
+      sums.set(b.category, (sums.get(b.category) ?? 0) + b.durationSec);
+    }
+    let top = group.blocks[0]?.category ?? "other";
+    let max = 0;
+    for (const [cat, sec] of sums) {
+      if (sec > max) { max = sec; top = cat; }
+    }
+    return top;
+  })();
+  const accent = categoryAccent(dominantCategory);
 
   return (
     <div
