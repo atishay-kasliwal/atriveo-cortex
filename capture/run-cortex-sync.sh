@@ -9,7 +9,6 @@ source "${SCRIPT_DIR}/launchd-env.sh"
 
 set -euo pipefail
 REPO_ROOT="${CORTEX_REPO_ROOT:?CORTEX_REPO_ROOT must be set by launchd}"
-DRIVE_ROOT="${CORTEX_DRIVE_ROOT:-/Volumes/Kasliwal v2}"
 LOG_DIR="${HOME}/Library/Logs/Atriveo"
 SYNC_LOG="${LOG_DIR}/cortex-sync.log"
 
@@ -32,24 +31,21 @@ export SCREENPIPE_DB="${SCREENPIPE_DB:-${HOME}/screenpipe-data/db.sqlite}"
 export SCREENPIPE_DATA_DIR="${SCREENPIPE_DATA_DIR:-${HOME}/screenpipe-data}"
 sync_log "Using data dir ${SCREENPIPE_DATA_DIR}"
 
-# launchd can start before the external volume is mounted
+# Wait for repo to be ready (repo is now on internal disk so this resolves instantly)
 elapsed=0
-max_wait=300
-while [[ ! -d "${DRIVE_ROOT}" ]] || [[ ! -d "${REPO_ROOT}/playground" ]]; do
+max_wait=60
+while [[ ! -d "${REPO_ROOT}/playground" ]]; do
   if (( elapsed == 0 )); then
-    sync_log "Waiting for volume ${DRIVE_ROOT} and repo ${REPO_ROOT}..."
+    sync_log "Waiting for repo at ${REPO_ROOT}..."
   fi
   if (( elapsed >= max_wait )); then
-    sync_log "Volume or repo not ready after ${max_wait}s"
+    sync_log "Repo not ready after ${max_wait}s — check CORTEX_REPO_ROOT"
     exit 1
   fi
   sleep 5
   elapsed=$((elapsed + 5))
 done
-if (( elapsed > 0 )); then
-  sync_log "Volume ready after ${elapsed}s"
-fi
-sync_log "Volume and repo ready"
+sync_log "Repo ready at ${REPO_ROOT}"
 
 # launchd cannot read dotenv on external volumes; use local copy from install-capture-agents.sh
 LOCAL_ENV="${SCRIPT_DIR}/.env.sync"

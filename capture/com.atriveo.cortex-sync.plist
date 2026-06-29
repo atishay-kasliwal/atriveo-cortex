@@ -20,8 +20,6 @@
     <string>__USER__</string>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
-    <key>CORTEX_DRIVE_ROOT</key>
-    <string>/Volumes/Kasliwal v2</string>
     <key>CORTEX_REPO_ROOT</key>
     <string>__REPO_ROOT__</string>
   </dict>
