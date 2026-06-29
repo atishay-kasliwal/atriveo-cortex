@@ -60,19 +60,6 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Refresh Cloudflare OAuth token for pages:write access
-        id: cf_token
-        run: |
-          RESP=$(curl -s -X POST "https://dash.cloudflare.com/oauth2/token" \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "grant_type=refresh_token" \
-            -d "refresh_token=${{ secrets.WRANGLER_REFRESH_TOKEN }}" \
-            -d "client_id=54d11594-84e4-41aa-b438-e81b8fa78ee7")
-          TOKEN=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))")
-          if [ -z "$TOKEN" ]; then echo "Token refresh failed: $RESP"; exit 1; fi
-          echo "::add-mask::$TOKEN"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
-
       - name: Install UI dependencies
         run: npm install
         working-directory: apps/cortex-ui
@@ -87,12 +74,10 @@ jobs:
         run: npm run clean:pages-artifacts
         working-directory: apps/cortex-ui
 
-      - name: Install wrangler
-        run: npm install -g wrangler
-
       - name: Deploy Pages
-        run: wrangler pages deploy dist --project-name=cortex-ui --branch=production
-        working-directory: apps/cortex-ui
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ steps.cf_token.outputs.token }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/cortex-ui
+          command: pages deploy dist --project-name=cortex-ui --branch=production
