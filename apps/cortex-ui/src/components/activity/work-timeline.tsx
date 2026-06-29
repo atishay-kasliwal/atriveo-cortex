@@ -5,97 +5,12 @@
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { categoryStyle, fmtDuration } from "@/components/dashboard/time";
-import { AppIcon, Sparkline } from "@/components/premium";
+import { AppIcon } from "@/components/premium";
 import { collapseMicroEntertainment } from "@/lib/activity/session-collapse";
 import { HourDeepDive } from "@/components/activity/hour-deep-dive";
 import type { HourGroup } from "@/components/activity/hour-deep-dive";
 import type { ActivityCategory, TimelineBlock } from "@/lib/api/types";
 
-// ─── App-aware block thumbnail ─────────────────────────────────────────────
-
-const CODE_APPS = /cursor|vscode|code|xcode|webstorm|intellij|vim|neovim|emacs|sublime/i;
-const TERM_APPS = /terminal|warp|iterm|bash|zsh|kitty|hyper/i;
-const BROWSER_APPS = /chrome|safari|firefox|arc|brave|edge/i;
-
-function TrafficLights() {
-  return (
-    <div className="flex items-center gap-[3px] px-2 py-1.5">
-      {(["#FF5F56", "#FFBD2E", "#27C93F"] as const).map((c) => (
-        <span key={c} className="h-[7px] w-[7px] rounded-full" style={{ background: c }} />
-      ))}
-    </div>
-  );
-}
-
-function BlockThumb({ block }: { block: TimelineBlock }) {
-  const app = block.app ?? block.applicationsUsed?.[0] ?? "";
-  const snippet = block.windowSnippets?.[0];
-  const site = block.websitesUsed?.[0];
-
-  if (CODE_APPS.test(app)) {
-    return (
-      <div className="flex h-full flex-col overflow-hidden bg-[#0d1117]">
-        <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.06]">
-          <TrafficLights />
-          <span className="truncate font-mono text-[9px] text-white/25">
-            {block.title?.split("/").pop() ?? app}
-          </span>
-        </div>
-        <pre className="min-h-0 flex-1 overflow-hidden px-2 py-1 font-mono text-[8px] leading-relaxed text-[#8b949e]" style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-          {snippet?.slice(0, 150) ?? "// ..."}
-        </pre>
-      </div>
-    );
-  }
-
-  if (TERM_APPS.test(app)) {
-    return (
-      <div className="flex h-full flex-col overflow-hidden bg-[#0a0e0a]">
-        <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.06]">
-          <TrafficLights />
-          <span className="font-mono text-[9px] text-white/20">zsh</span>
-        </div>
-        <pre className="min-h-0 flex-1 overflow-hidden px-2 py-1 font-mono text-[8px] leading-relaxed text-[#3fb950]" style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-          {snippet?.slice(0, 150) ?? "$ ..."}
-        </pre>
-      </div>
-    );
-  }
-
-  if (BROWSER_APPS.test(app) || site) {
-    return (
-      <div className="flex h-full flex-col overflow-hidden bg-[#13181f]">
-        <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.06]">
-          <TrafficLights />
-          <div className="mr-2 flex flex-1 items-center overflow-hidden rounded bg-white/[0.04] px-1.5 py-0.5">
-            <span className="truncate font-mono text-[8px] text-white/30">
-              {site ?? block.title}
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-1 flex-col justify-center px-2 py-1">
-          <p className="line-clamp-2 text-[10px] font-medium leading-snug text-foreground/80">
-            {block.title}
-          </p>
-          {site ? (
-            <p className="mt-0.5 truncate text-[8px] text-muted-foreground/40">{site}</p>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
-  // Category-colored fallback
-  const style = categoryStyle[block.category as ActivityCategory];
-  return (
-    <div
-      className="flex h-full flex-col items-center justify-center gap-1 overflow-hidden opacity-80"
-      style={{ background: style?.glow ? `${style.glow}20` : "rgba(255,255,255,0.03)" }}
-    >
-      <AppIcon app={app} size="sm" />
-    </div>
-  );
-}
 
 function groupByHour(blocks: TimelineBlock[]): HourGroup[] {
   const map = new Map<number, TimelineBlock[]>();
@@ -130,7 +45,7 @@ function categoryAccent(category: TimelineBlock["category"]): string {
     build: "#4F8CFF",
     research: "#2DD4BF",
     communication: "#F59E0B",
-    entertainment: "#EC4899",
+    entertainment: "#8B5CF6",
     idle: "#94A3B8",
   };
   return map[category] ?? "#2DD4BF";
@@ -214,40 +129,66 @@ function HourCard({
         <CategoryBar blocks={group.blocks} />
       </div>
 
-      {/* Thumbnail grid — click is handled at the card level */}
-      <div className="min-h-0 flex-1 overflow-hidden p-2.5">
-        <div className="grid h-full grid-cols-2 gap-1.5">
-          {group.blocks.slice(0, 3).map((block) => (
-            <div
-              key={block.id}
-              className="flex flex-col overflow-hidden rounded-lg border border-white/[0.05] bg-[#0d1117]"
-            >
-              <div className="min-h-0 flex-1 overflow-hidden">
-                <BlockThumb block={block} />
-              </div>
-              <div className="shrink-0 border-t border-white/[0.04] px-2 py-1.5">
-                <p className="truncate text-[11px] font-medium leading-tight text-foreground/90">
-                  {block.title}
-                </p>
-                <p className="mt-0.5 font-mono text-[10px] tabular-nums text-muted-foreground/50">
+      {/* Session list */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2" style={{ scrollbarWidth: "none" }}>
+        <div className="space-y-1">
+          {group.blocks.slice(0, 6).map((block) => {
+            const style = categoryStyle[block.category as ActivityCategory];
+            return (
+              <div
+                key={block.id}
+                className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.03]"
+              >
+                <div className={"h-[14px] w-[3px] shrink-0 rounded-full " + (style?.bar ?? "bg-white/20")} />
+                <AppIcon app={block.app ?? block.applicationsUsed?.[0]} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] font-medium text-foreground/90">
+                    {block.title}
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground/50">
                   {fmtDuration(block.durationSec)}
-                </p>
+                </span>
               </div>
-            </div>
-          ))}
-          {group.blocks.length > 3 ? (
-            <div className="flex items-center justify-center rounded-lg border border-white/[0.04] bg-white/[0.02]">
-              <span className="text-[11px] text-muted-foreground/40">
-                +{group.blocks.length - 3} more
-              </span>
-            </div>
+            );
+          })}
+          {group.blocks.length > 6 ? (
+            <p className="px-2 py-1 text-[11px] text-muted-foreground/30">
+              +{group.blocks.length - 6} more
+            </p>
           ) : null}
         </div>
       </div>
 
-      {/* Sparkline footer */}
-      <div className="shrink-0 border-t border-white/[0.06] px-4 py-2.5 opacity-60 transition-opacity group-hover/card:opacity-100">
-        <Sparkline seed={`hour-${group.hour}`} color={accent} />
+      {/* Time ticks footer */}
+      <div className="shrink-0 border-t border-white/[0.06] px-3 pb-3 pt-2">
+        <div className="relative mb-1 h-1 overflow-hidden rounded-full bg-white/[0.04]">
+          {group.blocks.map((b) => {
+            const startMin = new Date(b.startedAt).getMinutes();
+            const pct = (startMin / 60) * 100;
+            const widthPct = Math.max(0.5, ((b.durationSec / 60) / 60) * 100);
+            return (
+              <div
+                key={b.id}
+                className={"absolute top-0 bottom-0 rounded-full " + (categoryStyle[b.category as ActivityCategory]?.bar ?? "bg-white/20")}
+                style={{ left: `${pct}%`, width: `${widthPct}%` }}
+              />
+            );
+          })}
+        </div>
+        <div className="flex justify-between font-mono text-[9px] tabular-nums text-muted-foreground/30">
+          {[0, 10, 20, 30, 40, 50, 60].map((m) => {
+            const absH = m === 60 ? group.hour + 1 : group.hour;
+            const absM = m === 60 ? 0 : m;
+            const h12 = absH % 12 === 0 ? 12 : absH % 12;
+            const ap = absH >= 12 ? "pm" : "am";
+            return (
+              <span key={m}>
+                {absM === 0 ? `${h12}${ap}` : `:${String(absM).padStart(2, "0")}`}
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

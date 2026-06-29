@@ -43,10 +43,10 @@ export const categoryStyle: Record<
   entertainment: {
     label: "Entertainment",
     short: "Fun",
-    bar: "bg-[#EC4899]",
-    dot: "bg-[#EC4899]",
-    chip: "text-[#F9A8D4] bg-[#EC4899]/15",
-    glow: "rgba(236, 72, 153, 0.35)",
+    bar: "bg-[#8B5CF6]",
+    dot: "bg-[#8B5CF6]",
+    chip: "text-[#C4B5FD] bg-[#8B5CF6]/15",
+    glow: "rgba(139, 92, 246, 0.35)",
   },
   job_application: {
     label: "Job Application",

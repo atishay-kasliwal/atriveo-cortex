@@ -168,7 +168,7 @@ export function HomeKpiStrip({
     Active: "#2DD4BF",
     Focused: "#2DD4BF",
     Idle: "#94A3B8",
-    Entertainment: "#EC4899",
+    Entertainment: "#8B5CF6",
     "Next meeting": "#4F8CFF",
     Meetings: "#4F8CFF",
     "atriveo.com": "#4F8CFF",
