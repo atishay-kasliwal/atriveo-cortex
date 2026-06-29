@@ -9,41 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WeeklyReviewRouteImport } from './routes/weekly-review'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScreensRouteImport } from './routes/screens'
-import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RecurrenceRouteImport } from './routes/recurrence'
 import { Route as ProjectsRouteImport } from './routes/projects'
-import { Route as PlatformHealthRouteImport } from './routes/platform-health'
 import { Route as OverviewRouteImport } from './routes/overview'
-import { Route as OpenLoopsRouteImport } from './routes/open-loops'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as GlanceRouteImport } from './routes/glance'
-import { Route as DecisionsRouteImport } from './routes/decisions'
 import { Route as CaptureDoctorRouteImport } from './routes/capture-doctor'
-import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AttentionRouteImport } from './routes/attention'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as ActionsRouteImport } from './routes/actions'
-import { Route as AccuracyRouteImport } from './routes/accuracy'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProjectsHealthRouteImport } from './routes/projects.health'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
-import { Route as OpenLoopsIdRouteImport } from './routes/open-loops.$id'
 import { Route as IdeasIdRouteImport } from './routes/ideas.$id'
-import { Route as DebugTodayFactsRouteImport } from './routes/debug.today-facts'
-import { Route as DebugTelemetryRouteImport } from './routes/debug.telemetry'
 import { Route as DebugAnalyticsRouteImport } from './routes/debug.analytics'
 import { Route as ActionsIdRouteImport } from './routes/actions.$id'
 
-const WeeklyReviewRoute = WeeklyReviewRouteImport.update({
-  id: '/weekly-review',
-  path: '/weekly-review',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -52,11 +36,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const ScreensRoute = ScreensRouteImport.update({
   id: '/screens',
   path: '/screens',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReviewRoute = ReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecurrenceRoute = RecurrenceRouteImport.update({
@@ -69,19 +48,9 @@ const ProjectsRoute = ProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlatformHealthRoute = PlatformHealthRouteImport.update({
-  id: '/platform-health',
-  path: '/platform-health',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OverviewRoute = OverviewRouteImport.update({
   id: '/overview',
   path: '/overview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpenLoopsRoute = OpenLoopsRouteImport.update({
-  id: '/open-loops',
-  path: '/open-loops',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -99,19 +68,9 @@ const GlanceRoute = GlanceRouteImport.update({
   path: '/glance',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DecisionsRoute = DecisionsRouteImport.update({
-  id: '/decisions',
-  path: '/decisions',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CaptureDoctorRoute = CaptureDoctorRouteImport.update({
   id: '/capture-doctor',
   path: '/capture-doctor',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuditRoute = AuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AttentionRoute = AttentionRouteImport.update({
@@ -134,45 +93,20 @@ const ActionsRoute = ActionsRouteImport.update({
   path: '/actions',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccuracyRoute = AccuracyRouteImport.update({
-  id: '/accuracy',
-  path: '/accuracy',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ProjectsHealthRoute = ProjectsHealthRouteImport.update({
-  id: '/health',
-  path: '/health',
-  getParentRoute: () => ProjectsRoute,
 } as any)
 const ProjectsIdRoute = ProjectsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ProjectsRoute,
 } as any)
-const OpenLoopsIdRoute = OpenLoopsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => OpenLoopsRoute,
-} as any)
 const IdeasIdRoute = IdeasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => IdeasRoute,
-} as any)
-const DebugTodayFactsRoute = DebugTodayFactsRouteImport.update({
-  id: '/debug/today-facts',
-  path: '/debug/today-facts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DebugTelemetryRoute = DebugTelemetryRouteImport.update({
-  id: '/debug/telemetry',
-  path: '/debug/telemetry',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const DebugAnalyticsRoute = DebugAnalyticsRouteImport.update({
   id: '/debug/analytics',
@@ -187,230 +121,148 @@ const ActionsIdRoute = ActionsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/accuracy': typeof AccuracyRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
-  '/audit': typeof AuditRoute
   '/capture-doctor': typeof CaptureDoctorRoute
-  '/decisions': typeof DecisionsRoute
   '/glance': typeof GlanceRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/login': typeof LoginRoute
-  '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
-  '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
-  '/review': typeof ReviewRoute
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
-  '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
-  '/debug/telemetry': typeof DebugTelemetryRoute
-  '/debug/today-facts': typeof DebugTodayFactsRoute
   '/ideas/$id': typeof IdeasIdRoute
-  '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
-  '/projects/health': typeof ProjectsHealthRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/accuracy': typeof AccuracyRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
-  '/audit': typeof AuditRoute
   '/capture-doctor': typeof CaptureDoctorRoute
-  '/decisions': typeof DecisionsRoute
   '/glance': typeof GlanceRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/login': typeof LoginRoute
-  '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
-  '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
-  '/review': typeof ReviewRoute
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
-  '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
-  '/debug/telemetry': typeof DebugTelemetryRoute
-  '/debug/today-facts': typeof DebugTodayFactsRoute
   '/ideas/$id': typeof IdeasIdRoute
-  '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
-  '/projects/health': typeof ProjectsHealthRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/accuracy': typeof AccuracyRoute
   '/actions': typeof ActionsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ask': typeof AskRoute
   '/attention': typeof AttentionRoute
-  '/audit': typeof AuditRoute
   '/capture-doctor': typeof CaptureDoctorRoute
-  '/decisions': typeof DecisionsRoute
   '/glance': typeof GlanceRoute
   '/ideas': typeof IdeasRouteWithChildren
   '/login': typeof LoginRoute
-  '/open-loops': typeof OpenLoopsRouteWithChildren
   '/overview': typeof OverviewRoute
-  '/platform-health': typeof PlatformHealthRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/recurrence': typeof RecurrenceRoute
-  '/review': typeof ReviewRoute
   '/screens': typeof ScreensRoute
   '/settings': typeof SettingsRoute
-  '/weekly-review': typeof WeeklyReviewRoute
   '/actions/$id': typeof ActionsIdRoute
   '/debug/analytics': typeof DebugAnalyticsRoute
-  '/debug/telemetry': typeof DebugTelemetryRoute
-  '/debug/today-facts': typeof DebugTodayFactsRoute
   '/ideas/$id': typeof IdeasIdRoute
-  '/open-loops/$id': typeof OpenLoopsIdRoute
   '/projects/$id': typeof ProjectsIdRoute
-  '/projects/health': typeof ProjectsHealthRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/accuracy'
     | '/actions'
     | '/activity'
     | '/ask'
     | '/attention'
-    | '/audit'
     | '/capture-doctor'
-    | '/decisions'
     | '/glance'
     | '/ideas'
     | '/login'
-    | '/open-loops'
     | '/overview'
-    | '/platform-health'
     | '/projects'
     | '/recurrence'
-    | '/review'
     | '/screens'
     | '/settings'
-    | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
-    | '/debug/telemetry'
-    | '/debug/today-facts'
     | '/ideas/$id'
-    | '/open-loops/$id'
     | '/projects/$id'
-    | '/projects/health'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/accuracy'
     | '/actions'
     | '/activity'
     | '/ask'
     | '/attention'
-    | '/audit'
     | '/capture-doctor'
-    | '/decisions'
     | '/glance'
     | '/ideas'
     | '/login'
-    | '/open-loops'
     | '/overview'
-    | '/platform-health'
     | '/projects'
     | '/recurrence'
-    | '/review'
     | '/screens'
     | '/settings'
-    | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
-    | '/debug/telemetry'
-    | '/debug/today-facts'
     | '/ideas/$id'
-    | '/open-loops/$id'
     | '/projects/$id'
-    | '/projects/health'
   id:
     | '__root__'
     | '/'
-    | '/accuracy'
     | '/actions'
     | '/activity'
     | '/ask'
     | '/attention'
-    | '/audit'
     | '/capture-doctor'
-    | '/decisions'
     | '/glance'
     | '/ideas'
     | '/login'
-    | '/open-loops'
     | '/overview'
-    | '/platform-health'
     | '/projects'
     | '/recurrence'
-    | '/review'
     | '/screens'
     | '/settings'
-    | '/weekly-review'
     | '/actions/$id'
     | '/debug/analytics'
-    | '/debug/telemetry'
-    | '/debug/today-facts'
     | '/ideas/$id'
-    | '/open-loops/$id'
     | '/projects/$id'
-    | '/projects/health'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccuracyRoute: typeof AccuracyRoute
   ActionsRoute: typeof ActionsRouteWithChildren
   ActivityRoute: typeof ActivityRoute
   AskRoute: typeof AskRoute
   AttentionRoute: typeof AttentionRoute
-  AuditRoute: typeof AuditRoute
   CaptureDoctorRoute: typeof CaptureDoctorRoute
-  DecisionsRoute: typeof DecisionsRoute
   GlanceRoute: typeof GlanceRoute
   IdeasRoute: typeof IdeasRouteWithChildren
   LoginRoute: typeof LoginRoute
-  OpenLoopsRoute: typeof OpenLoopsRouteWithChildren
   OverviewRoute: typeof OverviewRoute
-  PlatformHealthRoute: typeof PlatformHealthRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RecurrenceRoute: typeof RecurrenceRoute
-  ReviewRoute: typeof ReviewRoute
   ScreensRoute: typeof ScreensRoute
   SettingsRoute: typeof SettingsRoute
-  WeeklyReviewRoute: typeof WeeklyReviewRoute
   DebugAnalyticsRoute: typeof DebugAnalyticsRoute
-  DebugTelemetryRoute: typeof DebugTelemetryRoute
-  DebugTodayFactsRoute: typeof DebugTodayFactsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/weekly-review': {
-      id: '/weekly-review'
-      path: '/weekly-review'
-      fullPath: '/weekly-review'
-      preLoaderRoute: typeof WeeklyReviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -423,13 +275,6 @@ declare module '@tanstack/react-router' {
       path: '/screens'
       fullPath: '/screens'
       preLoaderRoute: typeof ScreensRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/review': {
-      id: '/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recurrence': {
@@ -446,25 +291,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/platform-health': {
-      id: '/platform-health'
-      path: '/platform-health'
-      fullPath: '/platform-health'
-      preLoaderRoute: typeof PlatformHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/overview': {
       id: '/overview'
       path: '/overview'
       fullPath: '/overview'
       preLoaderRoute: typeof OverviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/open-loops': {
-      id: '/open-loops'
-      path: '/open-loops'
-      fullPath: '/open-loops'
-      preLoaderRoute: typeof OpenLoopsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -488,25 +319,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GlanceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/decisions': {
-      id: '/decisions'
-      path: '/decisions'
-      fullPath: '/decisions'
-      preLoaderRoute: typeof DecisionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/capture-doctor': {
       id: '/capture-doctor'
       path: '/capture-doctor'
       fullPath: '/capture-doctor'
       preLoaderRoute: typeof CaptureDoctorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/audit': {
-      id: '/audit'
-      path: '/audit'
-      fullPath: '/audit'
-      preLoaderRoute: typeof AuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/attention': {
@@ -537,26 +354,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/accuracy': {
-      id: '/accuracy'
-      path: '/accuracy'
-      fullPath: '/accuracy'
-      preLoaderRoute: typeof AccuracyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/projects/health': {
-      id: '/projects/health'
-      path: '/health'
-      fullPath: '/projects/health'
-      preLoaderRoute: typeof ProjectsHealthRouteImport
-      parentRoute: typeof ProjectsRoute
     }
     '/projects/$id': {
       id: '/projects/$id'
@@ -565,33 +368,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIdRouteImport
       parentRoute: typeof ProjectsRoute
     }
-    '/open-loops/$id': {
-      id: '/open-loops/$id'
-      path: '/$id'
-      fullPath: '/open-loops/$id'
-      preLoaderRoute: typeof OpenLoopsIdRouteImport
-      parentRoute: typeof OpenLoopsRoute
-    }
     '/ideas/$id': {
       id: '/ideas/$id'
       path: '/$id'
       fullPath: '/ideas/$id'
       preLoaderRoute: typeof IdeasIdRouteImport
       parentRoute: typeof IdeasRoute
-    }
-    '/debug/today-facts': {
-      id: '/debug/today-facts'
-      path: '/debug/today-facts'
-      fullPath: '/debug/today-facts'
-      preLoaderRoute: typeof DebugTodayFactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/debug/telemetry': {
-      id: '/debug/telemetry'
-      path: '/debug/telemetry'
-      fullPath: '/debug/telemetry'
-      preLoaderRoute: typeof DebugTelemetryRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/debug/analytics': {
       id: '/debug/analytics'
@@ -631,26 +413,12 @@ const IdeasRouteChildren: IdeasRouteChildren = {
 
 const IdeasRouteWithChildren = IdeasRoute._addFileChildren(IdeasRouteChildren)
 
-interface OpenLoopsRouteChildren {
-  OpenLoopsIdRoute: typeof OpenLoopsIdRoute
-}
-
-const OpenLoopsRouteChildren: OpenLoopsRouteChildren = {
-  OpenLoopsIdRoute: OpenLoopsIdRoute,
-}
-
-const OpenLoopsRouteWithChildren = OpenLoopsRoute._addFileChildren(
-  OpenLoopsRouteChildren,
-)
-
 interface ProjectsRouteChildren {
   ProjectsIdRoute: typeof ProjectsIdRoute
-  ProjectsHealthRoute: typeof ProjectsHealthRoute
 }
 
 const ProjectsRouteChildren: ProjectsRouteChildren = {
   ProjectsIdRoute: ProjectsIdRoute,
-  ProjectsHealthRoute: ProjectsHealthRoute,
 }
 
 const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
@@ -659,29 +427,20 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccuracyRoute: AccuracyRoute,
   ActionsRoute: ActionsRouteWithChildren,
   ActivityRoute: ActivityRoute,
   AskRoute: AskRoute,
   AttentionRoute: AttentionRoute,
-  AuditRoute: AuditRoute,
   CaptureDoctorRoute: CaptureDoctorRoute,
-  DecisionsRoute: DecisionsRoute,
   GlanceRoute: GlanceRoute,
   IdeasRoute: IdeasRouteWithChildren,
   LoginRoute: LoginRoute,
-  OpenLoopsRoute: OpenLoopsRouteWithChildren,
   OverviewRoute: OverviewRoute,
-  PlatformHealthRoute: PlatformHealthRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   RecurrenceRoute: RecurrenceRoute,
-  ReviewRoute: ReviewRoute,
   ScreensRoute: ScreensRoute,
   SettingsRoute: SettingsRoute,
-  WeeklyReviewRoute: WeeklyReviewRoute,
   DebugAnalyticsRoute: DebugAnalyticsRoute,
-  DebugTelemetryRoute: DebugTelemetryRoute,
-  DebugTodayFactsRoute: DebugTodayFactsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

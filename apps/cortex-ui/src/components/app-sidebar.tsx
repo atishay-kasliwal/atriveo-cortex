@@ -4,18 +4,10 @@
 
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  Activity,
   BarChart2,
-  BookOpen,
-  Brain,
   CalendarDays,
   CheckSquare,
-  CircleDashed,
-  ClipboardCheck,
-  Crosshair,
   FolderKanban,
-  Gauge,
-  HeartPulse,
   History,
   Home,
   LayoutDashboard,
@@ -26,7 +18,6 @@ import {
   Repeat,
   Search,
   Settings,
-  Sparkles,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -68,33 +59,6 @@ const moreNav = [
       { title: "Actions", url: "/actions", icon: CheckSquare },
       { title: "Ideas", url: "/ideas", icon: Lightbulb },
       { title: "Recurrence", url: "/recurrence", icon: Repeat },
-    ],
-  },
-  {
-    group: "Reviews",
-    items: [
-      { title: "Daily Review", url: "/review", icon: BookOpen },
-      { title: "Weekly Review", url: "/weekly-review", icon: CalendarDays },
-    ],
-  },
-  {
-    group: "Focus",
-    items: [
-      { title: "Decision Center", url: "/decisions", icon: Crosshair },
-      { title: "Open Loops", url: "/open-loops", icon: CircleDashed },
-      { title: "Attention", url: "/attention", icon: Brain },
-    ],
-  },
-  {
-    group: "Debug",
-    items: [
-      { title: "Activity Log", url: "/activity", icon: Activity },
-      { title: "Truth Audit", url: "/audit", icon: ClipboardCheck },
-      { title: "Accuracy", url: "/accuracy", icon: Gauge },
-      { title: "Telemetry", url: "/debug/telemetry", icon: Activity },
-      { title: "Today Facts", url: "/debug/today-facts", icon: Sparkles },
-      { title: "Platform Health", url: "/platform-health", icon: HeartPulse },
-      { title: "Project Health", url: "/projects/health", icon: HeartPulse },
     ],
   },
 ];

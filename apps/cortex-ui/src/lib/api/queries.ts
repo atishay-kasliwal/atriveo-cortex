@@ -22,18 +22,11 @@ export const qk = {
   projects: ["projects"] as const,
   projectsHealth: (date?: string) => ["projects", "health", date ?? "today"] as const,
   projectsHealthTrends: (days?: number) => ["projects", "health", "trends", days ?? 30] as const,
-  decisionsToday: ["decisions", "today"] as const,
-  decisionsRecommendations: (date?: string) => ["decisions", "recommendations", date ?? "today"] as const,
   project: (id: string) => ["projects", id] as const,
   actions: (bucket?: ActionBucket) => ["actions", bucket ?? "unresolved"] as const,
   action: (id: string) => ["actions", id] as const,
   ideas: ["ideas"] as const,
   idea: (id: string) => ["ideas", id] as const,
-  openLoops: ["open-loops"] as const,
-  openLoopsBoard: ["open-loops", "board"] as const,
-  openLoop: (id: string) => ["open-loops", id] as const,
-  review: (date: string) => ["reviews", "day", date] as const,
-  weeklyReview: (weekStart: string) => ["reviews", "week", weekStart] as const,
   search: (q: string) => ["search", q] as const,
   chat: (q: string) => ["chat", q] as const,
   attentionDay: (date: string) => ["attention", "day", date] as const,
@@ -45,10 +38,6 @@ export const qk = {
   screensSummary: (start?: string, end?: string) =>
     ["screens", "summary", start ?? "default", end ?? "default"] as const,
   pulseTimeline: (date: string) => ["screens", "pulse-timeline", date] as const,
-  auditDay: (date: string) => ["audit", "day", date] as const,
-  auditMetrics: (start?: string, end?: string) =>
-    ["audit", "metrics", start ?? "default", end ?? "default"] as const,
-  accuracyDashboard: ["accuracy", "dashboard"] as const,
   recurrence: ["recurrence"] as const,
   screenpipeHealth: ["system", "screenpipe-health"] as const,
   analyticsValidation: (date?: string) =>
@@ -128,20 +117,6 @@ export const projectsHealthTrendsQuery = (days = 30) =>
     staleTime: STALE,
   });
 
-export const decisionsTodayQuery = () =>
-  queryOptions({
-    queryKey: qk.decisionsToday,
-    queryFn: () => api.decisions.today(),
-    staleTime: STALE,
-  });
-
-export const decisionsRecommendationsQuery = (date?: string) =>
-  queryOptions({
-    queryKey: qk.decisionsRecommendations(date),
-    queryFn: () => api.decisions.recommendations(date ? { date } : undefined),
-    staleTime: STALE,
-  });
-
 export const projectQuery = (id: string) =>
   queryOptions({
     queryKey: qk.project(id),
@@ -185,43 +160,6 @@ export const ideaQuery = (id: string) =>
       if (!detail) throw new Error("Idea not found");
       return detail;
     },
-    staleTime: STALE,
-  });
-
-export const openLoopsQuery = queryOptions({
-  queryKey: qk.openLoops,
-  queryFn: () => api.openLoops.list(),
-  staleTime: STALE,
-});
-
-export const openLoopsBoardQuery = queryOptions({
-  queryKey: qk.openLoopsBoard,
-  queryFn: () => api.openLoops.board(),
-  staleTime: STALE,
-});
-
-export const openLoopQuery = (id: string) =>
-  queryOptions({
-    queryKey: qk.openLoop(id),
-    queryFn: async () => {
-      const detail = await api.openLoops.get(id);
-      if (!detail) throw new Error("Open loop not found");
-      return detail;
-    },
-    staleTime: STALE,
-  });
-
-export const reviewQuery = (date: string) =>
-  queryOptions({
-    queryKey: qk.review(date),
-    queryFn: () => api.reviews.day(date),
-    staleTime: STALE,
-  });
-
-export const weeklyReviewQuery = (weekStart: string) =>
-  queryOptions({
-    queryKey: qk.weeklyReview(weekStart),
-    queryFn: () => api.reviews.week(weekStart),
     staleTime: STALE,
   });
 
@@ -301,26 +239,6 @@ export const pulseTimelineQuery = (date: string) =>
     queryFn: () => api.screens.pulseTimeline(date),
     staleTime: STALE,
   });
-
-export const auditDayQuery = (date: string) =>
-  queryOptions({
-    queryKey: qk.auditDay(date),
-    queryFn: () => api.audit.day(date),
-    staleTime: STALE,
-  });
-
-export const auditMetricsQuery = (start?: string, end?: string) =>
-  queryOptions({
-    queryKey: qk.auditMetrics(start, end),
-    queryFn: () => api.audit.metrics(start, end),
-    staleTime: STALE,
-  });
-
-export const accuracyDashboardQuery = queryOptions({
-  queryKey: qk.accuracyDashboard,
-  queryFn: () => api.accuracy.dashboard(),
-  staleTime: STALE,
-});
 
 export const aiSettingsQuery = queryOptions({
   queryKey: qk.aiSettings,

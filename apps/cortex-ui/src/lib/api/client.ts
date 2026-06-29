@@ -5,9 +5,6 @@ import {
   fetchActions,
   fetchIdeaDetail,
   fetchIdeas,
-  fetchOpenLoopDetail,
-  fetchOpenLoops,
-  fetchOpenLoopsBoard,
   fetchOverview,
   fetchProjectDetail,
   fetchProjects,
@@ -21,11 +18,6 @@ import {
 } from "./analytics-adapter";
 import { fetchScreenpipeHealth } from "./system-adapter";
 import { fetchAnalyticsValidation } from "./analytics-validation-adapter";
-import {
-  fetchDailyReview,
-  fetchLatestWeeklyReview,
-  fetchWeeklyReview,
-} from "./review-adapter";
 import { fetchChat } from "./chat-adapter";
 import {
   fetchAttentionTrends,
@@ -38,22 +30,8 @@ import {
   fetchScreensSummary,
   fetchWeekScreens,
 } from "./screens-adapter";
-import {
-  fetchAuditMetrics,
-  fetchDayAudit,
-  submitAuditFeedback,
-} from "./audit-adapter";
-import {
-  fetchAccuracyDashboard,
-  fetchClassificationAccuracyReport,
-} from "./accuracy-adapter";
 import { fetchMemorySearch } from "./search-adapter";
 import { fetchProjectsHealth, fetchProjectHealthTrends } from "./project-health-adapter";
-import {
-  fetchTodayDecisions,
-  fetchDecisionRecommendations,
-  fetchProjectDecisions,
-} from "./decision-adapter";
 import { fetchAnalyticsHistory } from "./analytics-history-adapter";
 export { ApiError, isApiNotFound, isRetryableApiError } from "./cortex-fetch";
 export type { ActionBucket };
@@ -66,13 +44,6 @@ export const api = {
     week: (start?: string) => fetchWeekActivity(start),
     month: (start?: string) => fetchMonthActivity(start),
     history: () => fetchAnalyticsHistory(),
-  },
-
-  decisions: {
-    today: () => fetchTodayDecisions(),
-    recommendations: (params?: { date?: string; limit?: number }) =>
-      fetchDecisionRecommendations(params),
-    project: (project: string) => fetchProjectDecisions(project),
   },
 
   projects: {
@@ -91,18 +62,6 @@ export const api = {
   ideas: {
     list: () => fetchIdeas(),
     get: (id: string) => fetchIdeaDetail(id),
-  },
-
-  openLoops: {
-    list: () => fetchOpenLoops(),
-    board: () => fetchOpenLoopsBoard(),
-    get: (id: string) => fetchOpenLoopDetail(id),
-  },
-
-  reviews: {
-    day: (date: string) => fetchDailyReview(date),
-    week: (weekStart: string) => fetchWeeklyReview(weekStart),
-    weekLatest: () => fetchLatestWeeklyReview(),
   },
 
   recurrence: {
@@ -133,24 +92,6 @@ export const api = {
     week: (start?: string) => fetchWeekScreens(start),
     summary: (start?: string, end?: string) => fetchScreensSummary(start, end),
     pulseTimeline: (date?: string) => fetchPulseTimeline(date),
-  },
-
-  audit: {
-    day: (date?: string) => fetchDayAudit(date),
-    metrics: (start?: string, end?: string) => fetchAuditMetrics(start, end),
-    feedback: (input: {
-      date: string;
-      startTime: string;
-      endTime: string;
-      predictedState: string;
-      verdict: "correct" | "incorrect";
-    }) => submitAuditFeedback(input),
-  },
-
-  accuracy: {
-    dashboard: () => fetchAccuracyDashboard(),
-    report: (start?: string, end?: string) =>
-      fetchClassificationAccuracyReport(start, end),
   },
 
 };
