@@ -7,7 +7,7 @@ import { HomeKpiStrip } from "@/components/home/home-kpi-strip";
 import { CalendarUpcoming } from "@/components/home/calendar-upcoming";
 import { syncPipelineStyles } from "@/lib/api/sync-adapter";
 import type { ActivityPipelineState } from "@/lib/activity/activity-state";
-import type { ActivityCategory, TodayActivity } from "@/lib/api/types";
+import type { ActivityCategory, DailyBucket, TodayActivity } from "@/lib/api/types";
 
 const PIPELINE_LABEL: Record<ActivityPipelineState, string> = {
   live: "Live",
@@ -22,15 +22,44 @@ const CATEGORY_ORDER: ActivityCategory[] = [
   "health", "personal", "other",
 ];
 
+function GoalBadge({ todaySec, avgSec }: { todaySec: number; avgSec: number }) {
+  if (avgSec < 300) return null; // skip categories with <5min avg
+  const delta = todaySec - avgSec;
+  const pct = Math.abs(delta) / avgSec;
+  if (pct < 0.15) {
+    return (
+      <span className="rounded-full bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-muted-foreground/50">
+        avg
+      </span>
+    );
+  }
+  if (delta > 0) {
+    return (
+      <span className="rounded-full bg-[#2DD4BF]/10 px-1.5 py-0.5 text-[10px] text-[#2DD4BF]">
+        +{fmtDuration(delta)}
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-[#F59E0B]/10 px-1.5 py-0.5 text-[10px] text-[#F59E0B]">
+      −{fmtDuration(Math.abs(delta))}
+    </span>
+  );
+}
+
 export function HomeHero({
   data,
   dateLabel,
   pipelineState,
+  yesterdayFocusSec,
+  weekDays,
   children,
 }: {
   data: TodayActivity;
   dateLabel: string;
   pipelineState?: ActivityPipelineState;
+  yesterdayFocusSec?: number;
+  weekDays?: DailyBucket[];
   children?: React.ReactNode;
 }) {
   const totals = new Map<string, number>();
@@ -49,10 +78,32 @@ export function HomeHero({
   const totalCat = rows.reduce((n, r) => n + r.sec, 0) || 1;
   const top = workRows.slice().sort((a, b) => b.sec - a.sec)[0];
 
+  // 7-day category averages (excluding today's date)
+  const categoryAvgMap = (() => {
+    if (!weekDays || weekDays.length === 0) return null;
+    const pastDays = weekDays.filter((d) => d.activeSec > 0);
+    if (pastDays.length === 0) return null;
+    const sums = new Map<string, number>();
+    for (const day of pastDays) {
+      for (const { category, durationSec } of day.byCategory) {
+        sums.set(category, (sums.get(category) ?? 0) + durationSec);
+      }
+    }
+    const avgs = new Map<string, number>();
+    for (const [cat, total] of sums) {
+      avgs.set(cat, total / pastDays.length);
+    }
+    return avgs;
+  })();
+
+  // Focused comparison delta
+  const focusDelta =
+    yesterdayFocusSec != null ? data.focusSec - yesterdayFocusSec : null;
+
   return (
     <section className="surface-card overflow-hidden">
       {/* Header row: date + pipeline badge + tagline */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-4 pb-3 sm:px-6">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-4 pb-2 sm:px-6">
         <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
           {dateLabel}
         </p>
@@ -75,6 +126,38 @@ export function HomeHero({
           <p className="text-[13px] text-muted-foreground">Your day so far</p>
         )}
       </div>
+
+      {/* Yesterday vs. today comparison */}
+      {yesterdayFocusSec != null ? (
+        <div className="flex items-center gap-2 px-5 pb-3 sm:px-6">
+          <span className="text-[12px] text-muted-foreground/60">
+            Yesterday{" "}
+            <span className="font-mono font-medium tabular-nums text-foreground/70">
+              {fmtDuration(yesterdayFocusSec)}
+            </span>{" "}
+            focused
+          </span>
+          <span className="text-white/[0.12]">·</span>
+          <span className="text-[12px] text-muted-foreground/60">
+            Today{" "}
+            <span className="font-mono font-medium tabular-nums text-foreground/70">
+              {fmtDuration(data.focusSec)}
+            </span>
+          </span>
+          {focusDelta !== null ? (
+            <span
+              className={
+                "rounded-full px-2 py-0.5 font-mono text-[11px] tabular-nums " +
+                (focusDelta >= 0
+                  ? "bg-[#2DD4BF]/10 text-[#2DD4BF]"
+                  : "bg-[#F59E0B]/10 text-[#F59E0B]")
+              }
+            >
+              {focusDelta >= 0 ? "+" : "−"}{fmtDuration(Math.abs(focusDelta))}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* KPI strip */}
       <div className="px-5 pb-4 sm:px-6">
@@ -110,6 +193,12 @@ export function HomeHero({
                 <span className="font-mono text-[11px] tabular-nums text-muted-foreground/50">
                   {Math.round((r.sec / totalCat) * 100)}%
                 </span>
+                {categoryAvgMap ? (
+                  <GoalBadge
+                    todaySec={r.sec}
+                    avgSec={categoryAvgMap.get(r.category) ?? 0}
+                  />
+                ) : null}
               </div>
             ))}
           </div>

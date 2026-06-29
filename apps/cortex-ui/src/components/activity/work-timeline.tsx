@@ -4,13 +4,98 @@
 
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { categoryStyle, fmtClock, fmtDuration } from "@/components/dashboard/time";
-import { AppIcon, Sparkline, StatBadge } from "@/components/premium";
+import { categoryStyle, fmtDuration } from "@/components/dashboard/time";
+import { AppIcon, Sparkline } from "@/components/premium";
 import { collapseMicroEntertainment } from "@/lib/activity/session-collapse";
-import { sessionContextLabel } from "@/lib/activity/session-context";
 import { HourDeepDive } from "@/components/activity/hour-deep-dive";
 import type { HourGroup } from "@/components/activity/hour-deep-dive";
-import type { TimelineBlock } from "@/lib/api/types";
+import type { ActivityCategory, TimelineBlock } from "@/lib/api/types";
+
+// ─── App-aware block thumbnail ─────────────────────────────────────────────
+
+const CODE_APPS = /cursor|vscode|code|xcode|webstorm|intellij|vim|neovim|emacs|sublime/i;
+const TERM_APPS = /terminal|warp|iterm|bash|zsh|kitty|hyper/i;
+const BROWSER_APPS = /chrome|safari|firefox|arc|brave|edge/i;
+
+function TrafficLights() {
+  return (
+    <div className="flex items-center gap-[3px] px-2 py-1.5">
+      {(["#FF5F56", "#FFBD2E", "#27C93F"] as const).map((c) => (
+        <span key={c} className="h-[7px] w-[7px] rounded-full" style={{ background: c }} />
+      ))}
+    </div>
+  );
+}
+
+function BlockThumb({ block }: { block: TimelineBlock }) {
+  const app = block.app ?? block.applicationsUsed?.[0] ?? "";
+  const snippet = block.windowSnippets?.[0];
+  const site = block.websitesUsed?.[0];
+
+  if (CODE_APPS.test(app)) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden bg-[#0d1117]">
+        <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.06]">
+          <TrafficLights />
+          <span className="truncate font-mono text-[9px] text-white/25">
+            {block.title?.split("/").pop() ?? app}
+          </span>
+        </div>
+        <pre className="min-h-0 flex-1 overflow-hidden px-2 py-1 font-mono text-[8px] leading-relaxed text-[#8b949e]" style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+          {snippet?.slice(0, 150) ?? "// ..."}
+        </pre>
+      </div>
+    );
+  }
+
+  if (TERM_APPS.test(app)) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden bg-[#0a0e0a]">
+        <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.06]">
+          <TrafficLights />
+          <span className="font-mono text-[9px] text-white/20">zsh</span>
+        </div>
+        <pre className="min-h-0 flex-1 overflow-hidden px-2 py-1 font-mono text-[8px] leading-relaxed text-[#3fb950]" style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+          {snippet?.slice(0, 150) ?? "$ ..."}
+        </pre>
+      </div>
+    );
+  }
+
+  if (BROWSER_APPS.test(app) || site) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden bg-[#13181f]">
+        <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.06]">
+          <TrafficLights />
+          <div className="mr-2 flex flex-1 items-center overflow-hidden rounded bg-white/[0.04] px-1.5 py-0.5">
+            <span className="truncate font-mono text-[8px] text-white/30">
+              {site ?? block.title}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col justify-center px-2 py-1">
+          <p className="line-clamp-2 text-[10px] font-medium leading-snug text-foreground/80">
+            {block.title}
+          </p>
+          {site ? (
+            <p className="mt-0.5 truncate text-[8px] text-muted-foreground/40">{site}</p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  // Category-colored fallback
+  const style = categoryStyle[block.category as ActivityCategory];
+  return (
+    <div
+      className="flex h-full flex-col items-center justify-center gap-1 overflow-hidden opacity-80"
+      style={{ background: style?.glow ? `${style.glow}20` : "rgba(255,255,255,0.03)" }}
+    >
+      <AppIcon app={app} size="sm" />
+    </div>
+  );
+}
 
 function groupByHour(blocks: TimelineBlock[]): HourGroup[] {
   const map = new Map<number, TimelineBlock[]>();
@@ -117,41 +202,35 @@ function HourCard({
         <CategoryBar blocks={group.blocks} />
       </div>
 
-      {/* Session list — display only, click handled at card level */}
-      <div
-        className="min-h-0 flex-1 divide-y divide-white/[0.04] overflow-y-auto"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {group.blocks.map((block) => {
-          const context = sessionContextLabel(block);
-          return (
+      {/* Thumbnail grid — click is handled at the card level */}
+      <div className="min-h-0 flex-1 overflow-hidden p-2.5">
+        <div className="grid h-full grid-cols-2 gap-1.5">
+          {group.blocks.slice(0, 3).map((block) => (
             <div
               key={block.id}
-              className="flex w-full items-start gap-3 px-4 py-2.5 text-left"
+              className="flex flex-col overflow-hidden rounded-lg border border-white/[0.05] bg-[#0d1117]"
             >
-              <AppIcon app={block.app ?? block.applicationsUsed?.[0]} size="sm" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] font-medium leading-snug text-foreground">
-                  {block.title}
-                </div>
-                {context ? (
-                  <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                    {context}
-                  </div>
-                ) : null}
-                <div className="mt-0.5 font-mono text-[10px] tabular-nums text-muted-foreground/60">
-                  {fmtClock(block.startedAt)}–{fmtClock(block.endedAt)}
-                </div>
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <BlockThumb block={block} />
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5">
-                <span className="font-mono text-[11px] font-medium tabular-nums text-foreground/90">
+              <div className="shrink-0 border-t border-white/[0.04] px-2 py-1.5">
+                <p className="truncate text-[11px] font-medium leading-tight text-foreground/90">
+                  {block.title}
+                </p>
+                <p className="mt-0.5 font-mono text-[10px] tabular-nums text-muted-foreground/50">
                   {fmtDuration(block.durationSec)}
-                </span>
-                <StatBadge category={block.category} />
+                </p>
               </div>
             </div>
-          );
-        })}
+          ))}
+          {group.blocks.length > 3 ? (
+            <div className="flex items-center justify-center rounded-lg border border-white/[0.04] bg-white/[0.02]">
+              <span className="text-[11px] text-muted-foreground/40">
+                +{group.blocks.length - 3} more
+              </span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Sparkline footer */}

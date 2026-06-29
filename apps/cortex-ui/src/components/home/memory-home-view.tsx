@@ -18,6 +18,7 @@ import {
   localTodayFactsQuery,
   screenpipeHealthQuery,
   todayQuery,
+  weekQuery,
 } from "@/lib/api/queries";
 
 const SYNC_STATUS_KEY = ["sync", "status"] as const;
@@ -40,6 +41,24 @@ export function MemoryHomeView({
     queryKey: SYNC_STATUS_KEY,
     queryFn: fetchSyncStatus,
     staleTime: 15_000,
+  });
+
+  const yesterdayDate = useMemo(() => {
+    const d = new Date(calendarToday + "T12:00:00");
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }, [calendarToday]);
+
+  const yesterdayActivity = useQuery({
+    ...todayQuery(yesterdayDate),
+    enabled: viewDate === calendarToday,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const weekData = useQuery({
+    ...weekQuery(),
+    enabled: viewDate === calendarToday,
+    staleTime: 5 * 60 * 1000,
   });
 
   const dateLabel = formatDateLabel(viewDate, calendarToday);
@@ -100,6 +119,8 @@ export function MemoryHomeView({
           data={activitySource.data}
           dateLabel={dateLabel}
           pipelineState={pipelineState}
+          yesterdayFocusSec={yesterdayActivity.data?.focusSec}
+          weekDays={weekData.data?.days}
         >
           <WorkTimeline
             blocks={activitySource.data.timeline}
