@@ -83,9 +83,11 @@ jobs:
         run: npm run clean:pages-artifacts
         working-directory: apps/cortex-ui
 
+      - name: Install wrangler
+        run: npm install -g wrangler
+
       - name: Deploy Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/cortex-ui
-          command: pages deploy dist --project-name=cortex-ui --branch=production
+        run: wrangler pages deploy dist --project-name=cortex-ui --branch=production
+        working-directory: apps/cortex-ui
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
