@@ -66,13 +66,17 @@ export async function syncDay(date: string): Promise<SyncResult> {
     const signalIndex = await buildProjectSignalIndex();
     const enrichedSessions = enrichSessions(attribution.sessions, evidence, signalIndex);
 
-    // Fill ScreenPipe capture gaps (screen locked) with media that was playing,
-    // detected from macOS power assertions — so screen-off YouTube/music counts.
+    // Fill ScreenPipe gaps (screen locked) AND credit media playing concurrently
+    // in the background while the user was actively working. Both use pmset data.
+    // Gap sessions cover screen-off playback; concurrent sessions cover background
+    // media (e.g. FIFA streaming while coding). Work sessions are left intact —
+    // total attributed time may exceed clock time, but entertainment is accurate.
     const { listMediaSessionsForDay } = await import("@/lib/media/media-sessions");
-    const { buildMediaGapSessions } = await import("@/lib/media/media-gap-fill");
+    const { buildMediaGapSessions, buildConcurrentMediaSessions } = await import("@/lib/media/media-gap-fill");
     const mediaSessions = await listMediaSessionsForDay(start, end).catch(() => []);
     const gapSessions = buildMediaGapSessions(frames, mediaSessions, start, end);
-    const allSessions = [...enrichedSessions, ...gapSessions].sort(
+    const concurrentSessions = buildConcurrentMediaSessions(frames, mediaSessions, start, end);
+    const allSessions = [...enrichedSessions, ...gapSessions, ...concurrentSessions].sort(
       (a, b) => Date.parse(a.startTime) - Date.parse(b.startTime),
     );
 

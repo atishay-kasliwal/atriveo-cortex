@@ -114,3 +114,84 @@ export function buildMediaGapSessions(
 
   return out;
 }
+
+/**
+ * Concurrent media attribution — entertainment credit for media that played
+ * while the user was also actively using the computer.
+ *
+ * buildMediaGapSessions only fills screen-off gaps. This companion covers the
+ * "coding while FIFA plays in the background" case: pmset tells us media ran
+ * for 6h, but screenpipe only saw the code editor in the foreground.
+ *
+ * We credit entertainment for the frame-covered portions of each media session
+ * (i.e. the inverse of the gaps). Work sessions are left intact — total
+ * attributed time will exceed clock time, but entertainment becomes accurate.
+ */
+export function buildConcurrentMediaSessions(
+  frames: FrameInput[],
+  mediaSessions: MediaSessionRow[],
+  dayStart: string,
+  dayEnd: string,
+): DetectedSession[] {
+  const dayStartMs = Date.parse(dayStart);
+  const dayEndMs = Date.parse(dayEnd);
+  if (mediaSessions.length === 0 || frames.length === 0) return [];
+
+  // Build frame-covered intervals: complement of captureGaps.
+  const times = frames
+    .map((f) => Date.parse(f.timestamp))
+    .filter((t) => Number.isFinite(t))
+    .sort((a, b) => a - b);
+
+  const covered: Interval[] = [];
+  let segStart = dayStartMs;
+  for (const t of times) {
+    if (t - segStart > FRAME_CONTINUITY_MS) {
+      // gap starts at segStart — close the covered segment before it
+      if (segStart > dayStartMs) covered.push({ startMs: dayStartMs, endMs: segStart });
+      segStart = t;
+    }
+  }
+  // Close the final covered segment
+  const last = times[times.length - 1] ?? dayStartMs;
+  if (last > dayStartMs) covered.push({ startMs: dayStartMs, endMs: Math.min(last, dayEndMs) });
+  if (covered.length === 0) return [];
+
+  const out: DetectedSession[] = [];
+
+  for (const media of mediaSessions) {
+    const m: Interval = {
+      startMs: Math.max(Date.parse(media.started_at), dayStartMs),
+      endMs: Math.min(Date.parse(media.ended_at), dayEndMs),
+    };
+    if (m.endMs <= m.startMs) continue;
+
+    for (const seg of covered) {
+      const s = Math.max(m.startMs, seg.startMs);
+      const e = Math.min(m.endMs, seg.endMs);
+      if (e - s < 60_000) continue; // skip < 1 min overlaps
+      const durationSec = (e - s) / 1000;
+      const label =
+        media.kind === "video"
+          ? `Watching video · ${media.app}`
+          : `Listening · ${media.app}`;
+      out.push({
+        startTime: new Date(s).toISOString(),
+        endTime: new Date(e).toISOString(),
+        durationMinutes: durationSec / 60,
+        activeSeconds: durationSec,
+        dominantApp: media.app,
+        dominantProject: null,
+        projectSeconds: new Map(),
+        repoPathsUsed: [],
+        windowSnippets: [label],
+        sessionType: "ENTERTAINMENT",
+        sessionLabel: label,
+        applicationsUsed: [media.app],
+        websitesUsed: [],
+      });
+    }
+  }
+
+  return out;
+}
