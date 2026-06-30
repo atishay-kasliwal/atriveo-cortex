@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import { AtriveoMark } from "@/components/brand/atriveo-mark";
+import { LandingDayPreview } from "@/components/landing/landing-day-preview";
 
 /**
  * Cortex product landing page. Positioning: "Your work, remembered."
@@ -27,6 +28,7 @@ export function LandingPage() {
       <LogosStrip />
       <Features />
       <HowItWorks />
+      <LandingDayPreview />
       <ClosingCta />
       <Footer />
     </div>

@@ -23,6 +23,14 @@ export default defineConfig({
       port: 5173,
       strictPort: false,
       proxy: {
+        "/api/auth": {
+          target:
+            process.env.VITE_AUTH_PROXY_TARGET ??
+            process.env.VITE_API_PROXY_TARGET ??
+            process.env.API_URL ??
+            "http://127.0.0.1:3456",
+          changeOrigin: true,
+        },
         "/local-facts": {
           target: process.env.VITE_LOCAL_FACTS_PROXY ?? "http://127.0.0.1:3921",
           changeOrigin: true,

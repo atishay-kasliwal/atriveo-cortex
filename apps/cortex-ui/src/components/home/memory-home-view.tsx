@@ -6,6 +6,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { ArrowUpRight, Clock } from "lucide-react";
+import { DayPieGallery } from "@/components/home/day-pie-gallery";
 import { HomeHero } from "@/components/home/home-hero";
 import { WorkTimeline } from "@/components/activity/work-timeline";
 import { EmptyState, ErrorState } from "@/components/dashboard/states";
@@ -34,7 +35,10 @@ export function MemoryHomeView({
   const activity = useQuery({ ...todayQuery(viewDate), retry: false });
   const localToday = useQuery({
     ...localTodayFactsQuery(viewDate),
-    enabled: isClient && viewDate === calendarToday,
+    enabled:
+      isClient &&
+      viewDate === calendarToday &&
+      import.meta.env.VITE_LOCAL_FACTS_ENABLED === "true",
   });
   const screenpipeHealth = useQuery(screenpipeHealthQuery);
   const syncStatus = useQuery({
@@ -80,8 +84,15 @@ export function MemoryHomeView({
       hasTodayActivity(activitySource.data),
     );
 
+  const hasActivityData = hasTodayActivity(activity.data);
+
   const waitingForLocal =
-    viewDate === calendarToday && isClient && localToday.isFetching;
+    viewDate === calendarToday &&
+    isClient &&
+    localToday.isFetching &&
+    !hasActivityData &&
+    !activity.isError;
+
   const heroPending = activity.isLoading || waitingForLocal;
   const hasHeroData = Boolean(
     activitySource.data && hasTodayActivity(activitySource.data),
@@ -115,27 +126,32 @@ export function MemoryHomeView({
       ) : heroPending && !hasHeroData ? (
         <div className="h-[480px] animate-pulse rounded-2xl bg-surface-2/50" />
       ) : hasHeroData && activitySource.data ? (
-        <HomeHero
-          data={activitySource.data}
-          dateLabel={dateLabel}
-          pipelineState={pipelineState}
-          yesterdayFocusSec={yesterdayActivity.data?.focusSec}
-          weekDays={weekData.data?.days}
-        >
-          <WorkTimeline
-            blocks={activitySource.data.timeline}
-            action={
-              <Link
-                to="/activity"
-                search={{ date: viewDate }}
-                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-              >
-                Full log
-                <ArrowUpRight className="h-3 w-3" />
-              </Link>
-            }
-          />
-        </HomeHero>
+        <>
+          <HomeHero
+            data={activitySource.data}
+            dateLabel={dateLabel}
+            pipelineState={pipelineState}
+            yesterdayFocusSec={yesterdayActivity.data?.focusSec}
+            weekDays={weekData.data?.days}
+          >
+            <WorkTimeline
+              blocks={activitySource.data.timeline}
+              action={
+                <Link
+                  to="/activity"
+                  search={{ date: viewDate }}
+                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  Full log
+                  <ArrowUpRight className="h-3 w-3" />
+                </Link>
+              }
+            />
+          </HomeHero>
+          <div className="mt-4">
+            <DayPieGallery data={activitySource.data} />
+          </div>
+        </>
       ) : (
         <EmptyState
           icon={Clock}

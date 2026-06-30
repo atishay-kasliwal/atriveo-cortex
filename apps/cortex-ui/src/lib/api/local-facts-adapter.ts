@@ -138,7 +138,10 @@ export async function fetchLocalTodayBundle(
   date: string,
 ): Promise<LocalTodayBundle | null> {
   try {
-    const res = await fetch(LOCAL_FACTS_URL, { cache: "no-store" });
+    const res = await fetch(LOCAL_FACTS_URL, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(2_500),
+    });
     if (!res.ok) return null;
     const doc = (await res.json()) as LocalFactsDocument;
     if (doc.payload.date !== date) return null;

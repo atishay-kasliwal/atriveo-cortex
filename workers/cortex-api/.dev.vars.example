@@ -1,2 +1,7 @@
 # Local dev only — copy DATABASE_URL from playground/.env.local
 DATABASE_URL=
+
+# Auth for local sign-in (must match login.tsx email + your password)
+AUTH_SECRET=local-dev-cortex-auth-secret
+VALID_EMAIL=katishay@gmail.com
+VALID_PASSWORD=

@@ -950,6 +950,16 @@ export type TodayActivity = {
   projectsTouched: number;
   openLoopsCount: number;
   timeline: TimelineBlock[];
+  activeStateSec?: number;
+  backgroundStateSec?: number;
+  idleStateSec?: number;
+  sleepingStateSec?: number;
+  presenceScore?: number;
+  largestIdleBlockSec?: number;
+  totalIdleSec?: number;
+  idleByTier?: Array<{ tier: string; label: string; durationSec: number }>;
+  idleTime?: Array<{ category: string; label: string; durationSec: number }>;
+  presenceTime?: Array<{ category: string; label: string; durationSec: number }>;
   stateTimeline?: {
     id: string;
     startedAt: string;
@@ -959,13 +969,6 @@ export type TodayActivity = {
     label: string;
     idleTier?: string;
   }[];
-  presenceScore?: number;
-  largestIdleBlockSec?: number;
-  totalIdleSec?: number;
-  visibleTime?: number;
-  attentionTime?: number;
-  presenceTime?: number;
-  idleTime?: number;
   apps: AppUsage[];
   websites: WebsiteUsage[];
   websiteCategories: WebsiteCategoryUsage[];
