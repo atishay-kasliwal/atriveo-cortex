@@ -82,7 +82,11 @@ function dominantProjectBySeconds(
 }
 
 function emptyAccumulator(firstFrame: FrameInput): SessionAccumulator {
-  const domain = extractDomain(firstFrame.app_name, firstFrame.window_name);
+  const domain = extractDomain(
+    firstFrame.app_name,
+    firstFrame.window_name,
+    firstFrame.browser_url,
+  );
   const sessionType = resolveSessionType(
     firstFrame.app_name,
     domain,
@@ -145,7 +149,7 @@ function attributeGap(
   addSeconds(acc.appSeconds, app, attribSec);
   acc.activeSeconds += attribSec;
 
-  const domain = extractDomain(prev.app_name, prev.window_name);
+  const domain = extractDomain(prev.app_name, prev.window_name, prev.browser_url);
   const sessionType = resolveSessionType(prev.app_name, domain, prev.window_name);
   addSeconds(acc.categorySeconds, sessionType, attribSec);
   if (domain) addSeconds(acc.domainSeconds, domain, attribSec);
@@ -243,7 +247,7 @@ export function processFrames(
     const project = matchProjectFrame(prev, projectNames);
     if (project) addSeconds(projectSeconds, project, attribSec);
 
-    const currDomain = extractDomain(curr.app_name, curr.window_name);
+    const currDomain = extractDomain(curr.app_name, curr.window_name, curr.browser_url);
     const currType = resolveSessionType(curr.app_name, currDomain, curr.window_name);
     const currBucket = sessionCategoryBucket(currType);
     const sessionDurationMs = currMs - accStartMs;

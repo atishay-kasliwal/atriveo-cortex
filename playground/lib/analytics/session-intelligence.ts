@@ -102,6 +102,23 @@ function domainTitle(domains: string[]): string | null {
   return null;
 }
 
+/** Turn an uncurated domain like "en.wikipedia.org" into "Wikipedia" for display. */
+function domainToDisplayName(domain: string): string {
+  const stripped = domain
+    .replace(/^www\./i, "")
+    .replace(/\.(com|org|net|io|dev|app|co|ai)$/i, "");
+  const parts = stripped.split(".");
+  const name = parts[parts.length - 1] ?? stripped;
+  return titleCase(name.replace(/[-_]/g, " "));
+}
+
+/** Any resolved domain is more useful than the bare category name. */
+function fallbackDomainTitle(domains: string[]): string | null {
+  const top = domains[0];
+  if (!top) return null;
+  return domainToDisplayName(top);
+}
+
 function actionToTitle(action: string, primaryProject: string | null): string | null {
   const lower = action.toLowerCase();
   if (/migrat/.test(lower) && /cloudflare|dns|cdn/.test(lower)) {
@@ -224,6 +241,9 @@ export function deriveSessionTitle(input: {
     const fromIdea = ideaToTitle(idea.text);
     if (fromIdea) return fromIdea;
   }
+
+  const fromUnratedDomain = fallbackDomainTitle(input.websitesUsed);
+  if (fromUnratedDomain) return fromUnratedDomain;
 
   return CATEGORY_FALLBACK[input.sessionType];
 }

@@ -64,7 +64,19 @@ describe("session-intelligence", () => {
     expect(title).toBe("Job Applications");
   });
 
-  it("falls back to category label without project", () => {
+  it("falls back to category label without project or domain", () => {
+    const title = deriveSessionTitle({
+      sessionType: "RESEARCH",
+      primaryProject: null,
+      applicationsUsed: ["Chrome"],
+      websitesUsed: [],
+      actions: [],
+      ideas: [],
+    });
+    expect(title).toBe("Research");
+  });
+
+  it("uses the resolved domain name over the bare category label", () => {
     const title = deriveSessionTitle({
       sessionType: "RESEARCH",
       primaryProject: null,
@@ -73,7 +85,7 @@ describe("session-intelligence", () => {
       actions: [],
       ideas: [],
     });
-    expect(title).toBe("Research");
+    expect(title).toBe("Example");
   });
 
   it("enriches session with attribution and confidence", () => {
