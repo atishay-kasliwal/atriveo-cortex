@@ -23,7 +23,6 @@ import {
   generateIdeaCandidates,
   generateKnownDomainCandidate,
   generateMeetingCandidate,
-  generateOcrCandidate,
   generateProjectCandidate,
   generateUrlCandidates,
   generateWindowTitleCandidate,
@@ -59,8 +58,15 @@ function generateCandidateTitles(signals: SessionSignals): TitleCandidate[] {
 
   out.push(...generateIdeaCandidates(signals.ideas));
 
-  const ocr = generateOcrCandidate(signals.ocrTexts);
-  if (ocr) out.push(ocr);
+  // OCR phrase extraction is deliberately NOT wired in here: real screenpipe OCR
+  // misreads produce garbage that's shaped exactly like a real word or phrase
+  // ("Software Engineerhetnat", "Konsakaieeng2drc Ftcomt") with no structural
+  // signal (casing, punctuation) to distinguish it from genuine content — pattern
+  // matching alone can't filter it reliably. Verified against a real day of
+  // production data: enabling it produced titles worse than the honest category
+  // fallback it was meant to replace. The module (ocr-signal.ts) and its tests
+  // stay in the codebase for a future pass with a stronger filter (e.g. a
+  // dictionary/wordlist check), but generateOcrCandidate is not called here.
 
   const domainDisplay = generateDomainDisplayCandidate(signals.websitesUsed);
   if (domainDisplay) out.push(domainDisplay);

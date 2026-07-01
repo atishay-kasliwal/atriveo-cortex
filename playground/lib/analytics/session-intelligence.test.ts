@@ -140,7 +140,11 @@ describe("inferSessionTitle", () => {
     expect(result.title).toContain("session-detector.ts");
   });
 
-  it("falls back to an OCR-extracted phrase when nothing else resolves", () => {
+  it("does not use OCR text for titling — verified too unreliable on real data", () => {
+    // generateOcrCandidate exists and is unit-tested in title/ocr-signal.test.ts,
+    // but is deliberately not wired into the pipeline (see title-pipeline.ts) —
+    // real OCR misreads produce garbage shaped like real words, which a backfill
+    // against production data showed was worse than the honest category fallback.
     const result = inferSessionTitle(
       signals({
         sessionType: "RESEARCH",
@@ -150,8 +154,8 @@ describe("inferSessionTitle", () => {
         ],
       }),
     );
-    expect(result.source).toBe("ocr_phrase");
-    expect(result.title.length).toBeGreaterThan(0);
+    expect(result.source).toBe("category");
+    expect(result.title).toBe("Research");
   });
 
   it("titles a meeting session as Meeting regardless of other signals", () => {
