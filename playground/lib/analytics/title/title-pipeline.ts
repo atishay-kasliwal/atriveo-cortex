@@ -18,6 +18,7 @@
 
 import {
   generateActionCandidates,
+  generateBlankBrowserCandidate,
   generateCategoryFallbackCandidate,
   generateDomainDisplayCandidate,
   generateIdeaCandidates,
@@ -70,6 +71,15 @@ function generateCandidateTitles(signals: SessionSignals): TitleCandidate[] {
 
   const domainDisplay = generateDomainDisplayCandidate(signals.websitesUsed);
   if (domainDisplay) out.push(domainDisplay);
+
+  // A browser sitting on a blank/new tab with no navigation is idle attention,
+  // not "Research" — outranks the plain category fallback but never a real signal.
+  const blankBrowser = generateBlankBrowserCandidate(
+    signals.windowSnippets,
+    signals.websitesUsed,
+    signals.urlSnippets,
+  );
+  if (blankBrowser) out.push(blankBrowser);
 
   out.push(generateCategoryFallbackCandidate(signals.sessionType));
 

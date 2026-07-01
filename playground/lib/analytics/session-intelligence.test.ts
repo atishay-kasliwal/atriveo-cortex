@@ -77,6 +77,32 @@ describe("inferSessionTitle", () => {
     expect(result.confidence).toBeLessThan(0.1);
   });
 
+  it("titles a browser sitting on a blank New Tab as Idle, not Research", () => {
+    // A browser that was opened but never navigated anywhere is idle attention,
+    // not "research" — verified against a real day of production data where this
+    // was the single most common vague-title case.
+    const result = inferSessionTitle(
+      signals({
+        sessionType: "RESEARCH",
+        applicationsUsed: ["Google Chrome"],
+        windowSnippets: ["New Tab - Google Chrome - Atishay"],
+      }),
+    );
+    expect(result.title).toBe("Idle");
+  });
+
+  it("does not call a session Idle once real navigation happened", () => {
+    const result = inferSessionTitle(
+      signals({
+        sessionType: "RESEARCH",
+        applicationsUsed: ["Google Chrome"],
+        windowSnippets: ["New Tab - Google Chrome - Atishay"],
+        websitesUsed: ["wikipedia.org"],
+      }),
+    );
+    expect(result.title).not.toBe("Idle");
+  });
+
   it("prefers the resolved domain's display name over the bare category label", () => {
     const result = inferSessionTitle(
       signals({ sessionType: "RESEARCH", websitesUsed: ["example.com"] }),
@@ -144,7 +170,9 @@ describe("inferSessionTitle", () => {
     // generateOcrCandidate exists and is unit-tested in title/ocr-signal.test.ts,
     // but is deliberately not wired into the pipeline (see title-pipeline.ts) —
     // real OCR misreads produce garbage shaped like real words, which a backfill
-    // against production data showed was worse than the honest category fallback.
+    // against production data showed was worse than the honest fallback. This
+    // session has a blank New Tab and garbage OCR, so it should land on the
+    // "Idle" blank-browser candidate, never on a title derived from the OCR text.
     const result = inferSessionTitle(
       signals({
         sessionType: "RESEARCH",
@@ -154,8 +182,8 @@ describe("inferSessionTitle", () => {
         ],
       }),
     );
-    expect(result.source).toBe("category");
-    expect(result.title).toBe("Research");
+    expect(result.source).not.toBe("ocr_phrase");
+    expect(result.title).toBe("Idle");
   });
 
   it("titles a meeting session as Meeting regardless of other signals", () => {

@@ -152,6 +152,34 @@ function cleanWindowSnippet(raw: string): string {
   return (url ? url[1]! : head).replace(/[.…]+$/, "").trim();
 }
 
+/** True when every window snippet is just browser/OS chrome (e.g. "New Tab") —
+ *  the user had a browser open but never navigated anywhere. This is a distinct
+ *  situation from "browsed something we couldn't title": there's no page to
+ *  describe at all, so the session should read as idle attention, not research. */
+function isBlankBrowserSession(
+  windowSnippets: string[],
+  websitesUsed: string[],
+  urlSnippets: UrlSnippet[],
+): boolean {
+  if (websitesUsed.length > 0 || urlSnippets.length > 0) return false;
+  if (windowSnippets.length === 0) return false;
+  return windowSnippets.every((raw) => {
+    const cleaned = cleanWindowSnippet(raw);
+    return cleaned.length < 4 || WINDOW_CHROME.test(cleaned);
+  });
+}
+
+export function generateBlankBrowserCandidate(
+  windowSnippets: string[],
+  websitesUsed: string[],
+  urlSnippets: UrlSnippet[],
+): TitleCandidate | null {
+  if (!isBlankBrowserSession(windowSnippets, websitesUsed, urlSnippets)) return null;
+  return candidate("Idle", 0.5, "window_title", [
+    "Browser open with no page navigated to (blank/new tab only)",
+  ]);
+}
+
 export function generateWindowTitleCandidate(
   windowSnippets: string[],
   primaryProject: string | null,
