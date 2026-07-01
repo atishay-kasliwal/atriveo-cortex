@@ -25,6 +25,14 @@ export type AnalyticsRun = {
   error_message: string | null;
 };
 
+/** A resolved browser URL paired with the window title captured alongside it —
+ *  needed for structured URL parsing (e.g. a GitHub PR URL plus its window title). */
+export type UrlSnippet = {
+  url: string;
+  windowTitle: string;
+  domain: string;
+};
+
 export type DetectedSession = {
   startTime: string;
   endTime: string;
@@ -38,6 +46,10 @@ export type DetectedSession = {
   projectSeconds?: Map<string, number>;
   repoPathsUsed?: string[];
   windowSnippets?: string[];
+  /** Paired url+title samples for structured URL parsing. Small, capped list. */
+  urlSnippets?: UrlSnippet[];
+  /** Raw OCR text samples for noise-filtered phrase extraction. Small, capped list. */
+  ocrTexts?: string[];
   sessionType: SessionType;
   sessionLabel: string;
   applicationsUsed: string[];

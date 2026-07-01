@@ -13,13 +13,14 @@ import {
   sessionLabelForType,
   topKeysByValue,
 } from "./session-stitching";
-import { extractDomain, extractRepoPath } from "./website-parser";
+import { extractDomain, extractRepoPath, isBrowserApp } from "./website-parser";
 import { isIdleAt, type IdleInterval } from "./idle-presence";
 import type {
   AttributionResult,
   DetectedSession,
   FrameInput,
   SessionType,
+  UrlSnippet,
 } from "./types";
 
 export const INACTIVITY_MS = 10 * 60 * 1000;
@@ -106,6 +107,44 @@ function emptyAccumulator(firstFrame: FrameInput): SessionAccumulator {
   };
 }
 
+const MAX_URL_SNIPPETS = 8;
+const MAX_OCR_TEXTS = 12;
+
+/** Pair each frame's resolved URL with the window title captured alongside it —
+ *  the two fields are collected separately during accumulation, but structured
+ *  URL parsing (e.g. a GitHub PR link) needs both together. */
+function collectUrlSnippets(frames: FrameInput[]): UrlSnippet[] {
+  const seen = new Set<string>();
+  const out: UrlSnippet[] = [];
+  for (const frame of frames) {
+    if (!frame.browser_url || !isBrowserApp(frame.app_name)) continue;
+    const domain = extractDomain(frame.app_name, frame.window_name, frame.browser_url);
+    if (!domain) continue;
+    const key = frame.browser_url.slice(0, 200);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      url: frame.browser_url.slice(0, 300),
+      windowTitle: (frame.window_name ?? "").trim().slice(0, 200),
+      domain,
+    });
+    if (out.length >= MAX_URL_SNIPPETS) break;
+  }
+  return out;
+}
+
+/** Small sample of raw OCR text for the OCR noise-filter to search for signal
+ *  phrases — capped low since screenpipe OCR is verbose per frame. */
+function collectOcrTexts(frames: FrameInput[]): string[] {
+  const out: string[] = [];
+  for (const frame of frames) {
+    if (!frame.text || frame.text.trim().length < 6) continue;
+    out.push(frame.text.slice(0, 500));
+    if (out.length >= MAX_OCR_TEXTS) break;
+  }
+  return out;
+}
+
 function finalizeSession(
   acc: SessionAccumulator,
   projectNames: string[],
@@ -131,6 +170,8 @@ function finalizeSession(
     projectSeconds: new Map(acc.projectSeconds),
     repoPathsUsed: topKeysByValue(acc.repoPathSeconds),
     windowSnippets: [...acc.windowSnippets].slice(0, 6),
+    urlSnippets: collectUrlSnippets(acc.frames),
+    ocrTexts: collectOcrTexts(acc.frames),
     sessionType: dominantType,
     // Provisional label; enrichSessions derives the real title from window snippets.
     sessionLabel: sessionLabelForType(dominantType),
